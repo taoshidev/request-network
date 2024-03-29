@@ -9,7 +9,6 @@ export default class AuthRoutes extends BaseRouter {
   }
 
   public initializeRoutes() {
-    console.log('from initialize routes');
   }
 
 
