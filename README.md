@@ -62,7 +62,7 @@ Before you get started, make sure you have the following installed on your syste
    This project uses Docker to manage its services. To start the containers, run:
 
    ```bash
-   docker-compose up -d
+   docker-compose build && docker-compose up -d
    ```
 
    This command will start all the required services in the background.
