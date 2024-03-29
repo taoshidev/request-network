@@ -10,6 +10,7 @@
   "scripts": {
     "start": "MIGRATE=false tsc && node dist/index.js",
     "dev": "MIGRATE=false nodemon - exec 'ts-node' src/app.ts",
+    "dev:migrate": "MIGRATE=true nodemon - exec 'ts-node' src/app.ts",
     "build": "tsc",
     "test": "jest",
     "db:generate": "drizzle-kit generate:pg",

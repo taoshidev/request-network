@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   app:
-    container_name: validator-api
+    container_name: request-network-app
     build: .
     volumes:
       - .:/usr/src/app
@@ -17,7 +17,7 @@ services:
       - "${API_PORT}:${API_PORT}"
 
   db:
-    container_name: validator-db
+    container_name: request-network-db
     image: supabase/postgres
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"

@@ -35,10 +35,11 @@ export default class App {
 
   private initializeRoutes(): void {
     this.express.get("/", (req: Request, res: Response) => {
-      res.json({ message: "Validator online!..." });
+      res.json({ message: "Validator online..." });
     });
     const auth = new Auth(this.supabase);
     const authRoutes = new AuthRoutes(auth);
+    authRoutes.initializeRoutes();
   }
 
   private initializeErrorHandling(): void {

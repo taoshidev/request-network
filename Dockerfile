@@ -13,4 +13,4 @@ COPY . .
 
 EXPOSE 8080
 
-CMD ["pnpm", "dev"]
+CMD ["pnpm", "dev:migrate"]

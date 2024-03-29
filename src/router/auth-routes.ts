@@ -6,10 +6,11 @@ export default class AuthRoutes extends BaseRouter {
   constructor(auth: Auth) {
     super();
     this.auth = auth;
-    this.initializeRoutes();
   }
 
-  private initializeRoutes() {
+  public initializeRoutes() {
+    console.log('from initialize routes');
   }
+
 
 }
