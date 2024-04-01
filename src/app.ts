@@ -42,7 +42,6 @@ export default class App {
     // Setup consumer routes
     const consumerRoutes = new ConsumerRoute(new ConsumerCtrl());
     this.express.use(`/${this.baseApiUrl}`, consumerRoutes.routes());
-    console.log('asdfasfasdfasdfasfasdf', this.baseApiUrl);
     // Loop through all the schema and mount their routes
     [services, keys].forEach((schema) => {
       const ctrl = new BaseController(schema);
