@@ -1,6 +1,6 @@
 import Database from "../db/database.js";
-import { PgTableWithColumns } from "drizzle-orm/pg-core";
-import { eq, getTableName } from "drizzle-orm";
+import { PgTableWithColumns, SelectedFields } from "drizzle-orm/pg-core";
+import { eq, getTableName, SQL } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../db/schema.js";
 
@@ -28,9 +28,9 @@ export default abstract class DrizzleWrappter<T> {
     this.db = Database.db;
   }
 
-  async find(filters: Partial<T>): Promise<DrizzleResult<T[]>> {
+  async find(filters:SelectedFields, where: SQL): Promise<DrizzleResult<T[]>> {
     try {
-      const res = await this.db.select().from(this.schema);
+      const res = await this.db.select(filters).from(this.schema).where(where);
       return { data: res as T[], error: null };
     } catch (error) {
       console.error(error);

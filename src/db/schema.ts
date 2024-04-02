@@ -21,6 +21,7 @@ export const services = authSchema.table("services", {
     .notNull(),
   type: roleTypeEnum("type").notNull(),
   name: varchar("name"),
+  rnConsumerApiUrl: varchar("rnConsumerApiUrl"),
   rnConsumerRequestKey: varchar("rnConsumerRequestKey", { length: 255 }),
   rnValidatorApiId: varchar("rnValidatorApiId", { length: 255 }),
   rnValidatorHotkey: varchar("rnValidatorHotkey", { length: 255 }),

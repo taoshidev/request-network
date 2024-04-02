@@ -79,7 +79,6 @@ export class BaseController extends DrizzleWrappter<any> {
 
   public insert() {
     return async (req: Request, res: Response, next: NextFunction) => {
-      console.log("req.body.....", req.body);
       const data = await this.create(req?.body);
       if (data) {
         return res?.status(200).json(data);

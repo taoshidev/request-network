@@ -4,6 +4,7 @@ export class ServiceDTO implements BaseDTO {
   id?: string;
   type?: "consumer" | "validator";
   name?: string;
+  rnConsumerApiUrl?: string;
   rnConsumerRequestKey?: string;
   rnValidatorApiId?: string;
   rnValidatorHotkey?: string;
