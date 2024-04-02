@@ -4,12 +4,13 @@ import DatabaseMigrator from "./db/index.js";
 const app = new App();
 
 try {
-  const databaseMigrator = new DatabaseMigrator(process.env.DATABASE_URL!);
-  await databaseMigrator.migrate();
+  if (process.env.MIGRATE === "true") {
+    const databaseMigrator = new DatabaseMigrator(process.env.DATABASE_URL!);
+    await databaseMigrator.migrate();
+  }
+  app.listen();
 } catch (error: Error | unknown) {
   console.error(
     `Error starting server: ${(error as Error)?.message as string}`
   );
-} finally {
-  app.listen();
 }

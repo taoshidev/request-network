@@ -1,19 +1,22 @@
 import express, { Express, Request, Response } from "express";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import cors from "cors";
 import helmet from "helmet";
 import * as dotenv from "dotenv";
-import Auth from "./auth/auth.js";
-import AuthRoutes from "./router/auth-routes.js";
+import { services, keys } from "./db/schema.js";
+import { BaseController } from "./core/base-controller.js";
+import BaseRouter from "./core/base-router.js";
+import ConsumerCtrl from "./controller/consumer-controller.js";
+import ConsumerRoute from "./router/consumer-routes.js";
 
 dotenv.config({ path: ".env" });
 
 export default class App {
   public express: Express;
-  private supabase!: SupabaseClient;
+  private baseApiUrl: string;
 
   constructor() {
     this.express = express();
+    this.baseApiUrl = process.env.API_URL || "api/v1";
     this.initializeMiddlewares();
     this.initializeSupabase();
     this.initializeRoutes();
@@ -28,18 +31,29 @@ export default class App {
   }
 
   private initializeSupabase(): void {
-    const supabaseUrl: string = process.env.SUPABASE_URL || "";
-    const supabaseKey: string = process.env.SUPABASE_KEY || "";
-    this.supabase = createClient(supabaseUrl, supabaseKey);
+    // ...
   }
 
   private initializeRoutes(): void {
     this.express.get("/", (req: Request, res: Response) => {
       res.json({ message: "Validator online..." });
     });
-    const auth = new Auth(this.supabase);
-    const authRoutes = new AuthRoutes(auth);
-    authRoutes.initializeRoutes();
+
+    // Setup consumer routes
+    const consumerRoutes = new ConsumerRoute(new ConsumerCtrl());
+    this.express.use(`/${this.baseApiUrl}`, consumerRoutes.routes());
+    // Loop through all the schema and mount their routes
+    [services, keys].forEach((schema) => {
+      const ctrl = new BaseController(schema);
+      const router = new BaseRouter(schema, ctrl);
+      this.express.use(
+        `/${this.baseApiUrl}/${ctrl.tableName.toLowerCase()}`,
+        router.mount()
+      );
+    });
+
+    // TODO: for development only
+    this.printRoutes(this.express._router);
   }
 
   private initializeErrorHandling(): void {
@@ -57,11 +71,33 @@ export default class App {
     );
   }
 
-  public listen(): void {
-    const port: number | string = process.env.API_PORT || 3000;
-    this.express.listen(port, () => {
-      console.log(`Server running at ${process.env.API_HOST}:${process.env.API_PORT}`);
+  public printRoutes(router: express.Router) {
+    router?.stack?.forEach((middleware) => {
+      if (middleware.route) {
+        // Routes registered directly on the app
+        const { path, stack } = middleware.route;
+        stack.forEach((stackItem: any) => {
+          console.log(`${stackItem.method.toUpperCase()} ${path}`);
+        });
+      } else if (middleware.name === "router") {
+        // Routes added as router middleware
+        middleware.handle.stack.forEach((handler: any) => {
+          const route = handler.route;
+          route &&
+            route.stack.forEach((routeStack: any) => {
+              console.log(`${routeStack.method.toUpperCase()} ${route.path}`);
+            });
+        });
+      }
     });
   }
 
+  public listen(): void {
+    const port: number | string = process.env.API_PORT || 3000;
+    this.express.listen(port, () => {
+      console.log(
+        `Server running at ${process.env.API_HOST}:${process.env.API_PORT}`
+      );
+    });
+  }
 }

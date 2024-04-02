@@ -13,7 +13,7 @@ export default class DatabaseMigrator {
     this.connectionString = connectionString;
   }
   async migrate(): Promise<void> {
-    if(process.env.MIGRATE==='false') return;
+    if (process.env.MIGRATE === "false") return;
     console.log(process.env.DATABASE_URL);
     const client = postgres(this.connectionString, { prepare: false });
     const migrationClient = postgres(this.connectionString, { prepare: false });
