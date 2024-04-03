@@ -1,8 +1,11 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 import { ServiceDTO } from "../db/dto/service-dto.js";
 import { services } from "../db/schema.js";
 import { BaseController } from "../core/base-controller.js";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
+import Logger from "../utils/logger.js";
+import { CustomRequestDTO } from "../db/dto/custom-request-dto.js";
+import { ConsumerDTO } from "../db/dto/consumer-dto.js";
 
 /**
  * Controller for handling consumer-specific actions.
@@ -22,7 +25,7 @@ export default class ConsumerCtrl extends BaseController {
    * payload = {
    *    type: "consumer",
    *    rnConsumerRequestKey: "req-consumer-key",
-   *    rnValidatorApiId: "validator-api-id",
+   *    rnValidatorApiKey: "validator-api-id",
    *    rnValidatorHotkey: "validator-hotkey",
    *    rnValidatorMeta: {
    *      subnetId: "123456789",
@@ -30,13 +33,10 @@ export default class ConsumerCtrl extends BaseController {
    *    },
    *  };
    */
-  handleConsumerRegistration = async (
-    req: Request,
-    res: Response,
-    next?: NextFunction
-  ) => {
-    const { consumerInfo } = req.body;
-    const { data, error } = await this.create(consumerInfo as ServiceDTO);
+  handleConsumerRegistration = async (req: Request, res: Response) => {
+    if (!req?.body)
+      return res.status(400).json({ error: "Request missing payload" });
+    const { data, error } = await this.create(req.body as ServiceDTO);
 
     if (error) {
       return res.status(400).json({ error: error.message });
@@ -51,26 +51,51 @@ export default class ConsumerCtrl extends BaseController {
    * @param {Response} res - Express.js response object.
    * @returns The response from the validator to the consumer. A 500 status code is returned in case of an error.
    */
-  handleRequestToValidator = async (req: Request, res: Response, next?: NextFunction) => {
-    const validatorEndpoint = "http://localhost:8080/api/v1/services"; // TODO: replace with validator endpoint
+  handleRequestToValidator = async (req: CustomRequestDTO, res: Response) => {
+    const { consumer, body: data } = req;
+    const { valid, enabled, name, keyId, meta } = consumer as ConsumerDTO;
+
+    if (!valid)
+      return res.status(400).json({ error: "Consumer is not valid." });
+    if (!enabled)
+      return res.status(400).json({ error: "Consumer is not enabled." });
+
+    Logger.info(
+      `Consumer ${name} is forwarding request to validator ${meta?.validatorId} at ${meta?.customEndpoint}`
+    );
+
+    const url =
+      process.env.NODE_ENV === "development"
+        ? "http://localhost:8080/api/v1/services"
+        : meta?.customEndpoint;
+
+    ["host", "content-length", "connection"].forEach(
+      (key) => delete req.headers[key]
+    );
+
+    const headers = Object.assign({}, req.headers, {
+      "Content-Type": "application/json",
+      "x-taoshi-validator-request-key": keyId,
+    });
+
+    Logger.info(`Consumer: ${consumer}`);
 
     try {
       // Forward the request to the validator's output server
-      const validatorResponse = await axios({
-        method: "GET", // TODO: replace with validator request method
-        url: validatorEndpoint,
-        data: req.body,
-        headers: {
-          "Content-Type": "application/json",
-          "x-taoshi-validator-request-key": "req-validator-key", // TODO: replace with validator request key
-          /* ... */
-        },
+      const resp = await axios({
+        method: "GET",
+        url,
+        data,
+        headers,
       });
-
       // Return the response from the validator back to the consumer
-      res.status(validatorResponse.status).json(validatorResponse.data);
-    } catch (error) {
-      console.error("Error forwarding request to validator:", error);
+      res.status(resp.status).json(resp.data);
+    } catch (error: AxiosError | unknown) {
+      Logger.error(
+        `Error forwarding request to validator: ${
+          (error as AxiosError)?.response?.statusText
+        }`
+      );
       res.status(500).json({ error: "Internal server error" });
     }
   };

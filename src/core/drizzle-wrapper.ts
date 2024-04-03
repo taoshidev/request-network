@@ -28,9 +28,15 @@ export default abstract class DrizzleWrappter<T> {
     this.db = Database.db;
   }
 
-  async find(filters:SelectedFields, where: SQL): Promise<DrizzleResult<T[]>> {
+  async find(
+    where: SQL,
+    filters?: SelectedFields,
+  ): Promise<DrizzleResult<T[]>> {
     try {
-      const res = await this.db.select(filters).from(this.schema).where(where);
+      const res = await this.db
+        .select((filters && filters) as SelectedFields)
+        .from(this.schema)
+        .where(where);
       return { data: res as T[], error: null };
     } catch (error) {
       console.error(error);

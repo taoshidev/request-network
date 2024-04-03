@@ -1,0 +1,1 @@
+ALTER TABLE "auth"."services" RENAME COLUMN "rnValidatorApiId" TO "rnValidatorApiKey";
