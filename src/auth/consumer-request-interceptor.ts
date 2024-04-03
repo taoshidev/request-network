@@ -21,7 +21,9 @@ export default class ConsumerRequestInterceptor {
     res: Response,
     next: NextFunction
   ) => {
-    const consumer = await Auth.verifyRequest(req, "x-taoshi-consumer-request-key");
+    const consumer = await Auth.verifyRequest(req, {
+      type: "x-taoshi-consumer-request-key",
+    });
 
     if (!consumer) {
       Logger.error("Unauthorized");

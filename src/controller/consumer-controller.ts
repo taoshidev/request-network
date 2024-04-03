@@ -78,6 +78,13 @@ export default class ConsumerCtrl extends BaseController {
       "x-taoshi-validator-request-key": keyId,
     });
 
+    // NOTE: We are sending the request directly to our local api server in development mode, so that it can be debugged locally.
+    // Since our server is locked down, we need to mock this header for local development purposes.
+    // In production mode, the validator will be running on their production server, and this endpoint will be proxy to it.
+    if (process.env.NODE_ENV) {
+      headers["x-taoshi-request-key"] = keyId;
+    }
+
     Logger.info(`Consumer: ${consumer}`);
 
     try {
@@ -88,6 +95,7 @@ export default class ConsumerCtrl extends BaseController {
         data,
         headers,
       });
+
       // Return the response from the validator back to the consumer
       res.status(resp.status).json(resp.data);
     } catch (error: AxiosError | unknown) {

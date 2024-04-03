@@ -26,10 +26,10 @@ export default class Auth {
    */
   public static async verifyRequest(
     req: Request,
-    keyName: string
+    { type }: { type: string }
   ): Promise<Partial<ConsumerDTO> | boolean> {
     // Verify the request with unkey
-    const token = Auth.extractToken(req, keyName);
+    const token = Auth.extractToken(req, { type });
     if (!token) {
       Logger.error("No token provided");
       return false;
@@ -46,8 +46,8 @@ export default class Auth {
           key: token,
         },
       });
-      Logger.info("response from verify: " + JSON.stringify(response.data));
 
+      Logger.info(`Unkey Response: ${JSON.stringify(response.data)}`);
       const { keyId, meta } = response?.data as ConsumerDTO;
 
       // verify the consumer exists in local database
@@ -75,14 +75,17 @@ export default class Auth {
    * @param {Request} req - The incoming request object.
    * @returns {string | null} - The extracted token, if found, otherwise null.
    */
-  public static extractToken(req: Request, tokenName: string): string | null {
+  public static extractToken(
+    req: Request,
+    { type }: { type: string }
+  ): string | null {
     if (
       req.headers.authorization &&
       req.headers.authorization.split(" ")[0] === "Bearer"
     ) {
       return req.headers.authorization.split(" ")[1];
-    } else if (req.headers[tokenName]) {
-      return req.headers[tokenName] as string;
+    } else if (req.headers[type]) {
+      return req.headers[type] as string;
     } else if (req.query && req.query.token) {
       return req.query.token as string;
     }
