@@ -14,6 +14,7 @@ import ConsumerCtrl from "./controller/consumer-controller.js";
 import ConsumerRoute from "./router/consumer-routes.js";
 import Cors from "./core/cors-whitelist.js";
 import Logger from "./utils/logger.js";
+import RnUiRequestInterceptor from "./auth/rn-ui-request-interceptor.js";
 
 dotenv.config({ path: ".env" });
 
@@ -47,7 +48,11 @@ export default class App {
     // Loop through all the schema and mount their routes
     [services, keys].forEach((schema) => {
       const ctrl = new BaseController(schema);
-      const router = new BaseRouter(schema, ctrl);
+      const router = new BaseRouter(
+        schema,
+        ctrl,
+        RnUiRequestInterceptor.requestInterceptor
+      );
       this.express.use(
         `/${this.baseApiUrl}/${ctrl.tableName.toLowerCase()}`,
         router.mount()

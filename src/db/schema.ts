@@ -23,7 +23,7 @@ export const services = authSchema.table("services", {
   name: varchar("name"),
   rnConsumerApiUrl: varchar("rnConsumerApiUrl"),
   rnConsumerRequestKey: varchar("rnConsumerRequestKey", { length: 255 }),
-  rnValidatorApiId: varchar("rnValidatorApiId", { length: 255 }),
+  rnValidatorApiKey: varchar("rnValidatorApiKey", { length: 255 }),
   rnValidatorHotkey: varchar("rnValidatorHotkey", { length: 255 }),
   rnValidatorMeta: jsonb("rnValidatorMeta"),
   active: boolean("active").default(true).notNull(),

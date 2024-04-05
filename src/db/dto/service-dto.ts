@@ -6,11 +6,14 @@ export class ServiceDTO implements BaseDTO {
   name?: string;
   rnConsumerApiUrl?: string;
   rnConsumerRequestKey?: string;
-  rnValidatorApiId?: string;
+  rnValidatorApiKey?: string;
   rnValidatorHotkey?: string;
   rnValidatorMeta?: {
     subnetId: string;
     endpoint: string;
+    validatorId: string;
+    shortId: string;
+    subscriptionId: string;
   };
   constructor(data: Partial<ServiceDTO>) {
     Object.assign(this, data);
