@@ -94,7 +94,7 @@ export default class Cors {
         "x-taoshi-request-key",
         "x-taoshi-validator-request-key",
       ].some((key) => req.headers[key.toLowerCase()] !== undefined);
-      console.log("!origin && keys", !origin && keys);
+
       if ((!origin && keys) || allowed) {
         const corsOptions = {
           origin: allowed,
