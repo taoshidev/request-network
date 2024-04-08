@@ -7,6 +7,7 @@ import ConsumerCtrl from "../controller/consumer-controller.js";
 import { ConsumerDTO } from "../db/dto/consumer-dto.js";
 import { services } from "../db/schema.js";
 import { eq } from "drizzle-orm";
+import crypto from "crypto";
 
 dotenv.config({ path: ".env" });
 
@@ -15,9 +16,9 @@ dotenv.config({ path: ".env" });
  * Ensures that incoming requests have a valid token for authentication.
  */
 export default class Auth {
-  private static UNKEY_VERIFY_URL = "https://api.unkey.dev/v1/keys.verifyKey";
+  private static UNKEY_VERIFY_URL = process.env.UNKEY_VERIFY_URL;
   // TODO: replace this with validator api key when available from UI app
-  private static API_ID = process.env.UNKEY_API_ID;
+  private static API_ID = process.env.TAOSHI_API_KEY;
   private static consumerCtrl = new ConsumerCtrl();
   /**
    * Verifies the provided token with Unkey or a custom authentication service.
@@ -50,6 +51,9 @@ export default class Auth {
       Logger.info(`Unkey Response: ${JSON.stringify(response.data)}`);
       const { keyId, meta } = response?.data as ConsumerDTO;
 
+      if (!keyId) {
+        throw new Error("Unauthorized: Invalid request key");
+      }
       // verify the consumer exists in local database
       const resp = await this.consumerCtrl.find(
         eq(services.rnConsumerRequestKey, keyId)
@@ -90,5 +94,73 @@ export default class Auth {
       return req.query.token as string;
     }
     return null;
+  }
+
+  /**
+   * Generates a cryptographic signature based on request details and a secret key.
+   * The signature is intended to verify the authenticity and integrity of the request.
+   *
+   * @param {Object} params - Parameters for generating the signature.
+   * @param {string} params.method - The HTTP method of the request (e.g., "GET", "POST").
+   * @param {string} params.path - The request path.
+   * @param {object | any} params.body - The body of the request. Expected to be serialized to a string if an object.
+   * @param {string} params.apiKey - The API key associated with the request. Included in the signature for validation.
+   * @param {string} params.apiSecret - The secret key used to generate the HMAC signature.
+   * @param {string} params.nonce - A unique nonce for the request, to prevent replay attacks.
+   * @returns {string} - The generated HMAC signature as a hex string.
+   */
+  public static createSignature({
+    method,
+    path,
+    body,
+    apiKey,
+    apiSecret,
+    nonce,
+  }: {
+    method: string;
+    path: string;
+    body: object | any;
+    apiKey: string;
+    apiSecret: string;
+    nonce: string;
+  }) {
+    const message = `${method}${path}${body}${apiKey}${nonce}`;
+    return crypto.createHmac("sha256", apiSecret).update(message).digest("hex");
+  }
+
+  public static verifySignature(
+    req: Request,
+    apiKey: string = "",
+    apiSecret: string,
+    on: "ui" | "consumer" | "validator" = "ui"
+  ) {
+    const keyTypeMapping = {
+      ui: "x-taoshi-request-key",
+      consumer: "x-taoshi-consumer-request-key",
+      validator: "x-taoshi-validator-request-key",
+    };
+
+    if (!apiKey) {
+      const headerKey = keyTypeMapping[on];
+      apiKey = Auth.extractToken(req, { type: headerKey }) || "";
+    }
+
+    const signature = req.headers["x-taoshi-signature"];
+    const nonce = Array.isArray(req.headers["x-taoshi-nonce"])
+      ? req.headers["x-taoshi-nonce"][0]
+      : req.headers["x-taoshi-nonce"] || "";
+
+    const requestDetails = {
+      method: req.method,
+      path: req.originalUrl,
+      body: JSON.stringify(req.body),
+      apiKey,
+      apiSecret,
+      nonce,
+    };
+
+    const expectedSignature = this.createSignature(requestDetails);
+
+    return signature === expectedSignature;
   }
 }

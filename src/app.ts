@@ -14,7 +14,8 @@ import ConsumerCtrl from "./controller/consumer-controller.js";
 import ConsumerRoute from "./router/consumer-routes.js";
 import Cors from "./core/cors-whitelist.js";
 import Logger from "./utils/logger.js";
-import RnUiRequestInterceptor from "./auth/rn-ui-request-interceptor.js";
+import UiRequest from "./auth/ui-request.js";
+import Auth from "./auth/auth.js";
 
 dotenv.config({ path: ".env" });
 
@@ -38,6 +39,7 @@ export default class App {
   }
 
   private initializeRoutes(): void {
+
     this.express.get("/", (req: Request, res: Response) => {
       res.json({ message: "Validator online..." });
     });
@@ -51,7 +53,7 @@ export default class App {
       const router = new BaseRouter(
         schema,
         ctrl,
-        RnUiRequestInterceptor.requestInterceptor
+        UiRequest.interceptor
       );
       this.express.use(
         `/${this.baseApiUrl}/${ctrl.tableName.toLowerCase()}`,

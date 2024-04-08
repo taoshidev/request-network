@@ -89,19 +89,23 @@ export default class Cors {
     return async (req: Request, res: Response, next: NextFunction) => {
       const origin = req.header("Origin") as string;
       const allowed = this.cachedWhitelist.includes(origin);
-
-      if (!allowed) {
-        Logger.info(`Origin not allowed: ${origin}`);
-        return res.status(403).json({ error: "Not allowed" });
+      const keys = [
+        "x-taoshi-consumer-request-key",
+        "x-taoshi-request-key",
+        "x-taoshi-validator-request-key",
+      ].some((key) => req.headers[key.toLowerCase()] !== undefined);
+      console.log("!origin && keys", !origin && keys);
+      if ((!origin && keys) || allowed) {
+        const corsOptions = {
+          origin: allowed,
+          credentials: true,
+          methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+          allowedHeaders: "Content-Type, Authorization",
+        };
+        return cors(corsOptions)(req, res, next);
       }
-
-      const corsOptions = {
-        origin: allowed,
-        credentials: true,
-        methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-        allowedHeaders: "Content-Type, Authorization",
-      };
-      cors(corsOptions)(req, res, next);
+      Logger.info(`Origin not allowed: ${origin}`);
+      return res.status(403).json({ error: "Not allowed" });
     };
   }
 }
