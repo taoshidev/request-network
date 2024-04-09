@@ -21,7 +21,7 @@ export default class BaseRouter {
     this.router = Router();
   }
 
-  public registerRoute({
+  public register({
     method,
     path,
     handler,
@@ -31,10 +31,11 @@ export default class BaseRouter {
     path: string;
     handler: RouteHandler;
     interceptor?: RouteHandler;
-  }): void {
+  }): BaseRouter {
     const middleware = [handler as RouteHandler];
     if(interceptor) middleware.unshift(interceptor as RouteHandler);
     this.router[method](path, middleware);
+    return this;
   }
 
   public mount() {

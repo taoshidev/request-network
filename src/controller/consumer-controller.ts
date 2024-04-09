@@ -39,7 +39,7 @@ export default class ConsumerCtrl extends BaseController {
     const { data, error } = await this.create(req.body as ServiceDTO);
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: error?.message });
     }
 
     return res.status(201).json(data);

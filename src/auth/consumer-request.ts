@@ -7,7 +7,7 @@ import { CustomRequestDTO } from "../db/dto/custom-request-dto.js";
  * Interceptor for handling consumer request authentication.
  * Ensures that incoming requests have a valid token for authentication.
  */
-export default class ConsumerRequestInterceptor {
+export default class ConsumerRequest {
   /**
    * Main interceptor function to check for the presence and validity of a consumer token.
    * @param {CustomRequestDTO} req - The incoming request object from Express.
@@ -16,7 +16,7 @@ export default class ConsumerRequestInterceptor {
    * @returns {Promise<void>} - A promise that resolves when the authentication check is complete.
    * If authentication fails, it responds with an appropriate HTTP status code and error message.
    */
-  static requestInterceptor = async (
+  static interceptor = async (
     req: CustomRequestDTO,
     res: Response,
     next: NextFunction
