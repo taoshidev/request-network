@@ -25,7 +25,6 @@ export default class ConsumerCtrl extends BaseController {
    * payload = {
    *    type: "consumer",
    *    rnConsumerRequestKey: "req-consumer-key",
-   *    rnValidatorApiKey: "validator-api-id",
    *    rnValidatorHotkey: "validator-hotkey",
    *    rnValidatorMeta: {
    *      subnetId: "123456789",

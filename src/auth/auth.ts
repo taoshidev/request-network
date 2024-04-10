@@ -152,7 +152,7 @@ export default class Auth {
 
     const requestDetails = {
       method: req.method,
-      path: req.originalUrl,
+      path: req.originalUrl.replace(`/${process.env.API_PREFIX}`, ""),
       body: JSON.stringify(req.body),
       apiKey,
       apiSecret,
