@@ -64,19 +64,19 @@ export default class Cors {
     const res = (
       await this.db
         .select({
-          rnConsumerApiUrl: schema.services.rnConsumerApiUrl,
-          rnValidatorMeta: schema.services.rnValidatorMeta,
+          consumerApiUrl: schema.services.consumerApiUrl,
+          meta: schema?.services?.meta,
         })
         .from(schema.services)
         .where(eq(schema.services.type, "consumer"))
-    ).map(({ rnConsumerApiUrl, rnValidatorMeta }) => ({
-      rnConsumerApiUrl: rnConsumerApiUrl ?? undefined,
-      rnValidatorMeta: rnValidatorMeta as unknown,
-    })) as Pick<ServiceDTO, "rnConsumerApiUrl" | "rnValidatorMeta">[];
+    ).map(({ consumerApiUrl, meta }) => ({
+      consumerApiUrl: consumerApiUrl ?? undefined,
+      meta: meta as unknown,
+    })) as Pick<ServiceDTO, "consumerApiUrl" | "meta">[];
 
     if (res) {
       const urlsArray = res.flatMap((item: ServiceDTO) =>
-        [item.rnConsumerApiUrl, item?.rnValidatorMeta?.endpoint].filter(
+        [item.consumerApiUrl, item?.meta?.endpoint].filter(
           (url): url is string => url !== undefined
         )
       );

@@ -49,20 +49,19 @@ export default class Auth {
       });
 
       Logger.info(`Unkey Response: ${JSON.stringify(response.data)}`);
-      const { keyId, meta } = response?.data as ConsumerDTO;
+      const { keyId, meta: data } = response?.data as ConsumerDTO;
 
       if (!keyId) {
         throw new Error("Unauthorized: Invalid request key");
       }
-      // verify the consumer exists in local database
+
       const resp = await this.consumerCtrl.find(
-        eq(services.rnConsumerRequestKey, keyId)
+        eq(services.consumerKeyId, keyId)
       );
 
-      const { rnValidatorMeta } = resp?.data?.[0] as ServiceDTO;
+      const { meta } = resp?.data?.[0] as ServiceDTO;
 
-      // TODO: need to swap this out or add in checks for subscriptionId and endpoint
-      if (!meta?.shortId || meta?.shortId !== rnValidatorMeta?.shortId) {
+      if (!data?.shortId || data?.shortId !== meta?.shortId) {
         throw new Error("Unauthorized: Invalid request key");
       }
 
@@ -125,6 +124,7 @@ export default class Auth {
     nonce: string;
   }) {
     const message = `${method}${path}${body}${apiKey}${nonce}`;
+    console.log("MESSAGE::", message);
     return crypto.createHmac("sha256", apiSecret).update(message).digest("hex");
   }
 

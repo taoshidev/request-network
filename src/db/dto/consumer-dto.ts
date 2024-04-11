@@ -9,8 +9,8 @@ export interface ConsumerDTO {
     validatorId: string;
     subnetId: string;
     endpoint: string;
-    customEndpoint: string;
     subscriptionId: string;
+    consumerApiUrl?: string;
   };
   enabled: boolean;
   permissions: Array<string>;
