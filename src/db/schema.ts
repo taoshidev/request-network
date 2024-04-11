@@ -21,15 +21,14 @@ export const services = authSchema.table("services", {
     .notNull(),
   type: roleTypeEnum("type").notNull(),
   name: varchar("name"),
-  rnConsumerApiUrl: varchar("rnConsumerApiUrl"),
-  rnConsumerRequestKey: varchar("rnConsumerRequestKey", { length: 255 }),
-  rnValidatorApiKey: varchar("rnValidatorApiKey", { length: 255 }),
-  rnValidatorHotkey: varchar("rnValidatorHotkey", { length: 255 }),
-  rnValidatorMeta: jsonb("rnValidatorMeta"),
+  consumerKeyId: varchar("consumer_key_id", { length: 255 }),
+  consumerApiUrl: varchar("consumer_api_url"),
+  hotkey: varchar("hotkey", { length: 255 }),
+  meta: jsonb("meta"),
   active: boolean("active").default(true).notNull(),
-  createdAt: timestamp("createdAt").default(sql`now()`),
-  updatedAt: timestamp("updatedAt").default(sql`now()`),
-  deletedAt: timestamp("deletedAt"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const keys = authSchema.table("keys", {
@@ -37,14 +36,14 @@ export const keys = authSchema.table("keys", {
     .default(sql`gen_random_uuid()`)
     .primaryKey()
     .notNull(),
-  serviceId: uuid("serviceId")
+  serviceId: uuid("service_id")
     .references(() => services.id)
     .notNull(),
   key: varchar("key").unique().notNull(),
   active: boolean("active").default(true).notNull(),
-  createdAt: timestamp("createdAt").default(sql`now()`),
-  updatedAt: timestamp("updatedAt").default(sql`now()`),
-  deletedAt: timestamp("deletedAt"),
+  createdAt: timestamp("created_at").default(sql`now()`),
+  updatedAt: timestamp("updated_at").default(sql`now()`),
+  deletedAt: timestamp("deleted_at"),
 });
 
 export const serviceKeysRelations = relations(services, ({ many }) => ({

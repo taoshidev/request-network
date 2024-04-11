@@ -22,6 +22,20 @@
       "when": 1712174150405,
       "tag": "0002_past_spiral",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1712813482884,
+      "tag": "0003_hot_iron_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1712816094140,
+      "tag": "0004_freezing_secret_warriors",
+      "breakpoints": true
     }
   ]
 }
