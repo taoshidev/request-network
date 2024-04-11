@@ -21,11 +21,11 @@ dotenv.config({ path: ".env" });
 
 export default class App {
   public express: Express;
-  private baseApiUrl: string;
+  private apiPrefix: string;
 
   constructor() {
     this.express = express();
-    this.baseApiUrl = process.env.API_URL || "api/v1";
+    this.apiPrefix = process.env.API_PREFIX || "/api/v1";
     this.initializeMiddlewares();
     this.initializeRoutes();
     this.initializeErrorHandling();
@@ -46,7 +46,7 @@ export default class App {
 
     // Setup consumer routes
     const consumerRoutes = new ConsumerRoute(new ConsumerCtrl());
-    this.express.use(`/${this.baseApiUrl}`, consumerRoutes.routes());
+    this.express.use(consumerRoutes.routes());
     // Loop through all the schema and mount their routes
     [services, keys].forEach((schema) => {
       const ctrl = new BaseController(schema);
@@ -56,7 +56,7 @@ export default class App {
         UiRequest.interceptor
       );
       this.express.use(
-        `/${this.baseApiUrl}/${ctrl.tableName.toLowerCase()}`,
+        `${this.apiPrefix}/${ctrl.tableName.toLowerCase()}`,
         router.mount()
       );
     });
