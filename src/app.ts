@@ -15,7 +15,8 @@ import ConsumerRoute from "./router/consumer-routes.js";
 import Cors from "./core/cors-whitelist.js";
 import Logger from "./utils/logger.js";
 import UiRequest from "./auth/ui-request.js";
-import Auth from "./auth/auth.js";
+import DynamicRouter from "./core/dynamic-router.js";
+import ConsumerRequest from "./auth/consumer-request.js";
 
 dotenv.config({ path: ".env" });
 
@@ -39,27 +40,28 @@ export default class App {
   }
 
   private initializeRoutes(): void {
-
     this.express.get("/", (req: Request, res: Response) => {
       res.json({ message: "Validator online..." });
     });
 
     // Setup consumer routes
-    const consumerRoutes = new ConsumerRoute(new ConsumerCtrl());
-    this.express.use(consumerRoutes.routes());
+    // TODO: Might be deprecated in favor of dynamic routing
+    this.express.use(new ConsumerRoute(new ConsumerCtrl()).routes());
+
     // Loop through all the schema and mount their routes
     [services, keys].forEach((schema) => {
       const ctrl = new BaseController(schema);
-      const router = new BaseRouter(
-        schema,
-        ctrl,
-        UiRequest.interceptor
-      );
       this.express.use(
         `${this.apiPrefix}/${ctrl.tableName.toLowerCase()}`,
-        router.mount()
+        new BaseRouter(schema, ctrl, UiRequest.interceptor).mount()
       );
     });
+
+    // Setup dynamic routes
+    this.express.use(
+      "/",
+      new DynamicRouter(ConsumerRequest.interceptor).mount()
+    );
 
     // TODO: for development only
     this.printRoutes(this.express._router);
@@ -86,7 +88,7 @@ export default class App {
         // Routes registered directly on the app
         const { path, stack } = middleware.route;
         stack.forEach((stackItem: any) => {
-          Logger.info(`${stackItem.method.toUpperCase()} ${path}`);
+          Logger.info(`${stackItem?.method?.toUpperCase()} ${path}`);
         });
       } else if (middleware.name === "router") {
         // Routes added as router middleware
@@ -94,7 +96,7 @@ export default class App {
           const route = handler.route;
           route &&
             route.stack.forEach((routeStack: any) => {
-              Logger.info(`${routeStack.method.toUpperCase()} ${route.path}`);
+              Logger.info(`${routeStack?.method?.toUpperCase()} ${route.path}`);
             });
         });
       }
