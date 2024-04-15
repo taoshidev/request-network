@@ -1,7 +1,7 @@
 import { Response, NextFunction } from "express";
-import Auth from "./auth.js";
-import Logger from "../utils/logger.js";
-import { CustomRequestDTO } from "../db/dto/custom-request-dto.js";
+import Auth from "./auth";
+import Logger from "../utils/logger";
+import { CustomRequestDTO } from "../db/dto/custom-request-dto";
 
 /**
  * Interceptor for handling consumer request authentication.

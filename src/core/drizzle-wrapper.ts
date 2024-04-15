@@ -1,8 +1,8 @@
-import Database from "../db/database.js";
+import Database from "../db/database";
 import { PgTableWithColumns, SelectedFields } from "drizzle-orm/pg-core";
 import { eq, getTableName, SQL } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import * as schema from "../db/schema.js";
+import * as schema from "../db/schema";
 
 export interface DrizzleError {
   severity_local: string;
@@ -20,8 +20,8 @@ export interface DrizzleResult<T> {
 }
 
 export default abstract class DrizzleWrappter<T> {
-  public tableName = "";
-  protected db: PostgresJsDatabase<typeof schema>;
+  public tableName: string;
+  protected db: PostgresJsDatabase<any>;
 
   constructor(protected schema: PgTableWithColumns<any>) {
     this.tableName = getTableName(schema);

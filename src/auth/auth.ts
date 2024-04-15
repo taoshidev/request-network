@@ -1,11 +1,11 @@
 import axios, { AxiosError } from "axios";
-import Logger from "../utils/logger.js";
+import Logger from "../utils/logger";
 import * as dotenv from "dotenv";
-import { ServiceDTO } from "../db/dto/service-dto.js";
+import { ServiceDTO } from "../db/dto/service-dto";
 import { Request } from "express";
-import ConsumerCtrl from "../controller/consumer-controller.js";
-import { ConsumerDTO } from "../db/dto/consumer-dto.js";
-import { services } from "../db/schema.js";
+import ConsumerCtrl from "../controller/consumer-controller";
+import { ConsumerDTO } from "../db/dto/consumer-dto";
+import { services } from "../db/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 

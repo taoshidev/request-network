@@ -9,8 +9,7 @@ import {
   pgEnum,
   jsonb,
 } from "drizzle-orm/pg-core";
-
-import { bytea } from "./custom-type.js";
+import { bytea } from "./types";
 
 export const authSchema = pgSchema("auth");
 export const roleTypeEnum = pgEnum("type", ["consumer", "validator"]);

@@ -7,17 +7,17 @@ import express, {
 } from "express";
 import helmet from "helmet";
 import * as dotenv from "dotenv";
-import { services, wallets } from "./db/schema.js";
-import { BaseController } from "./core/base-controller.js";
-import BaseRouter from "./core/base-router.js";
-import ConsumerCtrl from "./controller/consumer-controller.js";
-import ConsumerRoute from "./router/consumer-routes.js";
-import Cors from "./core/cors-whitelist.js";
-import Logger from "./utils/logger.js";
-import UiRequest from "./auth/ui-request.js";
-import DynamicRouter from "./core/dynamic-router.js";
-import ConsumerRequest from "./auth/consumer-request.js";
-import { BlockchainService } from "./core/blockchain-service.js";
+import { services, wallets } from "./db/schema";
+import { BaseController } from "./core/base-controller";
+import BaseRouter from "./core/base-router";
+import ConsumerCtrl from "./controller/consumer-controller";
+import ConsumerRoute from "./router/consumer-routes";
+import Cors from "./core/cors-whitelist";
+import Logger from "./utils/logger";
+import UiRequest from "./auth/ui-request";
+import DynamicRouter from "./core/dynamic-router";
+import ConsumerRequest from "./auth/consumer-request";
+import { BlockchainService } from "./core/blockchain-service";
 
 dotenv.config({ path: ".env" });
 

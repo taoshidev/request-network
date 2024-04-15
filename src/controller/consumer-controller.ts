@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { ServiceDTO } from "../db/dto/service-dto.js";
-import { services, wallets } from "../db/schema.js";
-import { BaseController } from "../core/base-controller.js";
+import { ServiceDTO } from "../db/dto/service-dto";
+import { services, wallets } from "../db/schema";
+import { BaseController } from "../core/base-controller";
 import axios, { AxiosError } from "axios";
-import Logger from "../utils/logger.js";
-import { CustomRequestDTO } from "../db/dto/custom-request-dto.js";
-import { ConsumerDTO } from "../db/dto/consumer-dto.js";
-import { BlockchainService } from "../core/blockchain-service.js";
+import Logger from "../utils/logger";
+import { CustomRequestDTO } from "../db/dto/custom-request-dto";
+import { ConsumerDTO } from "../db/dto/consumer-dto";
+import { BlockchainService } from "../core/blockchain-service";
 
 /**
  * Controller for handling consumer-specific actions.

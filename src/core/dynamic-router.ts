@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction, RequestHandler } from "express";
-import HTTPRequest from "./request.js";
+import HTTPRequest from "./request";
 
 // type RequestInterceptor = (
 //   req: Request,

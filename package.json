@@ -3,19 +3,18 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "description": "",
-  "type": "module",
   "types": "dist/index.d.ts",
   "keywords": [],
   "author": "nod",
   "scripts": {
-    "start": "MIGRATE=false tsc && node dist/index.js",
-    "dev": "MIGRATE=false nodemon - exec 'ts-node' src/app.ts",
-    "dev:migrate": "MIGRATE=true nodemon - exec 'ts-node' src/app.ts",
-    "build": "tsc",
+    "start": "MIGRATE=false pnpm build && node dist/index.js",
+    "dev": "MIGRATE=false pnpm build && nodemon - exec 'ts-node' src/app.ts",
+    "dev:migrate": "MIGRATE=true pnpm build && nodemon - exec 'ts-node' src/app.ts",
+    "build": "rm -rf dist && tsc",
     "test": "jest",
     "db:generate": "drizzle-kit generate:pg",
     "introspect:pg": "drizzle-kit introspect:pg",
-    "db:push": "MIGRATE=true drizzle-kit push:pg --config=drizzle.config.ts"
+    "db:push": "MIGRATE=true && drizzle-kit push:pg --config=drizzle.config.ts"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

@@ -1,4 +1,4 @@
-import Encryption from "../utils/encryption.js";
+import Encryption from "../utils/encryption";
 import { customType } from "drizzle-orm/pg-core";
 
 export const bytea = customType<{
