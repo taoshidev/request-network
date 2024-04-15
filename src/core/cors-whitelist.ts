@@ -1,11 +1,11 @@
 import cors from "cors";
 import { Request, Response, NextFunction, RequestHandler } from "express";
-import Database from "../db/database.js";
+import Database from "../db/database";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import * as schema from "../db/schema.js";
+import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
-import { ServiceDTO } from "..//db/dto/service-dto.js";
-import Logger from "../utils/logger.js";
+import { ServiceDTO } from "..//db/dto/service-dto";
+import Logger from "../utils/logger";
 
 /**
  * The Cors class manages CORS (Cross-Origin Resource Sharing) policies for the application,

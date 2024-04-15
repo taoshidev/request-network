@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 
 type RouteHandler = (req: Request, res: Response, next: NextFunction) => void;
+
 type RequestInterceptor = (
   req: Request,
   res: Response,
@@ -33,7 +34,7 @@ export default class BaseRouter {
     interceptor?: RouteHandler;
   }): BaseRouter {
     const middleware = [handler as RouteHandler];
-    if(interceptor) middleware.unshift(interceptor as RouteHandler);
+    if (interceptor) middleware.unshift(interceptor as RouteHandler);
     this.router[method](path, middleware);
     return this;
   }

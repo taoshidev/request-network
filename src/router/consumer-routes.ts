@@ -1,8 +1,8 @@
-import BaseRouter from "../core/base-router.js";
-import ConsumerCtrl from "../controller/consumer-controller.js";
-import { services } from "../db/schema.js";
-import ConsumerRequest from "../auth/consumer-request.js";
-import UiRequest from "../auth/ui-request.js";
+import BaseRouter from "../core/base-router";
+import ConsumerCtrl from "../controller/consumer-controller";
+import { services } from "../db/schema";
+import ConsumerRequest from "../auth/consumer-request";
+import UiRequest from "../auth/ui-request";
 
 export default class ConsumerRoute extends BaseRouter {
   constructor(private consumerCtrl: ConsumerCtrl) {
