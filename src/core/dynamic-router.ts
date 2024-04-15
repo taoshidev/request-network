@@ -1,11 +1,5 @@
-import { Router, Request, Response, NextFunction, RequestHandler } from "express";
+import { Router, RequestHandler } from "express";
 import HTTPRequest from "./request";
-
-// type RequestInterceptor = (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ) => void;
 
 /**
  * The DynamicRouter class extends the HTTPRequest class to dynamically handle
@@ -26,15 +20,7 @@ export default class DynamicRouter extends HTTPRequest {
    * @returns {Router} Returns the configured router instance which can be used in Express applications.
    */
   public mount() {
-    this.router
-      .route(`(*)?`)
-      .all(this.requestInterceptor)
-      .get(this.fetch)
-      .post(this.fetch)
-      .patch(this.fetch)
-      .put(this.fetch)
-      .delete(this.fetch);
-
+    this.router.route(`(*)?`).all([this.requestInterceptor, this.fetch]);
     return this.router;
   }
 }

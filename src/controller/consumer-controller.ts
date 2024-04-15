@@ -49,7 +49,7 @@ export default class ConsumerCtrl extends BaseController {
         BlockchainService.createEscrowWallet(validatorPrivateKey);
       // If successful, store the keys into the database wallets table
       const { error: walletError } = await this.wallet.create({
-        serviceId: data.id,
+        serviceId: data?.[0].id,
         privateKey: escrowWallet.privateKey,
         publicKey: escrowWallet.address,
         active: true,
