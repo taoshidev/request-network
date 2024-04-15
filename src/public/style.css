@@ -26,6 +26,7 @@ body {
   text-align: center;
   margin: 3em;
   padding: 3em;
+  max-width: 580px;
 }
 
 h1 {
@@ -42,6 +43,7 @@ h1 {
   background-color: #e35f25;
   color: white;
   padding: 7px 40px;
+  margin-top: 25px;
   text-decoration: none;
   transition: background-color 0.3s;
 }

@@ -1,3 +1,5 @@
+import * as dotenv from "dotenv";
+dotenv.config({ path: ".env" });
 import express, {
   Express,
   Request,
@@ -6,7 +8,6 @@ import express, {
   RequestHandler,
 } from "express";
 import helmet from "helmet";
-import * as dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import { services, wallets } from "./db/schema";
@@ -20,15 +21,6 @@ import UiRequest from "./auth/ui-request";
 import DynamicRouter from "./core/dynamic-router";
 import ConsumerRequest from "./auth/consumer-request";
 import { BlockchainService } from "./core/blockchain-service";
-
-dotenv.config({ path: ".env" });
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Static files directory
-const publicPath = path.join(__dirname, "public");
-
 export default class App {
   public express: Express;
   private apiPrefix: string;
@@ -49,10 +41,17 @@ export default class App {
   }
 
   private initializeStaticRoutes(): void {
-    this.express.use(express.static(publicPath));
-    this.express.get("/", (req: Request, res: Response) => {
-      res.sendFile(path.join(__dirname, "public", "welcome.html"));
+    this.express.use(express.static(path.join(__dirname, "public")));
+    this.express.set("view engine", "ejs");
+    this.express.set("views", path.join(__dirname, "views"));
+    this.express.get("/", (req, res) => {
+      res.render("index", { uiAppUrl: process.env.REQUEST_NETWORK_UI_URL });
     });
+
+    // this.express.use(express.static(path.join(__dirname, "public")));
+    // this.express.get("/", (req: Request, res: Response) => {
+    //   res.sendFile(path.join(__dirname, "public", "welcome.html"));
+    // });
   }
 
   private initializeRoutes(): void {
