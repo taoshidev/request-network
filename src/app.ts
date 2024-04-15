@@ -7,16 +7,17 @@ import express, {
 } from "express";
 import helmet from "helmet";
 import * as dotenv from "dotenv";
-import { services, keys } from "./db/schema.js";
-import { BaseController } from "./core/base-controller.js";
-import BaseRouter from "./core/base-router.js";
-import ConsumerCtrl from "./controller/consumer-controller.js";
-import ConsumerRoute from "./router/consumer-routes.js";
-import Cors from "./core/cors-whitelist.js";
-import Logger from "./utils/logger.js";
-import UiRequest from "./auth/ui-request.js";
-import DynamicRouter from "./core/dynamic-router.js";
-import ConsumerRequest from "./auth/consumer-request.js";
+import { services, wallets } from "./db/schema";
+import { BaseController } from "./core/base-controller";
+import BaseRouter from "./core/base-router";
+import ConsumerCtrl from "./controller/consumer-controller";
+import ConsumerRoute from "./router/consumer-routes";
+import Cors from "./core/cors-whitelist";
+import Logger from "./utils/logger";
+import UiRequest from "./auth/ui-request";
+import DynamicRouter from "./core/dynamic-router";
+import ConsumerRequest from "./auth/consumer-request";
+import { BlockchainService } from "./core/blockchain-service";
 
 dotenv.config({ path: ".env" });
 
@@ -49,12 +50,27 @@ export default class App {
     this.express.use(new ConsumerRoute(new ConsumerCtrl()).routes());
 
     // Loop through all the schema and mount their routes
-    [services, keys].forEach((schema) => {
+    [services, wallets].forEach((schema) => {
       const ctrl = new BaseController(schema);
       this.express.use(
         `${this.apiPrefix}/${ctrl.tableName.toLowerCase()}`,
         new BaseRouter(schema, ctrl, UiRequest.interceptor).mount()
       );
+    });
+
+    // TODO: test wallet endpoints
+    this.express.post("/wallet", (req: Request, res: Response) => {
+      const validatorPrivateKey = process.env.VALIDATOR_WALLET_PRIVATE_KEY;
+      if (!validatorPrivateKey) {
+        return res
+          .status(400)
+          .json({ error: "Missing Validator private wallet key." });
+      }
+
+      const { privateKey, address } =
+        BlockchainService.createEscrowWallet(validatorPrivateKey);
+      Logger.info(JSON.stringify({ privateKey, address }));
+      res.json({ privateKey, address });
     });
 
     // Setup dynamic routes

@@ -1,6 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosError, Method } from "axios";
 import { Request, Response } from "express";
-import Logger from "../utils/logger.js";
+import Logger from "../utils/logger";
 
 export enum StatusCode {
   NotFound = 404,

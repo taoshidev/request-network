@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import DrizzleWrappter from "./drizzle-wrapper.js";
+import DrizzleWrappter from "./drizzle-wrapper";
 import { PgTableWithColumns } from "drizzle-orm/pg-core";
 
 interface RequestWithSchemaObject extends Request {
