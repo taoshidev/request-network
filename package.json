@@ -44,6 +44,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.40.0",
     "drizzle-orm": "^0.30.6",
+    "ethers": "^6.11.1",
     "postgres": "^3.4.4",
     "winston": "^3.13.0"
   }

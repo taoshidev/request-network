@@ -1,11 +1,11 @@
-import { Router, Request, Response, NextFunction } from "express";
+import { Router, Request, Response, NextFunction, RequestHandler } from "express";
 import HTTPRequest from "./request.js";
 
-type RequestInterceptor = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => void;
+// type RequestInterceptor = (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => void;
 
 /**
  * The DynamicRouter class extends the HTTPRequest class to dynamically handle
@@ -15,7 +15,7 @@ type RequestInterceptor = (
 export default class DynamicRouter extends HTTPRequest {
   public router: Router;
 
-  constructor(private requestInterceptor: RequestInterceptor) {
+  constructor(private requestInterceptor: RequestHandler) {
     super();
     this.router = Router();
   }

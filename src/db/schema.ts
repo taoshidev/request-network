@@ -1,7 +1,6 @@
 import { relations } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import {
-  pgTable,
   uuid,
   varchar,
   pgSchema,
@@ -10,6 +9,8 @@ import {
   pgEnum,
   jsonb,
 } from "drizzle-orm/pg-core";
+
+import { bytea } from "./custom-type.js";
 
 export const authSchema = pgSchema("auth");
 export const roleTypeEnum = pgEnum("type", ["consumer", "validator"]);
@@ -31,7 +32,7 @@ export const services = authSchema.table("services", {
   deletedAt: timestamp("deleted_at"),
 });
 
-export const keys = authSchema.table("keys", {
+export const wallets = authSchema.table("wallets", {
   id: uuid("id")
     .default(sql`gen_random_uuid()`)
     .primaryKey()
@@ -39,20 +40,21 @@ export const keys = authSchema.table("keys", {
   serviceId: uuid("service_id")
     .references(() => services.id)
     .notNull(),
-  key: varchar("key").unique().notNull(),
+  publicKey: varchar("public_key").unique().notNull(),
+  privateKey: bytea("private_key"),
   active: boolean("active").default(true).notNull(),
   createdAt: timestamp("created_at").default(sql`now()`),
   updatedAt: timestamp("updated_at").default(sql`now()`),
   deletedAt: timestamp("deleted_at"),
 });
 
-export const serviceKeysRelations = relations(services, ({ many }) => ({
-  keys: many(keys),
+export const serviceWalletsRelations = relations(services, ({ many }) => ({
+  wallets: many(wallets),
 }));
 
-export const keyServiceRelations = relations(keys, ({ one }) => ({
+export const walletServiceRelations = relations(wallets, ({ one }) => ({
   services: one(services, {
-    fields: [keys.serviceId],
+    fields: [wallets.serviceId],
     references: [services.id],
   }),
 }));

@@ -1,19 +1,22 @@
 import { Request, Response } from "express";
 import { ServiceDTO } from "../db/dto/service-dto.js";
-import { services } from "../db/schema.js";
+import { services, wallets } from "../db/schema.js";
 import { BaseController } from "../core/base-controller.js";
 import axios, { AxiosError } from "axios";
 import Logger from "../utils/logger.js";
 import { CustomRequestDTO } from "../db/dto/custom-request-dto.js";
 import { ConsumerDTO } from "../db/dto/consumer-dto.js";
+import { BlockchainService } from "../core/blockchain-service.js";
 
 /**
  * Controller for handling consumer-specific actions.
  * This includes registering new consumers and forwarding consumer requests to validators.
  */
 export default class ConsumerCtrl extends BaseController {
+  private wallet: BaseController;
   constructor() {
     super(services);
+    this.wallet = new BaseController(wallets);
   }
 
   /**
@@ -26,13 +29,44 @@ export default class ConsumerCtrl extends BaseController {
   handleConsumerRegistration = async (req: Request, res: Response) => {
     if (!req?.body)
       return res.status(400).json({ error: "Request missing payload" });
-    const { data, error } = await this.create(req.body as ServiceDTO);
 
-    if (error) {
-      return res.status(400).json({ error: error?.message });
+    const validatorPrivateKey = process.env.VALIDATOR_WALLET_PRIVATE_KEY;
+    if (!validatorPrivateKey) {
+      return res
+        .status(500)
+        .json({ error: "Validator private key configuration is missing." });
     }
 
-    return res.status(201).json(data);
+    try {
+      const { data, error } = await this.create(req.body as ServiceDTO);
+
+      if (error) {
+        return res.status(400).json({ error: error?.message });
+      }
+
+      // Attempt to create an escrow wallet using the blockchain service
+      const escrowWallet =
+        BlockchainService.createEscrowWallet(validatorPrivateKey);
+      // If successful, store the keys into the database wallets table
+      const { error: walletError } = await this.wallet.create({
+        serviceId: data.id,
+        privateKey: escrowWallet.privateKey,
+        publicKey: escrowWallet.address,
+        active: true,
+      });
+
+      if (walletError) {
+        return res.status(400).json({ error: walletError?.message });
+      }
+
+      // Respond with the public key of the escrow wallet
+      return res.status(201).json({ ...data, publicKey: escrowWallet.address });
+    } catch (error: Error | unknown) {
+      Logger.error("Error registering consumer:" + JSON.stringify(error));
+      return res
+        .status(500)
+        .json({ error: (error as Error)?.message || "Internal server error" });
+    }
   };
 
   /**

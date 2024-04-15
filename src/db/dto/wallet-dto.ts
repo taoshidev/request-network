@@ -1,14 +1,16 @@
 import { BaseDTO } from "./base-dto.js";
 
-export class KeyDTO implements BaseDTO {
+export class WalletDTO implements BaseDTO {
   id?: string;
   serviceId?: string;
-  key?: string;
+  publicKey?: string;
+  privateKey?: string;
   active?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
   deletedAt?: Date | null;
-  constructor(data: Partial<KeyDTO>) {
+
+  constructor(data: Partial<WalletDTO>) {
     Object.assign(this, data);
   }
 }
