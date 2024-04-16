@@ -1,0 +1,53 @@
+html,
+body {
+  margin: 0;
+  padding: o;
+  display: flex;
+  box-sizing: border-box;
+  font-family: "ADLaM Display", system-ui;
+  height: 100vh;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+body {
+  font-weight: 400;
+  font-style: normal;
+  background-color: #f7f6f3;
+}
+
+.welcome-container {
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+  border: 1px dashed black;
+  text-align: center;
+  margin: 3em;
+  padding: 3em;
+  max-width: 580px;
+}
+
+h1 {
+  margin-bottom: 20px;
+  font-size: 26px;
+}
+
+.button {
+  font-family: "Space Mono", monospace;
+  font-weight: 400;
+  font-size: 14px;
+  font-style: normal;
+  display: inline-block;
+  background-color: #e35f25;
+  color: white;
+  padding: 7px 40px;
+  margin-top: 25px;
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+
+.button:hover {
+  background-color: #ca4f17;
+}

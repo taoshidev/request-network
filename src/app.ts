@@ -1,3 +1,5 @@
+import * as dotenv from "dotenv";
+dotenv.config({ path: ".env" });
 import express, {
   Express,
   Request,
@@ -6,7 +8,8 @@ import express, {
   RequestHandler,
 } from "express";
 import helmet from "helmet";
-import * as dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import { services, wallets } from "./db/schema";
 import { BaseController } from "./core/base-controller";
 import BaseRouter from "./core/base-router";
@@ -18,9 +21,6 @@ import UiRequest from "./auth/ui-request";
 import DynamicRouter from "./core/dynamic-router";
 import ConsumerRequest from "./auth/consumer-request";
 import { BlockchainService } from "./core/blockchain-service";
-
-dotenv.config({ path: ".env" });
-
 export default class App {
   public express: Express;
   private apiPrefix: string;
@@ -29,6 +29,7 @@ export default class App {
     this.express = express();
     this.apiPrefix = process.env.API_PREFIX || "/api/v1";
     this.initializeMiddlewares();
+    this.initializeStaticRoutes();
     this.initializeRoutes();
     this.initializeErrorHandling();
   }
@@ -36,15 +37,25 @@ export default class App {
   private async initializeMiddlewares(): Promise<void> {
     this.express.use(helmet());
     this.express.use(express.json());
-    this.express.use(express.urlencoded({ extended: true }));
-    this.express.use(Cors.getDynamicCorsMiddleware());
+    this.express.use(express.urlencoded({ extended: false }));
+  }
+
+  private initializeStaticRoutes(): void {
+    this.express.use(express.static(path.join(__dirname, "public")));
+    this.express.set("view engine", "ejs");
+    this.express.set("views", path.join(__dirname, "views"));
+    this.express.get("/", (req, res) => {
+      res.render("index", { uiAppUrl: process.env.REQUEST_NETWORK_UI_URL });
+    });
+
+    // this.express.use(express.static(path.join(__dirname, "public")));
+    // this.express.get("/", (req: Request, res: Response) => {
+    //   res.sendFile(path.join(__dirname, "public", "welcome.html"));
+    // });
   }
 
   private initializeRoutes(): void {
-    this.express.get("/", (req: Request, res: Response) => {
-      res.json({ message: "Validator online..." });
-    });
-
+    this.express.use(Cors.getDynamicCorsMiddleware());
     // Setup consumer routes
     // TODO: Might be deprecated in favor of dynamic routing
     this.express.use(new ConsumerRoute(new ConsumerCtrl()).routes());
