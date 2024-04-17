@@ -1,5 +1,5 @@
-import BaseRouter from "../core/base-router";
-import ConsumerCtrl from "../controller/consumer-controller";
+import BaseRouter from "../core/base.router";
+import ConsumerCtrl from "../controller/consumer.controller";
 import { services } from "../db/schema";
 import ConsumerRequest from "../auth/consumer-request";
 import UiRequest from "../auth/ui-request";

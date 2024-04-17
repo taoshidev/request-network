@@ -1,4 +1,4 @@
-import { BaseDTO } from "./base-dto.js";
+import { BaseDTO } from "./base.dto.js";
 
 export class WalletDTO implements BaseDTO {
   id?: string;

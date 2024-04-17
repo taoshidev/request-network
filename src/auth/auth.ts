@@ -1,10 +1,10 @@
 import axios, { AxiosError } from "axios";
 import Logger from "../utils/logger";
 import * as dotenv from "dotenv";
-import { ServiceDTO } from "../db/dto/service-dto";
+import { ServiceDTO } from "../db/dto/service.dto";
 import { Request } from "express";
-import ConsumerCtrl from "../controller/consumer-controller";
-import { ConsumerDTO } from "../db/dto/consumer-dto";
+import ConsumerCtrl from "../controller/consumer.controller";
+import { ConsumerDTO } from "../db/dto/consumer.dto";
 import { services } from "../db/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";

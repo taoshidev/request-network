@@ -4,7 +4,7 @@ import Database from "../db/database";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
-import { ServiceDTO } from "..//db/dto/service-dto";
+import { ServiceDTO } from "../db/dto/service.dto";
 import Logger from "../utils/logger";
 
 /**

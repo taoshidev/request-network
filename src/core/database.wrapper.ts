@@ -19,7 +19,7 @@ export interface DrizzleResult<T> {
   error: DrizzleError | null;
 }
 
-export default abstract class DrizzleWrappter<T> {
+export default abstract class DatabaseWrapper<T> {
   public tableName: string;
   protected db: PostgresJsDatabase<any>;
 
