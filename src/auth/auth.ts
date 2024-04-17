@@ -1,15 +1,13 @@
 import axios, { AxiosError } from "axios";
 import Logger from "../utils/logger";
-import * as dotenv from "dotenv";
 import { ServiceDTO } from "../db/dto/service.dto";
-import { Request } from "express";
+import { Request, Response, NextFunction } from "express";
 import ConsumerCtrl from "../controller/consumer.controller";
 import { ConsumerDTO } from "../db/dto/consumer.dto";
 import { services } from "../db/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
-
-dotenv.config({ path: ".env" });
+import HttpError from "src/utils/http-error";
 
 /**
  * Interceptor for handling consumer request authentication.
@@ -27,14 +25,16 @@ export default class Auth {
    */
   public static async verifyRequest(
     req: Request,
+    res: Response,
+    next: NextFunction,
     { type }: { type: string }
-  ): Promise<Partial<ConsumerDTO> | boolean> {
-    // Verify the request with unkey
+  ): Promise<Partial<ConsumerDTO> | boolean | any> {
     const token = Auth.extractToken(req, { type });
     if (!token) {
       Logger.error("No token provided");
       return false;
     }
+
     try {
       const response = await axios({
         method: "POST",
@@ -49,6 +49,7 @@ export default class Auth {
       });
 
       Logger.info(`Unkey Response: ${JSON.stringify(response.data)}`);
+
       const { keyId, meta: data } = response?.data as ConsumerDTO;
 
       if (!keyId) {
@@ -59,17 +60,19 @@ export default class Auth {
         eq(services.consumerKeyId, keyId)
       );
 
-      const { meta } = resp?.data?.[0] as ServiceDTO;
+      const { active, meta } = resp?.data?.[0] as ServiceDTO;
 
+      if (!active) {
+        throw new HttpError(403, "Unauthorized: Subscription is not active");
+      }
       if (!data?.shortId || data?.shortId !== meta?.shortId) {
-        throw new Error("Unauthorized: Invalid request key");
+        throw new HttpError(403, "Unauthorized: Invalid request key");
       }
 
-      // Return response to the next middleware
       return response?.data;
     } catch (error: AxiosError | unknown) {
-      Logger.error(`Error verifying token with Unkey: ${error}`);
-      return false;
+      next(error);
+      return;
     }
   }
 

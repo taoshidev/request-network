@@ -92,10 +92,10 @@ export default class App {
 
     this.express.use(
       (err: any, req: Request, res: Response, next: Function) => {
-        Logger.error(err.stack);
+        process.env.NODE_ENV==='development' && Logger.error(err.stack);
         const statusCode = err.statusCode || 500;
         const errorMessage = err.message || "Internal Server Error";
-        res.status(statusCode).json({ error: errorMessage });
+        return res.status(statusCode).json({ error: errorMessage });
       }
     );
   }

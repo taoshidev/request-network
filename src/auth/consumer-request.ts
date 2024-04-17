@@ -21,13 +21,14 @@ export default class ConsumerRequest {
     res: Response,
     next: NextFunction
   ) => {
-    const consumer = await Auth.verifyRequest(req, {
+    const consumer = await Auth.verifyRequest(req, res, next,{
       type: "x-taoshi-consumer-request-key",
     });
 
     if (!consumer) {
-      Logger.error("Unauthorized");
-      return res.status(403).json({ error: "Unauthorized" });
+      // Logger.error("Unauthorized");
+      return;
+      // return res.status(403).json({ error: "Unauthorized" });
     }
 
     // Add response from Unkey to the request object for use in the next middleware
