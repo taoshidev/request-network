@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import Logger from "src/utils/logger";
+import Logger from "../utils/logger";
 
 /**
  * Blockchain class provides methods to interact with blockchain technologies.

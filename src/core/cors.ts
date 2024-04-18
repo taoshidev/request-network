@@ -49,7 +49,7 @@ export default class Cors {
       const newWhitelist = await this.getWhitelistFromDb();
       const uniqueWhitelist = new Set([
         process.env.REQUEST_NETWORK_UI_URL as string,
-        `${process.env.API_HOST}:${process.env.API_PORT}`,
+        `${process.env.API_HOST}`,
         ...newWhitelist,
       ]);
       this.cachedWhitelist = Array.from(uniqueWhitelist).filter(Boolean);

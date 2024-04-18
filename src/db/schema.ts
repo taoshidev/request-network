@@ -25,7 +25,7 @@ export const services = authSchema.table("services", {
   consumerApiUrl: varchar("consumer_api_url"),
   hotkey: varchar("hotkey", { length: 255 }),
   meta: jsonb("meta"),
-  active: boolean("active").default(true).notNull(),
+  active: boolean("active").default(false).notNull(),
   createdAt: timestamp("created_at").default(sql`now()`),
   updatedAt: timestamp("updated_at").default(sql`now()`),
   deletedAt: timestamp("deleted_at"),
