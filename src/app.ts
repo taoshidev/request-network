@@ -33,7 +33,7 @@ export default class App {
     // Run the monthly service cron every 30 days
     new ServiceCron().run();
     // Monitor pending transactions
-    new Blockchain().monitorPendingTransactions();
+    new Blockchain().monitorPendingTransactions()
     // Authenticate with Uphold API service
     const uphold = await new UpholdConnector().authenticate();
     // Create Uphold cards if they don't exist

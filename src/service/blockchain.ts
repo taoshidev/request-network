@@ -12,20 +12,106 @@ export const TOKEN_TYPE = {
  * It includes creating and managing wallets which can be used for creating escrow accounts and managing payment activities.
  */
 export class Blockchain {
-  private wsProvider: ethers.WebSocketProvider;
-  private httpProvider: ethers.JsonRpcProvider;
+  private wsProvider!: ethers.WebSocketProvider;
+  private httpProvider!: ethers.JsonRpcProvider;
   private serviceManager: ServiceManager;
+  private transactionQueue: string[] = [];
+  private processedCount: number = 0;
+  private errorCount: number = 0;
+  private processingRate: number = 2000;
 
   constructor() {
+    this.initializeProviders();
+    this.processQueue();
+    this.serviceManager = new ServiceManager();
+  }
+
+  private initializeProviders() {
+    const providerOptions = {
+      polling: false,
+      batchStallTime: 50,
+      batchMaxSize: 1024 * 1024,
+      batchMaxCount: 1,
+      cacheTimeout: 300000,
+    };
+
     const network =
       process.env.NODE_ENV === "development" ? "sepolia" : "mainnet";
+    const wsURL = `wss://${network}.infura.io/ws/v3/${process.env.INFURA_PROJECT_ID}`;
+    const httpURL = `https://${network}.infura.io/v3/${process.env.INFURA_PROJECT_ID}`;
+
     this.wsProvider = new ethers.WebSocketProvider(
-      `wss://${network}.infura.io/ws/v3/${process.env.INFURA_PROJECT_ID}`
+      wsURL,
+      network,
+      providerOptions
     );
-    this.httpProvider = new ethers.JsonRpcProvider(
-      `https://${network}.infura.io/v3/${process.env.INFURA_PROJECT_ID}`
-    );
-    this.serviceManager = new ServiceManager();
+
+    this.httpProvider = new ethers.JsonRpcProvider(httpURL, network, {
+      ...providerOptions,
+      batchMaxCount: 50,
+    });
+
+    this.wsProvider.websocket.close = () => {
+      setTimeout(this.handleWebSocketError.bind(this), 5000);
+    };
+    this.wsProvider.websocket.onerror = (error) => {
+      Logger.error(`WebSocket Error: ${error.message}`);
+      setTimeout(this.handleWebSocketError.bind(this), 5000);
+    };
+
+    this.wsProvider.on("pending", (txHash) => {
+      this.transactionQueue.push(txHash);
+      Logger.info(`Transaction queued: ${txHash}`);
+    });
+  }
+
+  private async processQueue() {
+    setInterval(async () => {
+      if (this.transactionQueue.length > 0) {
+        const txHash = this.transactionQueue.shift();
+        try {
+          const transaction = await this.getTransaction(txHash!);
+          this.processedCount++;
+          Logger.info(`Transaction processed: ${transaction?.hash}`);
+        } catch (error: any) {
+          this.errorCount++;
+          if (error.code === "RATE_LIMITED") {
+            this.processingRate *= 2;
+          }
+          Logger.error(`Error processing transaction: ${error}`);
+        } finally {
+          Logger.info(
+            `Queue Status: ${this.transactionQueue.length} remaining, ${this.processedCount} processed, ${this.errorCount} errors.`
+          );
+        }
+      }
+    }, this.processingRate);
+  }
+
+  private handleWebSocketError() {
+    let retryCount = 0;
+    const maxRetries = 5;
+
+    const attemptReconnect = () => {
+      if (retryCount < maxRetries) {
+        const delay = Math.pow(2, retryCount) * 1000;
+        setTimeout(() => {
+          Logger.info(`Reconnecting WebSocket... Attempt ${retryCount + 1}`);
+          this.initializeProviders();
+          this.monitorPendingTransactions();
+          retryCount++;
+        }, delay);
+      } else {
+        Logger.error(
+          "Maximum WebSocket reconnection attempts reached. Giving up."
+        );
+      }
+    };
+
+    if (this.wsProvider) {
+      this.wsProvider.removeAllListeners();
+    }
+    attemptReconnect();
   }
 
   /**
@@ -67,36 +153,41 @@ export class Blockchain {
       `Starting monitoring transactions for address: ${walletAddress}`
     );
     this.wsProvider.on("pending", async (txHash) => {
-      try {
-        const tx = await this.getTransaction(txHash);
-        if (tx && (tx.from === walletAddress || tx.to === walletAddress)) {
-          Logger.info(
-            `Transaction ${txHash} involves monitored address: ${walletAddress}`
-          );
-        }
-      } catch (error) {
-        Logger.error(
-          `Error monitoring transaction for ${walletAddress}: ${error}`
-        );
-      }
+      this.queueTransaction(txHash, walletAddress);
     });
+  }
 
-    this.wsProvider.on("error", (error) => {
-      Logger.error(`WebSocket Error: ${JSON.stringify(error)}`);
-      this.wsProvider.removeAllListeners();
-      setTimeout(() => this.monitorTransactions(walletAddress), 1000);
-    });
+  private async queueTransaction(txHash: string, walletAddress: string) {
+    const tx = await this.getTransaction(txHash);
+    if (tx && (tx.from === walletAddress || tx.to === walletAddress)) {
+      this.transactionQueue.push(txHash);
+      if (tx && (tx.from === walletAddress || tx.to === walletAddress)) {
+        const receipt = await this.getTransactionReceipt(txHash);
+        Logger.info("Detailed transaction info:");
+        Logger.info(`Transaction Hash: ${tx.hash}`);
+        Logger.info(`Gas Limit: ${tx.gasLimit.toString()}`);
+        Logger.info(`Gas Used: ${receipt?.gasUsed.toString()}`);
+        Logger.info(`Base Fee: ${receipt?.fee}`);
+      }
+      Logger.info(
+        `Transaction ${txHash} queued for monitoring address: ${walletAddress}`
+      );
+      Logger.info(`Current Queue Size: ${this.transactionQueue.length}`);
+    } else 
+    {
+      Logger.info(`TRANSACTION DOESNT MATCH....`);
+
+    }
   }
 
   async getTransaction(
     txHash: string
   ): Promise<ethers.TransactionResponse | null> {
     try {
-      const tx = await this.httpProvider.getTransaction(txHash);
-      return tx;
+      return await this.httpProvider.getTransaction(txHash);
     } catch (error) {
       Logger.error(`Error retrieving transaction ${txHash}: ${error}`);
-      return null;
+      throw error;
     }
   }
 
