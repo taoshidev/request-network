@@ -5,6 +5,7 @@ export class ServiceDTO extends BaseDTO {
   name?: string;
   consumerKeyId?: string;
   consumerApiUrl?: string;
+  price?: string;
   hotkey?: string;
   meta?: {
     subnetId: string;

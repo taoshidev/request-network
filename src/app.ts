@@ -14,6 +14,7 @@ import ConsumerRequest from "./auth/consumer-request";
 import { Blockchain } from "./service/blockchain";
 import ServiceCron from "./core/cron";
 import Registration from "./core/registration";
+import UpholdConnector from "./service/uphold.connector";
 export default class App {
   public express: Express;
   private apiPrefix: string;
@@ -25,7 +26,21 @@ export default class App {
     this.initializeStaticRoutes();
     this.initializeRoutes();
     this.initializeErrorHandling();
+    this.monitorBlockchainTransactions();
+  }
+
+  private async monitorBlockchainTransactions() {
+    // Run the monthly service cron every 30 days
     new ServiceCron().run();
+    // Monitor pending transactions
+    new Blockchain().monitorPendingTransactions();
+    // Authenticate with Uphold API service
+    const uphold = await new UpholdConnector().authenticate();
+    // Create Uphold cards if they don't exist
+    ["TAO", "USDC", "USDT"].forEach(
+      async (currency) =>
+        await uphold.checkCardExistsOrCreate(await uphold.getCards(), currency)
+    );
   }
 
   private async initializeMiddlewares(): Promise<void> {
@@ -67,8 +82,7 @@ export default class App {
           .json({ error: "Missing Validator private wallet key." });
       }
 
-      const { privateKey, address } =
-        Blockchain.createEscrowWallet(validatorPrivateKey);
+      const { privateKey, address } = Blockchain.createEscrowWallet();
       Logger.info(JSON.stringify({ privateKey, address }));
       res.json({ privateKey, address });
     });
@@ -128,9 +142,7 @@ export default class App {
   public listen(): void {
     const port: number | string = process.env.API_PORT || 3000;
     this.express.listen(port, () => {
-      Logger.info(
-        `Server running at ${process.env.API_HOST}`
-      );
+      Logger.info(`Server running at ${process.env.API_HOST}`);
     });
   }
 }

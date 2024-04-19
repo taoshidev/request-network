@@ -43,7 +43,7 @@ export default class Registration {
       if (response.status === 200) {
         // Update service status to active
         await new ServiceManager().updateMany({ active: true });
-        Logger.info("Validator online...");
+        Logger.info("Validator API online configuration complete...");
       }
     } catch (error) {
       Registration.handleError(error);

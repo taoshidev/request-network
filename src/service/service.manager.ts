@@ -4,7 +4,7 @@ import { BaseController } from "../core/base.controller";
 import Logger from "../utils/logger";
 import DatabaseWrapper from "../core/database.wrapper";
 import { DrizzleResult } from "../core/database.wrapper";
-import { eq } from "drizzle-orm";
+import { eq, and, isNotNull } from "drizzle-orm";
 import { ServiceWithWalletDTO } from "../db/dto/service-wallet.dto";
 
 export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
@@ -45,11 +45,20 @@ export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
         .select({
           id: services.id,
           active: services.active,
+          price: services.price,
+          hotkey: services.hotkey,
           publicKey: wallets.publicKey,
+          privateKey: wallets.privateKey,
         })
         .from(services)
         .leftJoin(wallets, eq(services.id, wallets.serviceId))
-        .where(eq(services.active, true));
+        .where(
+          and(
+            eq(services.active, true),
+            isNotNull(wallets.publicKey),
+            isNotNull(wallets.privateKey)
+          )
+        );
       return { data: data as ServiceWithWalletDTO[], error: null };
     } catch (error: any) {
       Logger.error("Error get active services: " + JSON.stringify(error));
