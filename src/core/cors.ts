@@ -4,7 +4,7 @@ import Database from "../db/database";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../db/schema";
 import { eq } from "drizzle-orm";
-import { ServiceDTO } from "..//db/dto/service-dto";
+import { ServiceDTO } from "../db/dto/service.dto";
 import Logger from "../utils/logger";
 
 /**
@@ -49,7 +49,7 @@ export default class Cors {
       const newWhitelist = await this.getWhitelistFromDb();
       const uniqueWhitelist = new Set([
         process.env.REQUEST_NETWORK_UI_URL as string,
-        `${process.env.API_HOST}:${process.env.API_PORT}`,
+        `${process.env.API_HOST}`,
         ...newWhitelist,
       ]);
       this.cachedWhitelist = Array.from(uniqueWhitelist).filter(Boolean);

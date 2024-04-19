@@ -11,7 +11,6 @@ export default class Database {
 
   public static get db() {
     if (!this._drizzle) {
-      console.log("Initializing drizzle...");
       this._drizzle = drizzle(Database.client, { schema });
     }
     return this._drizzle;

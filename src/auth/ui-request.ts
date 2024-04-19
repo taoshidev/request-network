@@ -1,7 +1,7 @@
 import { Response, NextFunction } from "express";
 import Auth from "./auth";
 import Logger from "../utils/logger";
-import { CustomRequestDTO } from "../db/dto/custom-request-dto";
+import { CustomRequestDTO } from "../db/dto/custom-request.dto";
 
 /**
  * Class to intercept requests and perform authentication.

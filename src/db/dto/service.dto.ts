@@ -1,7 +1,6 @@
-import { BaseDTO } from "./base-dto.js";
+import { BaseDTO } from "./base.dto.js";
 
-export class ServiceDTO implements BaseDTO {
-  id?: string;
+export class ServiceDTO extends BaseDTO {
   type?: "consumer" | "validator";
   name?: string;
   consumerKeyId?: string;
@@ -15,6 +14,7 @@ export class ServiceDTO implements BaseDTO {
     subscriptionId: string;
   };
   constructor(data: Partial<ServiceDTO>) {
+    super(data)
     Object.assign(this, data);
   }
 }

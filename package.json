@@ -7,14 +7,14 @@
   "keywords": [],
   "author": "nod",
   "scripts": {
-    "start": "MIGRATE=false pnpm build && node dist/index.js",
-    "dev": "MIGRATE=false pnpm build && nodemon - exec 'ts-node' src/app.ts",
-    "dev:migrate": "MIGRATE=true pnpm build && nodemon - exec 'ts-node' src/app.ts",
-    "build": "rm -rf dist && tsc",
+    "start": "cross-env pnpm build && node -r tsconfig-paths/register dist/index.js",
+    "start:migrate": "cross-env MIGRATE=true pnpm build && nodemon -r tsconfig-paths/register dist/index.js",
+    "dev": "pnpm build && nodemon - exec 'ts-node' src/app.ts",
+    "build": "rm -rf dist && tsc && cp -R src/views dist/views",
     "test": "jest",
     "db:generate": "drizzle-kit generate:pg",
     "introspect:pg": "drizzle-kit introspect:pg",
-    "db:push": "MIGRATE=true && drizzle-kit push:pg --config=drizzle.config.ts"
+    "db:push": "drizzle-kit push:pg --config=drizzle.config.ts"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
@@ -23,10 +23,12 @@
     "@types/jest": "^29.5.12",
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.11.30",
+    "@types/node-cron": "^3.0.11",
     "@types/supertest": "^6.0.2",
     "@types/winston": "^2.4.4",
     "axios": "^1.6.8",
     "cors": "^2.8.5",
+    "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
     "drizzle-kit": "^0.20.14",
     "express": "^4.19.2",
@@ -45,6 +47,7 @@
     "drizzle-orm": "^0.30.6",
     "ejs": "^3.1.10",
     "ethers": "^6.11.1",
+    "node-cron": "^3.0.3",
     "postgres": "^3.4.4",
     "winston": "^3.13.0"
   }

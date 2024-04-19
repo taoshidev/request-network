@@ -8,7 +8,7 @@ type RequestInterceptor = (
   next: NextFunction
 ) => void;
 
-import { BaseController } from "./base-controller.js";
+import { BaseController } from "./base.controller.js";
 import { PgTableWithColumns } from "drizzle-orm/pg-core";
 
 export default class BaseRouter {

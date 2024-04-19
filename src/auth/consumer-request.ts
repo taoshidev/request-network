@@ -1,7 +1,7 @@
 import { Response, NextFunction } from "express";
 import Auth from "./auth";
 import Logger from "../utils/logger";
-import { CustomRequestDTO } from "../db/dto/custom-request-dto";
+import { CustomRequestDTO } from "../db/dto/custom-request.dto";
 
 /**
  * Interceptor for handling consumer request authentication.
@@ -21,16 +21,14 @@ export default class ConsumerRequest {
     res: Response,
     next: NextFunction
   ) => {
-    const consumer = await Auth.verifyRequest(req, {
+    const consumer = await Auth.verifyRequest(req, res, next, {
       type: "x-taoshi-consumer-request-key",
     });
 
     if (!consumer) {
-      Logger.error("Unauthorized");
-      return res.status(403).json({ error: "Unauthorized" });
+      return;
     }
 
-    // Add response from Unkey to the request object for use in the next middleware
     req.consumer = consumer as CustomRequestDTO["consumer"];
 
     next();

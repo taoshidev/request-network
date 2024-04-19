@@ -1,26 +1,19 @@
-import * as dotenv from "dotenv";
-dotenv.config({ path: ".env" });
-import express, {
-  Express,
-  Request,
-  Response,
-  NextFunction,
-  RequestHandler,
-} from "express";
+import express, { Express, Request, Response } from "express";
 import helmet from "helmet";
 import path from "path";
-import { fileURLToPath } from "url";
 import { services, wallets } from "./db/schema";
-import { BaseController } from "./core/base-controller";
-import BaseRouter from "./core/base-router";
-import ConsumerCtrl from "./controller/consumer-controller";
-import ConsumerRoute from "./router/consumer-routes";
-import Cors from "./core/cors-whitelist";
+import { BaseController } from "./core/base.controller";
+import BaseRouter from "./core/base.router";
+import ConsumerCtrl from "./controller/consumer.controller";
+import ConsumerRoute from "./router/consumer.router";
+import Cors from "./core/cors";
 import Logger from "./utils/logger";
 import UiRequest from "./auth/ui-request";
-import DynamicRouter from "./core/dynamic-router";
+import DynamicRouter from "./core/dynamic.router";
 import ConsumerRequest from "./auth/consumer-request";
-import { BlockchainService } from "./core/blockchain-service";
+import { Blockchain } from "./service/blockchain";
+import ServiceCron from "./core/cron";
+import Registration from "./core/registration";
 export default class App {
   public express: Express;
   private apiPrefix: string;
@@ -32,6 +25,7 @@ export default class App {
     this.initializeStaticRoutes();
     this.initializeRoutes();
     this.initializeErrorHandling();
+    new ServiceCron().run();
   }
 
   private async initializeMiddlewares(): Promise<void> {
@@ -47,11 +41,6 @@ export default class App {
     this.express.get("/", (req, res) => {
       res.render("index", { uiAppUrl: process.env.REQUEST_NETWORK_UI_URL });
     });
-
-    // this.express.use(express.static(path.join(__dirname, "public")));
-    // this.express.get("/", (req: Request, res: Response) => {
-    //   res.sendFile(path.join(__dirname, "public", "welcome.html"));
-    // });
   }
 
   private initializeRoutes(): void {
@@ -79,7 +68,7 @@ export default class App {
       }
 
       const { privateKey, address } =
-        BlockchainService.createEscrowWallet(validatorPrivateKey);
+        Blockchain.createEscrowWallet(validatorPrivateKey);
       Logger.info(JSON.stringify({ privateKey, address }));
       res.json({ privateKey, address });
     });
@@ -101,10 +90,10 @@ export default class App {
 
     this.express.use(
       (err: any, req: Request, res: Response, next: Function) => {
-        Logger.error(err.stack);
+        process.env.NODE_ENV === "development" && Logger.error(err.stack);
         const statusCode = err.statusCode || 500;
         const errorMessage = err.message || "Internal Server Error";
-        res.status(statusCode).json({ error: errorMessage });
+        return res.status(statusCode).json({ error: errorMessage });
       }
     );
   }
@@ -130,11 +119,17 @@ export default class App {
     });
   }
 
+  public init(): App {
+    Logger.info("Initializing app config...");
+    Registration.registerWithUI();
+    return this;
+  }
+
   public listen(): void {
     const port: number | string = process.env.API_PORT || 3000;
     this.express.listen(port, () => {
       Logger.info(
-        `Server running at ${process.env.API_HOST}:${process.env.API_PORT}`
+        `Server running at ${process.env.API_HOST}`
       );
     });
   }

@@ -1,0 +1,1 @@
+ALTER TABLE "auth"."services" ALTER COLUMN "active" SET DEFAULT false;
