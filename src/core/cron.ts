@@ -1,8 +1,8 @@
 import { Blockchain } from "../service/blockchain";
-import ServiceManager from "src/service/service.manager";
+import ServiceManager from "../service/service.manager";
 import cron from "node-cron";
-import Logger from "src/utils/logger";
-import { ServiceWithWalletDTO } from "src/db/dto/service-wallet.dto";
+import Logger from "../utils/logger";
+import { ServiceWithWalletDTO } from "../db/dto/service-wallet.dto";
 
 export default class ServiceCron {
   private blockchain: Blockchain;
@@ -63,7 +63,7 @@ export default class ServiceCron {
       Logger.info(
         `No funds found for wallet ${service.publicKey}. Setting active flag to false.`
       );
-      await this.serviceManager.deactivate(service.id as string);
+      await this.serviceManager.changeStatus(service.id as string, false);
     } else {
       Logger.info(
         `Funds detected for wallet ${service.publicKey}: ${data.balance}`

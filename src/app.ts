@@ -1,5 +1,3 @@
-import * as dotenv from "dotenv";
-dotenv.config({ path: ".env" });
 import express, { Express, Request, Response } from "express";
 import helmet from "helmet";
 import path from "path";
@@ -15,7 +13,7 @@ import DynamicRouter from "./core/dynamic.router";
 import ConsumerRequest from "./auth/consumer-request";
 import { Blockchain } from "./service/blockchain";
 import ServiceCron from "./core/cron";
-
+import Registration from "./core/registration";
 export default class App {
   public express: Express;
   private apiPrefix: string;
@@ -92,7 +90,7 @@ export default class App {
 
     this.express.use(
       (err: any, req: Request, res: Response, next: Function) => {
-        process.env.NODE_ENV==='development' && Logger.error(err.stack);
+        process.env.NODE_ENV === "development" && Logger.error(err.stack);
         const statusCode = err.statusCode || 500;
         const errorMessage = err.message || "Internal Server Error";
         return res.status(statusCode).json({ error: errorMessage });
@@ -121,11 +119,17 @@ export default class App {
     });
   }
 
+  public init(): App {
+    Logger.info("Initializing app config...");
+    Registration.registerWithUI();
+    return this;
+  }
+
   public listen(): void {
     const port: number | string = process.env.API_PORT || 3000;
     this.express.listen(port, () => {
       Logger.info(
-        `Server running at ${process.env.API_HOST}:${process.env.API_PORT}`
+        `Server running at ${process.env.API_HOST}`
       );
     });
   }

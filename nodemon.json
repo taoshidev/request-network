@@ -1,7 +1,7 @@
 {
   "watch": ["src"],
   "ext": "ts",
-  "ignore": ["src/**/*.spec.ts"],
+  "ignore": ["src/**/*.spec.ts", ".env"],
   "exec": "ts-node -r tsconfig-paths/register src/index.ts",
   "env": {
     "MIGRATE": "false"

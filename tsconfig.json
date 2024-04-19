@@ -9,10 +9,11 @@
     "target": "ESNext",
     "module": "commonjs",
     "baseUrl": ".",
-    "declaration":true,
-    "rootDir": "./src",
-    "outDir": "./dist",
+    "declaration": true,
+    "rootDir": "src",
+    "outDir": "dist",
     "noEmit": false,
+    "moduleResolution": "node",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "inlineSourceMap": true,
@@ -24,7 +25,7 @@
     "noImplicitAny": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*"],
   "typeRoots": ["./node_modules/@types"],
   "exclude": [
     "dist",

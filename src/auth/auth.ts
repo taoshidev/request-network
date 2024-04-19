@@ -7,7 +7,7 @@ import { ConsumerDTO } from "../db/dto/consumer.dto";
 import { services } from "../db/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
-import HttpError from "src/utils/http-error";
+import HttpError from "../utils/http-error";
 
 /**
  * Interceptor for handling consumer request authentication.
@@ -48,7 +48,7 @@ export default class Auth {
         },
       });
 
-      Logger.info(`Unkey Response: ${JSON.stringify(response.data)}`);
+      Logger.info(`Unkey Response: ${response?.data?.valid}`);
 
       const { keyId, meta: data } = response?.data as ConsumerDTO;
 
@@ -59,6 +59,10 @@ export default class Auth {
       const resp = await this.consumerCtrl.find(
         eq(services.consumerKeyId, keyId)
       );
+
+      if(!resp?.data?.[0]) {
+        throw new HttpError(403, "No services found");
+      }
 
       const { active, meta } = resp?.data?.[0] as ServiceDTO;
 
@@ -127,7 +131,7 @@ export default class Auth {
     nonce: string;
   }) {
     const message = `${method}${path}${body}${apiKey}${nonce}`;
-    console.log("MESSAGE::", message);
+
     return crypto.createHmac("sha256", apiSecret).update(message).digest("hex");
   }
 

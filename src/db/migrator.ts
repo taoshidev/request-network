@@ -2,7 +2,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import * as schema from "./schema";
-import Logger from "src/utils/logger";
+import Logger from "../utils/logger";
 
 export default class DatabaseMigrator {
   private connectionString: string;

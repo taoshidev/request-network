@@ -2,10 +2,10 @@ import { ServiceDTO } from "../db/dto/service.dto";
 import { services, wallets } from "../db/schema";
 import { BaseController } from "../core/base.controller";
 import Logger from "../utils/logger";
-import DatabaseWrapper from "src/core/database.wrapper";
-import { DrizzleResult } from "src/core/database.wrapper";
+import DatabaseWrapper from "../core/database.wrapper";
+import { DrizzleResult } from "../core/database.wrapper";
 import { eq } from "drizzle-orm";
-import { ServiceWithWalletDTO } from "src/db/dto/service-wallet.dto";
+import { ServiceWithWalletDTO } from "../db/dto/service-wallet.dto";
 
 export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
   public wallet: BaseController;
@@ -19,10 +19,13 @@ export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
    * @param {string} id - The ID of the subscription to pause.
    * @returns {Promise<DrizzleResult<ServiceDTO>>} The result of the update operation.
    */
-  async deactivate(id: string): Promise<DrizzleResult<ServiceDTO>> {
+  async changeStatus(
+    id: string,
+    active: boolean
+  ): Promise<DrizzleResult<ServiceDTO>> {
     try {
       const { data, error } = await this.update(id, {
-        active: false,
+        active,
       } as ServiceDTO);
       if (error) {
         throw new Error(error.message);
@@ -53,5 +56,4 @@ export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
       return { data: null, error: error.message || "Internal server error" };
     }
   }
-
 }

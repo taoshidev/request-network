@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from "axios";
-import Logger from "src/utils/logger";
+import Logger from "../utils/logger";
 
 type UpholdTransaction = {
   id: string;

@@ -3,12 +3,13 @@ services:
   app:
     container_name: request-network-app
     build: .
+    command: ["pnpm", "dev"]
     volumes:
       - .:/usr/src/app
     depends_on:
       - db
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DB}
       SUPABASE_URL: ${SUPABASE_URL}
       SUPABASE_KEY: ${SUPABASE_KEY}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}

@@ -91,6 +91,19 @@ export default abstract class DatabaseWrapper<T> {
     }
   }
 
+  async updateMany(record: Partial<T>): Promise<DrizzleResult<T | T[]>> {
+    try {
+      const res = await this.db
+        .update(this.schema)
+        .set(record)
+        .returning();
+      return { data: res as T, error: null };
+    } catch (error) {
+      console.error(error);
+      return { data: null, error: error as DrizzleError };
+    }
+  }
+
   async delete(id: string): Promise<DrizzleResult<T>> {
     try {
       const res = await this.db
