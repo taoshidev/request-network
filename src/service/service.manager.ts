@@ -1,6 +1,6 @@
 import { ServiceDTO } from "../db/dto/service.dto";
 import { services, wallets } from "../db/schema";
-import { BaseController } from "../core/base.controller";
+import BaseController from "../core/base.controller";
 import Logger from "../utils/logger";
 import DatabaseWrapper from "../core/database.wrapper";
 import { DrizzleResult } from "../core/database.wrapper";
@@ -36,8 +36,30 @@ export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
       return { data: null, error: error.message || "Internal server error" };
     }
   }
+  async getSubscription(
+    id: string
+  ): Promise<DrizzleResult<ServiceWithWalletDTO>> {
+    try {
+      const data = await this.db
+        .select({
+          id: services.id,
+          active: services.active,
+          price: services.price,
+          hotkey: services.hotkey,
+          publicKey: wallets.publicKey,
+          privateKey: wallets.privateKey,
+        })
+        .from(services)
+        .leftJoin(wallets, eq(services.id, wallets.serviceId))
+        .where(eq(services.id, id));
+      return { data: data?.[0] as ServiceWithWalletDTO, error: null };
+    } catch (error: any) {
+      Logger.error("Error get service by id: " + JSON.stringify(error));
+      return { data: null, error: error.message || "Internal server error" };
+    }
+  }
 
-  async getActiveSubscriptions(): Promise<
+  async getSubscriptions({ active = true, inclusive = false } = {}): Promise<
     DrizzleResult<ServiceWithWalletDTO[]>
   > {
     try {
@@ -54,7 +76,9 @@ export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
         .leftJoin(wallets, eq(services.id, wallets.serviceId))
         .where(
           and(
-            eq(services.active, true),
+            inclusive
+              ? isNotNull(services.active)
+              : eq(services.active, active),
             isNotNull(wallets.publicKey),
             isNotNull(wallets.privateKey)
           )

@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
 import { ServiceDTO } from "../db/dto/service.dto";
 import { services, wallets } from "../db/schema";
-import { BaseController } from "../core/base.controller";
+import BaseController from "../core/base.controller";
 import axios, { AxiosError } from "axios";
 import Logger from "../utils/logger";
 import { CustomRequestDTO } from "../db/dto/custom-request.dto";
 import { ConsumerDTO } from "../db/dto/consumer.dto";
-import { Blockchain } from "../service/blockchain";
+import BlockchainManager from "../service/blockchain.manager";
 
 /**
  * Controller for handling consumer-specific actions.
@@ -46,7 +46,7 @@ export default class ConsumerCtrl extends BaseController {
 
       // Attempt to create an escrow wallet using the blockchain service
       const escrowWallet =
-        Blockchain.createEscrowWallet();
+        BlockchainManager.createEscrowWallet();
       // If successful, store the keys into the database wallets table
       const { error: walletError } = await this.wallet.create({
         serviceId: data?.[0].id,
