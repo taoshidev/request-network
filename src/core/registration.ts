@@ -1,7 +1,6 @@
 import axios, { AxiosError } from "axios";
 import Logger from "../utils/logger";
 import Auth from "../auth/auth";
-import ServiceManager from "../service/service.manager";
 
 /**
  * Handles registration of the API instance with the UI application.
@@ -41,8 +40,6 @@ export default class Registration {
       const response = await axios.post(url, body, { headers });
 
       if (response.status === 200) {
-        // Update service status to active
-        await new ServiceManager().updateMany({ active: true });
         Logger.info("Validator API online configuration complete...");
       }
     } catch (error) {

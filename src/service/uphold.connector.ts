@@ -1,5 +1,7 @@
 import axios, { AxiosInstance } from "axios";
 import Logger from "../utils/logger";
+import BlockchainManager from "./blockchain.manager";
+import { ServiceWithWalletDTO } from "../db/dto/service-wallet.dto";
 
 type UpholdTransaction = {
   id: string;
@@ -33,12 +35,13 @@ type UpholdCard = {
  */
 export default class UpholdConnector {
   private client: AxiosInstance;
-
+  private blockchain: BlockchainManager;
   /**
    * Initializes a new instance of the UpholdConnector class with default
    * configuration for the Axios client.
    */
   constructor() {
+    this.blockchain = new BlockchainManager();
     this.client = axios.create({
       baseURL:
         process.env.NODE_ENV === "development"
@@ -95,8 +98,6 @@ export default class UpholdConnector {
         Logger.info(
           `No card found for currency ${currency}, considering creating one.`
         );
-        // TODO: might need to create a card if it does not exist
-        // return await this.createCard(currency);
         return null;
       }
     } catch (error) {
@@ -124,6 +125,14 @@ export default class UpholdConnector {
     }
   }
 
+  async authCheck(): Promise<UpholdConnector> {
+    if (!this.client.defaults.headers.common["Authorization"]) {
+      Logger.error("Not authenticated to Uphold. Authenticating...");
+      await this.authenticate();
+    }
+    return this;
+  }
+
   /**
    * Converts a specified amount from one currency to another.
    * @param {string} cardId the card ID to use.
@@ -135,10 +144,8 @@ export default class UpholdConnector {
     denomination: { amount: string; currency: string },
     destination: string
   ): Promise<UpholdTransaction> {
-    if (!this.client.defaults.headers.common["Authorization"]) {
-      Logger.error("Authenticating to Uphold...");
-      await this.authenticate();
-    }
+    await this.authCheck();
+
     try {
       const response = await this.client.post(
         `/v0/me/cards/${cardId}/transactions?commit=true`,
@@ -149,8 +156,22 @@ export default class UpholdConnector {
       );
       Logger.info(`Conversion successful: ${JSON.stringify(response.data)}`);
       return response.data;
-    } catch (error) {
-      Logger.error(`Failed to convert currency: ${error}`);
+    } catch (error: any) {
+      Logger.error(
+        `Failed to convert currency From: ${denomination.currency} To: TAO Reason: ${error}`
+      );
+      if (error.response) {
+        Logger.error(
+          `API Error: ${error.response.status} - ${JSON.stringify(
+            error.response.data
+          )}`
+        );
+      } else if (error.request) {
+        Logger.error(`API No Response: ${error?.request}`);
+      } else {
+        Logger.error(`API Request Setup Error: ${error.message}`);
+      }
+
       throw error;
     }
   }
@@ -203,5 +224,92 @@ export default class UpholdConnector {
     });
     Logger.info(`Created new ${currency} card: ${response.data.id}`);
     return response.data;
+  }
+
+  /**
+   * Handles the transfer of funds from the service's wallet to an Uphold card, converts it to another currency,
+   * and then sends it to a designated wallet.
+   * @param {ServiceWithWalletDTO} service - The service with funds to transfer.
+   */
+  async handleFundsTransfer(
+    service: ServiceWithWalletDTO
+  ): Promise<UpholdTransaction | boolean> {
+    await this.authCheck();
+    const usdcCard = await this.getCardByCurrency("USDC");
+    const taoCard = await this.getCardByCurrency("TAO");
+    if (usdcCard && taoCard) {
+      try {
+        // Transfer USDC from the escrow wallet to the Uphold USDC card
+        const transaction = await this.blockchain.sendTokens(
+          service.privateKey as string,
+          usdcCard.address.ethereum,
+          service.price as string,
+          "USDC"
+        );
+        if (!transaction.signature) return false;
+
+        // Convert USDC to TAO on Uphold
+        const conversion = await this.convertCurrency(
+          usdcCard.id,
+          { amount: service.price as string, currency: "USDC" },
+          taoCard.id
+        );
+        if (!conversion) {
+          throw new Error("Failed to convert USDC to TAO");
+        }
+
+        // Withdraw TAO from the Uphold TAO card to the designated wallet
+        if (conversion.destination.amount) {
+          const { destination } = conversion;
+          const res = await this.withdrawToAddress(
+            taoCard.id,
+            destination.amount,
+            service.hotkey as string
+          );
+          if (!res) {
+            throw new Error("Failed to withdraw TAO from TAO card");
+          }
+          return res;
+        }
+      } catch (error) {
+        Logger.error(
+          `Failed to handle fund transfer for service ${service.id}: ${error}`
+        );
+        return false;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Checks the blockchain balance for a given subscription and deactivates it if the balance is zero
+   * or not enough to cover the price. Also handles the conversion and transfer of funds if sufficient.
+   * @param {ServiceWithWalletDTO} service - The subscription service to check.
+   */
+  async checkSubscriptionBalance(
+    service: ServiceWithWalletDTO
+  ): Promise<{ sufficient: boolean; balance: string } | void> {
+    if (
+      service.id &&
+      service.publicKey &&
+      service.privateKey &&
+      service.price
+    ) {
+      const data = await this.blockchain.getTokenBalances(service.publicKey);
+      const balance = data.usdc as string;
+      const sufficient =
+        balance && parseFloat(balance) >= parseFloat(service.price);
+
+      if (!sufficient) {
+        Logger.info(
+          `Insufficient funds in wallet ${service.publicKey}. Setting active flag to false.`
+        );
+        return { sufficient: false, balance };
+      }
+      Logger.info(
+        `Sufficient funds detected for wallet ${service.publicKey}: ${balance} USDC`
+      );
+      return { sufficient, balance };
+    }
   }
 }

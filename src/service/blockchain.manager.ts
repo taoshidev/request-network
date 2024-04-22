@@ -1,31 +1,37 @@
 import { HDNodeWallet, ethers } from "ethers";
 import Logger from "../utils/logger";
-import ServiceManager from "./service.manager";
-
-export const TOKEN_TYPE = {
-  USDC: { address: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", decimals: 6 },
-  USDT: { address: "0xdAC17F958D2ee523a2206206994597C13D831ec7", decimals: 6 },
-};
+import { ContractTransactionResponse } from "ethers";
+import { TOKENS } from "./transaction.manager";
 
 /**
- * Blockchain class provides methods to interact with blockchain technologies.
+ * BlockchainManager class provides methods to interact with blockchain technologies.
  * It includes creating and managing wallets which can be used for creating escrow accounts and managing payment activities.
  */
-export class Blockchain {
-  private wsProvider: ethers.WebSocketProvider;
-  private httpProvider: ethers.JsonRpcProvider;
-  private serviceManager: ServiceManager;
+export default class BlockchainManager {
+  private httpProvider!: ethers.JsonRpcProvider;
 
   constructor() {
+    this.initializeProviders();
+  }
+
+  private initializeProviders() {
+    const providerOptions = {
+      polling: false,
+      batchStallTime: 50,
+      batchMaxSize: 1024 * 1024,
+      batchMaxCount: 50,
+      cacheTimeout: 300000,
+    };
+
     const network =
       process.env.NODE_ENV === "development" ? "sepolia" : "mainnet";
-    this.wsProvider = new ethers.WebSocketProvider(
-      `wss://${network}.infura.io/ws/v3/${process.env.INFURA_PROJECT_ID}`
-    );
+    const httpURL = `https://${network}.infura.io/v3/${process.env.INFURA_PROJECT_ID}`;
+
     this.httpProvider = new ethers.JsonRpcProvider(
-      `https://${network}.infura.io/v3/${process.env.INFURA_PROJECT_ID}`
+      httpURL,
+      network,
+      providerOptions
     );
-    this.serviceManager = new ServiceManager();
   }
 
   /**
@@ -33,70 +39,17 @@ export class Blockchain {
    * @returns {ethers.Wallet} A new wallet object representing the escrow wallet.
    */
   static createEscrowWallet(): ethers.Wallet | HDNodeWallet {
-    const randomWallet = ethers.Wallet.createRandom();
-    console.log(`New Escrow Wallet Address: ${randomWallet.address}`);
-    return randomWallet;
-  }
-
-  async monitorPendingTransactions(): Promise<void> {
-    const subscriptions = await this.serviceManager.getActiveSubscriptions();
-    const walletAddresses = subscriptions.data?.map((s) => s.publicKey);
-    (walletAddresses || []).forEach((a) =>
-      this.monitorTransactions(a as string)
-    );
-  }
-
-  /**
-   * Monitors all pending blockchain transactions for a specified address.
-   * This method subscribes to the 'pending' events on the Ethereum blockchain and checks
-   * if the incoming or outgoing transaction involves the specified address.
-   *
-   * @param {string} walletAddress - The Ethereum address to monitor for transactions.
-   * @returns {Promise<void>} A promise that resolves when the method is set up and continues to listen indefinitely.
-   *
-   * @example
-   * ```
-   * const blockchain = new Blockchain();
-   * blockchain.monitorTransactions('0x1234567890123456789012345678901234567890');
-   * ```
-   *
-   * - TODO: Monitor for pending transactions. Send data to UI application
-   */
-  private async monitorTransactions(walletAddress: string): Promise<void> {
-    Logger.info(
-      `Starting monitoring transactions for address: ${walletAddress}`
-    );
-    this.wsProvider.on("pending", async (txHash) => {
-      try {
-        const tx = await this.getTransaction(txHash);
-        if (tx && (tx.from === walletAddress || tx.to === walletAddress)) {
-          Logger.info(
-            `Transaction ${txHash} involves monitored address: ${walletAddress}`
-          );
-        }
-      } catch (error) {
-        Logger.error(
-          `Error monitoring transaction for ${walletAddress}: ${error}`
-        );
-      }
-    });
-
-    this.wsProvider.on("error", (error) => {
-      Logger.error(`WebSocket Error: ${JSON.stringify(error)}`);
-      this.wsProvider.removeAllListeners();
-      setTimeout(() => this.monitorTransactions(walletAddress), 1000);
-    });
+    return ethers.Wallet.createRandom();
   }
 
   async getTransaction(
     txHash: string
   ): Promise<ethers.TransactionResponse | null> {
     try {
-      const tx = await this.httpProvider.getTransaction(txHash);
-      return tx;
+      return await this.httpProvider.getTransaction(txHash);
     } catch (error) {
       Logger.error(`Error retrieving transaction ${txHash}: ${error}`);
-      return null;
+      throw error;
     }
   }
 
@@ -175,8 +128,8 @@ export class Blockchain {
   }
 
   async getTokenBalances(walletAddress: string) {
-    const usdcAddress = TOKEN_TYPE.USDC.address;
-    // const usdtAddress = TOKEN_TYPE.USDT.address;
+    const usdcAddress = TOKENS.USDC.address;
+    // const usdtAddress = TOKENS.USDT.address;
     const usdcBalance = await this.getTokenBalance(usdcAddress, walletAddress);
     // const usdtBalance = await this.getTokenBalance(usdtAddress, walletAddress, 6);
     return {
@@ -222,34 +175,42 @@ export class Blockchain {
    * @param privateKey The private key of the sender's wallet.
    *                   Ensure this is kept secure and never hard-coded in production!
    * @param token The token type.
-   * @param toAddress The recipient's address.
+   * @param to The recipient's address.
    * @param amount The amount of tokens to send, as a string,
    *               to account for tokens that require decimal precision.
    */
   async sendTokens(
     privateKey: string,
-    toAddress: string,
+    to: string,
     amount: string,
-    token: keyof typeof TOKEN_TYPE
-  ): Promise<void> {
+    token: keyof typeof TOKENS
+  ): Promise<ContractTransactionResponse> {
     const wallet = new ethers.Wallet(privateKey, this.httpProvider);
-    const tokenConfig = TOKEN_TYPE[token];
+    const tokenConfig = TOKENS[token];
     const tokenContract = new ethers.Contract(
       tokenConfig.address,
       ["function transfer(address to, uint256 amount) returns (bool)"],
       wallet
     );
 
-    const amountToSend = ethers.parseUnits(amount, tokenConfig.decimals);
+    // Fetch the current nonce
+    let nonce = await this.httpProvider.getTransactionCount(
+      wallet.address,
+      "latest"
+    );
+
+    const amt = ethers.parseUnits(amount, tokenConfig.decimals);
+
     try {
-      const transactionResponse = await tokenContract.transfer(
-        toAddress,
-        amountToSend
-      );
+      const res = await tokenContract.transfer(to, amt, { nonce });
       Logger.info(
-        `Tokens transferred to ${toAddress} | Transaction Hash: ${transactionResponse.hash}`
+        `Transferring from Escrow to Uphold ${token} card ${to} | Transaction Hash: ${res.hash}`
       );
-      await transactionResponse.wait();
+      await res.wait();
+      Logger.info(
+        `Tokens transferred from escrow to Uphold ${token} card ${to} | Transaction Hash: ${res.hash}`
+      );
+      return res;
     } catch (error) {
       Logger.error(`Failed to send tokens: ${error}`);
       throw error;

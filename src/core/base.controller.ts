@@ -6,7 +6,7 @@ interface RequestWithSchemaObject extends Request {
   [key: string]: any;
 }
 
-export class BaseController extends DatabaseWrapper<any> {
+export default class BaseController extends DatabaseWrapper<any> {
   constructor(public schema: PgTableWithColumns<any>) {
     super(schema);
   }

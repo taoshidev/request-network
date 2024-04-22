@@ -2,7 +2,7 @@ import express, { Express, Request, Response } from "express";
 import helmet from "helmet";
 import path from "path";
 import { services, wallets } from "./db/schema";
-import { BaseController } from "./core/base.controller";
+import BaseController from "./core/base.controller";
 import BaseRouter from "./core/base.router";
 import ConsumerCtrl from "./controller/consumer.controller";
 import ConsumerRoute from "./router/consumer.router";
@@ -11,10 +11,14 @@ import Logger from "./utils/logger";
 import UiRequest from "./auth/ui-request";
 import DynamicRouter from "./core/dynamic.router";
 import ConsumerRequest from "./auth/consumer-request";
-import { Blockchain } from "./service/blockchain";
+import BlockchainManager from "./service/blockchain.manager";
 import ServiceCron from "./core/cron";
 import Registration from "./core/registration";
 import UpholdConnector from "./service/uphold.connector";
+import TransactionManager from "./service/transaction.manager";
+import ServiceManager from "./service/service.manager";
+import { ServiceWithWalletDTO } from "./db/dto/service-wallet.dto";
+
 export default class App {
   public express: Express;
   private apiPrefix: string;
@@ -30,13 +34,17 @@ export default class App {
   }
 
   private async monitorBlockchainTransactions() {
-    // Run the monthly service cron every 30 days
+    // Run the monthly service cron 1st of every month
     new ServiceCron().run();
-    // Monitor pending transactions
-    new Blockchain().monitorPendingTransactions();
+    // Monitor pending transactions on USDC and USDT
+    new TransactionManager(
+      (await new ServiceManager()
+        .getSubscriptions({ inclusive: true })
+        .then((res) => res.data)) as ServiceWithWalletDTO[]
+    );
     // Authenticate with Uphold API service
     const uphold = await new UpholdConnector().authenticate();
-    // Create Uphold cards if they don't exist
+    // Create Uphold cards if not exists
     ["TAO", "USDC", "USDT"].forEach(
       async (currency) =>
         await uphold.checkCardExistsOrCreate(await uphold.getCards(), currency)
@@ -82,7 +90,7 @@ export default class App {
           .json({ error: "Missing Validator private wallet key." });
       }
 
-      const { privateKey, address } = Blockchain.createEscrowWallet();
+      const { privateKey, address } = BlockchainManager.createEscrowWallet();
       Logger.info(JSON.stringify({ privateKey, address }));
       res.json({ privateKey, address });
     });

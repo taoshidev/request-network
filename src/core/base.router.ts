@@ -1,14 +1,13 @@
-import { Router, Request, Response, NextFunction } from "express";
+import {
+  Router,
+  Request,
+  Response,
+  NextFunction,
+} from "express";
 
 type RouteHandler = (req: Request, res: Response, next: NextFunction) => void;
 
-type RequestInterceptor = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => void;
-
-import { BaseController } from "./base.controller.js";
+import BaseController from "./base.controller.js";
 import { PgTableWithColumns } from "drizzle-orm/pg-core";
 
 export default class BaseRouter {
@@ -17,7 +16,7 @@ export default class BaseRouter {
   constructor(
     protected schema: PgTableWithColumns<any>,
     protected ctrl: BaseController,
-    private requestInterceptor?: RequestInterceptor
+    private requestInterceptor?: RouteHandler
   ) {
     this.router = Router();
   }
