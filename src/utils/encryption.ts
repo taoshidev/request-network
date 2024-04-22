@@ -51,10 +51,6 @@ export default class Encryption {
 
   static generateTestKeys() {
     const key = crypto.randomBytes(32);
-    console.log("TEST ENCRYPTION_KEY=", key.toString("base64"));
     const iv = crypto.randomBytes(16);
-    console.log("TEST IV_STRING=", iv.toString("base64"));
   }
 }
-
-process.env.NODE_ENV === "development" && Encryption.generateTestKeys();

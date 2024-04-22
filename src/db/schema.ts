@@ -23,6 +23,7 @@ export const services = authSchema.table("services", {
   name: varchar("name"),
   consumerKeyId: varchar("consumer_key_id", { length: 255 }),
   consumerApiUrl: varchar("consumer_api_url"),
+  price: varchar("price"),
   hotkey: varchar("hotkey", { length: 255 }),
   meta: jsonb("meta"),
   active: boolean("active").default(false).notNull(),

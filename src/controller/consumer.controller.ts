@@ -46,7 +46,7 @@ export default class ConsumerCtrl extends BaseController {
 
       // Attempt to create an escrow wallet using the blockchain service
       const escrowWallet =
-        Blockchain.createEscrowWallet(validatorPrivateKey);
+        Blockchain.createEscrowWallet();
       // If successful, store the keys into the database wallets table
       const { error: walletError } = await this.wallet.create({
         serviceId: data?.[0].id,
