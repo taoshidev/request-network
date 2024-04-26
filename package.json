@@ -7,12 +7,12 @@
   "keywords": [],
   "author": "nod",
   "scripts": {
+    "test": "jest",
     "start": "cross-env node -r tsconfig-paths/register dist/index.js",
     "start:migrate": "cross-env MIGRATE=true pnpm build && nodemon -r tsconfig-paths/register dist/index.js",
     "dev": "pnpm build && nodemon - exec 'ts-node' src/app.ts",
-    "build": "rm -rf dist && tsc && cp -R src/views dist/views && cp -R src/public dist/public",
+    "build": "rm -rf dist && tsc && cp -R src/views dist/views && cp -R src/public dist/public && pnpm db:push",
     "deploy:staging": "pnpm build && eb deploy reqnet-staging --profile taoshi",
-    "test": "jest",
     "db:generate": "drizzle-kit generate:pg",
     "introspect:pg": "drizzle-kit introspect:pg",
     "db:push": "drizzle-kit push:pg --config=drizzle.config.ts"
@@ -42,6 +42,7 @@
     "@types/supertest": "^6.0.2"
   },
   "devDependencies": {
+    "drizzle-kit": "^0.20.14",
     "jest": "^29.7.0",
     "morgan": "^1.10.0",
     "nodemon": "^3.1.0",
