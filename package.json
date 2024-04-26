@@ -37,8 +37,6 @@
     "morgan": "^1.10.0",
     "nodemon": "^3.1.0",
     "supertest": "^6.3.4",
-    "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.4.3"
   },
   "dependencies": {
@@ -49,6 +47,8 @@
     "ethers": "^6.11.1",
     "node-cron": "^3.0.3",
     "postgres": "^3.4.4",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "winston": "^3.13.0"
   }
 }
