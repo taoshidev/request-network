@@ -148,7 +148,7 @@ export default class App {
   }
 
   public listen(): void {
-    const port: number | string = process.env.API_PORT || 3000;
+    const port: number | string = process.env.API_PORT || 8080;
     this.express.listen(port, () => {
       Logger.info(`Server running at ${process.env.API_HOST}`);
     });

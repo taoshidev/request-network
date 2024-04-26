@@ -124,7 +124,7 @@ export default class TransactionManager {
   }
 
   monitorAllWallets(): void {
-    this.services.forEach((service) => {
+    this.services?.forEach((service) => {
       this.monitorTransfers(service);
     });
   }
