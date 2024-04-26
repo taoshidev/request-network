@@ -28,7 +28,6 @@
     "@types/winston": "^2.4.4",
     "axios": "^1.6.8",
     "cors": "^2.8.5",
-    "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
     "drizzle-kit": "^0.20.14",
     "express": "^4.19.2",
@@ -44,6 +43,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.40.0",
+    "cross-env": "^7.0.3",
     "drizzle-orm": "^0.30.6",
     "ejs": "^3.1.10",
     "ethers": "^6.11.1",
