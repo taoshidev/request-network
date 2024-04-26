@@ -7,10 +7,11 @@
   "keywords": [],
   "author": "nod",
   "scripts": {
-    "start": "node -r tsconfig-paths/register dist/index.js",
+    "start": "cross-env node -r tsconfig-paths/register dist/index.js",
     "start:migrate": "cross-env MIGRATE=true pnpm build && nodemon -r tsconfig-paths/register dist/index.js",
     "dev": "pnpm build && nodemon - exec 'ts-node' src/app.ts",
     "build": "rm -rf dist && tsc && cp -R src/views dist/views && cp -R src/public dist/public",
+    "deploy:staging": "pnpm build && eb deploy reqnet-staging --profile taoshi",
     "test": "jest",
     "db:generate": "drizzle-kit generate:pg",
     "introspect:pg": "drizzle-kit introspect:pg",
