@@ -101,6 +101,11 @@ export default class App {
       new DynamicRouter(ConsumerRequest.interceptor).mount()
     );
 
+    this.express.use((req, res, next) => {
+      res.setHeader('Origin-Agent-Cluster', '?1');
+      next();
+    });
+
     // TODO: for development only
     this.printRoutes(this.express._router);
   }
