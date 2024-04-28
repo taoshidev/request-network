@@ -52,15 +52,15 @@ export default class App {
   }
 
   private async initializeMiddlewares(): Promise<void> {
-    this.express.use(helmet());
+    // this.express.use(helmet());
     this.express.use(express.json());
     this.express.use(express.urlencoded({ extended: false }));
   }
 
   private initializeStaticRoutes(): void {
-    this.express.use(express.static(path.join(__dirname, "/public")));
+    this.express.use(express.static(path.join(__dirname, "public")));
     this.express.set("view engine", "ejs");
-    this.express.set("views", path.join(__dirname, "/views"));
+    this.express.set("views", path.join(__dirname, "views"));
     this.express.get("/", (req, res) => {
       res.setHeader('Origin-Agent-Cluster', '?1');
       res.render("index", { uiAppUrl: process.env.REQUEST_NETWORK_UI_URL });

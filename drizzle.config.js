@@ -9,6 +9,7 @@ export default {
   out: "./src/db/migrations",
   driver: "pg",
   dbCredentials: {
-    connectionString: process.env.DATABASE_URL,
+    connectionString: process.env.DATABASE_URL + "?sslmode=require",
+    rejectUnauthorized: process.env.NODE_ENV === "production",
   },
 };
