@@ -52,7 +52,7 @@ export default class App {
   }
 
   private async initializeMiddlewares(): Promise<void> {
-    // this.express.use(helmet());
+    this.express.use(helmet());
     this.express.use(express.json());
     this.express.use(express.urlencoded({ extended: false }));
   }
