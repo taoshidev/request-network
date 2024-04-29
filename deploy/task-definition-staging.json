@@ -1,0 +1,117 @@
+{
+  "family": "request-network-task",
+  "networkMode": "awsvpc",
+  "executionRoleArn": "arn:aws:iam::533267243769:role/ecs_assume_role",
+  "containerDefinitions": [
+    {
+      "name": "request-network",
+      "cpu": 256,
+      "memory": 512,
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "hostPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "NODE_ENV",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-NODE_ENV"
+        },
+        {
+          "name": "API_HOST",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-API_HOST"
+        },
+        {
+          "name": "API_PORT",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-API_PORT"
+        },
+        {
+          "name": "API_PREFIX",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-API_PREFIX"
+        },
+        {
+          "name": "REQUEST_NETWORK_UI_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-REQUEST_NETWORK_UI_URL"
+        },
+        {
+          "name": "VALIDATOR_OUTPUT_SERVER_API_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-VALIDATOR_OUTPUT_SERVER_API_URL"
+        },
+        {
+          "name": "UNKEY_VERIFY_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-UNKEY_VERIFY_URL"
+        },
+        {
+          "name": "TAOSHI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-TAOSHI_API_KEY"
+        },
+        {
+          "name": "TAOSHI_VALIDATOR_API_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-TAOSHI_VALIDATOR_API_SECRET"
+        },
+        {
+          "name": "VALIDATOR_WALLET_PRIVATE_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-VALIDATOR_WALLET_PRIVATE_KEY"
+        },
+        {
+          "name": "UPHOLD_CLIENT_ID",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-UPHOLD_CLIENT_ID"
+        },
+        {
+          "name": "UPHOLD_CLIENT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-UPHOLD_CLIENT_SECRET"
+        },
+        {
+          "name": "ENCRYPTION_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-ENCRYPTION_KEY"
+        },
+        {
+          "name": "IV_STRING",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-IV_STRING"
+        },
+        {
+          "name": "INFURA_PROJECT_ID",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-INFURA_PROJECT_ID"
+        },
+        {
+          "name": "POSTGRES_HOST",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-POSTGRES_HOST"
+        },
+        {
+          "name": "POSTGRES_DB",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-POSTGRES_DB"
+        },
+        {
+          "name": "POSTGRES_PORT",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-POSTGRES_PORT"
+        },
+        {
+          "name": "POSTGRES_USER",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-POSTGRES_USER"
+        },
+        {
+          "name": "POSTGRES_PASSWORD",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-POSTGRES_PASSWORD"
+        },
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-DATABASE_URL"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/request-network-app",
+          "awslogs-region": "us-west-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024"
+}
