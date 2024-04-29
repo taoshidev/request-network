@@ -15,6 +15,8 @@ COPY . .
 
 RUN pnpm build
 
+RUN ls -al ./dist
+
 RUN chmod +x ./start.sh
 
 EXPOSE 8080
