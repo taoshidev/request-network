@@ -35,7 +35,7 @@ jobs:
       id: task-def-update
       uses: aws-actions/amazon-ecs-render-task-definition@v1
       with:
-        input: deploy/task-definition-staging.json
+        task-definition: deploy/task-definition-staging.json
         container-name: request-network
         image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
 
