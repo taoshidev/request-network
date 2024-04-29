@@ -15,96 +15,90 @@
           "protocol": "tcp"
         }
       ],
-      "environment": [
-        {
-          "name": "SECRET_MANAGER_ARN",
-          "value": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd"
-        }
-      ],
       "secrets": [
         {
           "name": "NODE_ENV",
-          "valueFrom": "${SECRET_MANAGER_ARN}-NODE_ENV"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-NODE_ENV"
         },
         {
           "name": "API_HOST",
-          "valueFrom": "${SECRET_MANAGER_ARN}-API_HOST"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-API_HOST"
         },
         {
           "name": "API_PORT",
-          "valueFrom": "${SECRET_MANAGER_ARN}-API_PORT"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-API_PORT"
         },
         {
           "name": "API_PREFIX",
-          "valueFrom": "${SECRET_MANAGER_ARN}-API_PREFIX"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-API_PREFIX"
         },
         {
           "name": "REQUEST_NETWORK_UI_URL",
-          "valueFrom": "${SECRET_MANAGER_ARN}-REQUEST_NETWORK_UI_URL"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-REQUEST_NETWORK_UI_URL"
         },
         {
           "name": "VALIDATOR_OUTPUT_SERVER_API_URL",
-          "valueFrom": "${SECRET_MANAGER_ARN}-VALIDATOR_OUTPUT_SERVER_API_URL"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-VALIDATOR_OUTPUT_SERVER_API_URL"
         },
         {
           "name": "UNKEY_VERIFY_URL",
-          "valueFrom": "${SECRET_MANAGER_ARN}-5HnRrd-UNKEY_VERIFY_URL"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-UNKEY_VERIFY_URL"
         },
         {
           "name": "TAOSHI_API_KEY",
-          "valueFrom": "${SECRET_MANAGER_ARN}-5HnRrd-TAOSHI_API_KEY"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-TAOSHI_API_KEY"
         },
         {
           "name": "TAOSHI_VALIDATOR_API_SECRET",
-          "valueFrom": "${SECRET_MANAGER_ARN}-TAOSHI_VALIDATOR_API_SECRET"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-TAOSHI_VALIDATOR_API_SECRET"
         },
         {
           "name": "VALIDATOR_WALLET_PRIVATE_KEY",
-          "valueFrom": "${SECRET_MANAGER_ARN}-VALIDATOR_WALLET_PRIVATE_KEY"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-VALIDATOR_WALLET_PRIVATE_KEY"
         },
         {
           "name": "UPHOLD_CLIENT_ID",
-          "valueFrom": "${SECRET_MANAGER_ARN}-UPHOLD_CLIENT_ID"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-UPHOLD_CLIENT_ID"
         },
         {
           "name": "UPHOLD_CLIENT_SECRET",
-          "valueFrom": "${SECRET_MANAGER_ARN}-UPHOLD_CLIENT_SECRET"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-UPHOLD_CLIENT_SECRET"
         },
         {
           "name": "ENCRYPTION_KEY",
-          "valueFrom": "${SECRET_MANAGER_ARN}-ENCRYPTION_KEY"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-ENCRYPTION_KEY"
         },
         {
           "name": "IV_STRING",
-          "valueFrom": "${SECRET_MANAGER_ARN}-IV_STRING"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-IV_STRING"
         },
         {
           "name": "INFURA_PROJECT_ID",
-          "valueFrom": "${SECRET_MANAGER_ARN}-INFURA_PROJECT_ID"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-INFURA_PROJECT_ID"
         },
         {
           "name": "POSTGRES_HOST",
-          "valueFrom": "${SECRET_MANAGER_ARN}-POSTGRES_HOST"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-POSTGRES_HOST"
         },
         {
           "name": "POSTGRES_DB",
-          "valueFrom": "${SECRET_MANAGER_ARN}-POSTGRES_DB"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-POSTGRES_DB"
         },
         {
           "name": "POSTGRES_PORT",
-          "valueFrom": "${SECRET_MANAGER_ARN}-POSTGRES_PORT"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-POSTGRES_PORT"
         },
         {
           "name": "POSTGRES_USER",
-          "valueFrom": "${SECRET_MANAGER_ARN}-POSTGRES_USER"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-POSTGRES_USER"
         },
         {
           "name": "POSTGRES_PASSWORD",
-          "valueFrom": "${SECRET_MANAGER_ARN}-POSTGRES_PASSWORD"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-POSTGRES_PASSWORD"
         },
         {
           "name": "DATABASE_URL",
-          "valueFrom": "${SECRET_MANAGER_ARN}-DATABASE_URL"
+          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-DATABASE_URL"
         }
       ],
       "logConfiguration": {
