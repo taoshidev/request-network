@@ -13,6 +13,8 @@ RUN npm install -g pnpm && pnpm install
 
 COPY . .
 
+RUN pnpm build
+
 RUN chmod +x ./start.sh
 
 EXPOSE 8080
