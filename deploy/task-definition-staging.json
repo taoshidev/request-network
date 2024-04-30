@@ -15,92 +15,13 @@
           "protocol": "tcp"
         }
       ],
-      "secrets": [
+      "environmentFiles": [
         {
-          "name": "NODE_ENV",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-NODE_ENV"
-        },
-        {
-          "name": "API_HOST",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-API_HOST"
-        },
-        {
-          "name": "API_PORT",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-API_PORT"
-        },
-        {
-          "name": "API_PREFIX",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-API_PREFIX"
-        },
-        {
-          "name": "REQUEST_NETWORK_UI_URL",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-REQUEST_NETWORK_UI_URL"
-        },
-        {
-          "name": "VALIDATOR_OUTPUT_SERVER_API_URL",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-VALIDATOR_OUTPUT_SERVER_API_URL"
-        },
-        {
-          "name": "UNKEY_VERIFY_URL",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-UNKEY_VERIFY_URL"
-        },
-        {
-          "name": "TAOSHI_API_KEY",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-TAOSHI_API_KEY"
-        },
-        {
-          "name": "TAOSHI_VALIDATOR_API_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-TAOSHI_VALIDATOR_API_SECRET"
-        },
-        {
-          "name": "VALIDATOR_WALLET_PRIVATE_KEY",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-VALIDATOR_WALLET_PRIVATE_KEY"
-        },
-        {
-          "name": "UPHOLD_CLIENT_ID",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-UPHOLD_CLIENT_ID"
-        },
-        {
-          "name": "UPHOLD_CLIENT_SECRET",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-UPHOLD_CLIENT_SECRET"
-        },
-        {
-          "name": "ENCRYPTION_KEY",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-ENCRYPTION_KEY"
-        },
-        {
-          "name": "IV_STRING",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-IV_STRING"
-        },
-        {
-          "name": "INFURA_PROJECT_ID",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-INFURA_PROJECT_ID"
-        },
-        {
-          "name": "POSTGRES_HOST",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-POSTGRES_HOST"
-        },
-        {
-          "name": "POSTGRES_DB",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-POSTGRES_DB"
-        },
-        {
-          "name": "POSTGRES_PORT",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-POSTGRES_PORT"
-        },
-        {
-          "name": "POSTGRES_USER",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-POSTGRES_USER"
-        },
-        {
-          "name": "POSTGRES_PASSWORD",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-POSTGRES_PASSWORD"
-        },
-        {
-          "name": "DATABASE_URL",
-          "valueFrom": "arn:aws:secretsmanager:us-west-1:533267243769:secret:reqnet-staging-env-5HnRrd-DATABASE_URL"
+          "value": "arn:aws:s3:::reqnet/files/staging.env",
+          "type": "s3"
         }
       ],
+
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
