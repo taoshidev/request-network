@@ -7,11 +7,14 @@ const app = new App();
 
 (async () => {
   try {
-    if (process.env.DATABASE_URL && process.env.MIGRATE === "true") {
-      const databaseMigrator = new DatabaseMigrator(process.env.DATABASE_URL!);
-      await databaseMigrator.migrate();
-    }
-    app.init().listen();
+    app.init(async (app: App) => {
+      if (process.env.DATABASE_URL && process.env.MIGRATE === "true") {
+        const databaseMigrator = new DatabaseMigrator(
+          process.env.DATABASE_URL!
+        );
+        await databaseMigrator.migrate();
+      }
+    });
   } catch (error) {
     console.error(`Error starting server: ${(error as Error)?.message}`);
   }
