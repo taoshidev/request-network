@@ -1,6 +1,6 @@
 import * as dotenv from "dotenv";
+
 dotenv.config({ path: ".env" });
-import Logger from "@/utils/logger";
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL environment variable is required.");
@@ -11,7 +11,6 @@ export default {
   out: "./src/db/migrations",
   driver: "pg",
   dbCredentials: {
-    connectionString: process.env.DATABASE_URL + "?sslmode=require",
-    rejectUnauthorized: process.env.NODE_ENV === "production",
+    connectionString: process.env.DATABASE_URL
   },
 };

@@ -26,11 +26,6 @@ export default class App {
   constructor() {
     this.express = express();
     this.apiPrefix = process.env.API_PREFIX || "/api/v1";
-    this.initializeMiddlewares();
-    this.initializeStaticRoutes();
-    this.initializeRoutes();
-    this.initializeErrorHandling();
-    this.monitorBlockchainTransactions();
   }
 
   private async monitorBlockchainTransactions() {
@@ -142,18 +137,22 @@ export default class App {
     });
   }
 
-  public init(): App {
+  public init(cb?: (app: App) => void): App {
     Logger.info("Initializing app config...");
     if (process.env.NODE_ENV === "development")
       Logger.info("App ENV Config: " + JSON.stringify(process.env, null, 2));
-    Registration.registerWithUI();
-    return this;
-  }
-
-  public listen(): void {
     const port: number | string = process.env.API_PORT || 8080;
     this.express.listen(port, () => {
       Logger.info(`Server running at ${process.env.API_HOST}`);
+      Registration.registerWithUI();
+      this.initializeMiddlewares();
+      this.initializeStaticRoutes();
+      this.initializeRoutes();
+      this.initializeErrorHandling();
+      this.monitorBlockchainTransactions();
+      cb?.(this);
     });
+
+    return this;
   }
 }

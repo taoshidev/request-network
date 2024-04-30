@@ -1,5 +1,3 @@
-
-
 Prerequisites
 Before you get started, make sure you have the following installed on your system:
 
@@ -8,7 +6,6 @@ npm (version 8.x or higher) or Yarn (version 1.22.x or higher)
 Docker Desktop 4.25.2 (129061). (for running services in containers)
 Git (for version control)
 NVM v0.38.0
-
 
 # Project Setup Guide
 
@@ -26,9 +23,9 @@ Before you get started, make sure you have the following installed on your syste
 
 ## Installation Steps
 
-1. **Clone the Repository**
+1. **Fork and clone the Repository**
 
-   Start by cloning the project repository to your local machine:
+   Start by forking and then cloning the project repository to your local machine:
 
    ```bash
    git clone https://github.com/taoshidev/request-network.git
@@ -76,17 +73,16 @@ Before you get started, make sure you have the following installed on your syste
    # or
    yarn db:push
    ```
-   
+
    When spinning up the project, the server will run db:push on for you. When there's database schema change run:
 
-    ```bash
+   ```bash
    pnpm db:generate
    pnpm db:push
    # or
    yarn db:generate
    pnpm db:push
    ```
-
 
 6. **Start the Application**
 
@@ -99,7 +95,6 @@ Before you get started, make sure you have the following installed on your syste
    ```
 
    To run the server on development mode:
-
 
    ```bash
    pnpm dev
@@ -138,7 +133,7 @@ Before you get started, make sure you have the following installed on your syste
   To create a production build, run:
 
   ```bash
-  pnpm run build
+  pnpm build
   # or
   yarn build
   ```
