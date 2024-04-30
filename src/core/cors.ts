@@ -104,11 +104,7 @@ export default class Cors {
         };
         return cors(corsOptions)(req, res, next);
       }
-      Logger.info(`Origin not allowed: ${origin}`);
       return res.status(403).json({ error: "Not allowed" });
     };
   }
 }
-
-// Initialize the CORS whitelist refresh cycle
-Cors.init();

@@ -54,9 +54,13 @@ export default class Registration {
   private static handleError(error: AxiosError | unknown): void {
     if (axios.isAxiosError(error)) {
       if (error.code === "ECONNREFUSED") {
-        Logger.error("Failed to register with UI app: Is the UI app running?");
+        Logger.error(
+          `Failed to register with UI app at ${process.env.REQUEST_NETWORK_UI_URL}: Is the UI app running?`
+        );
       } else {
-        Logger.error(`Failed to register with UI app: ${error.message}`);
+        Logger.error(
+          `Failed to register with UI app at ${process.env.REQUEST_NETWORK_UI_URL} Error: ${error.message}`
+        );
       }
     } else {
       Logger.error("An unexpected error occurred during registration.");

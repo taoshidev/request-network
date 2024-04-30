@@ -16,8 +16,6 @@ import ServiceCron from "./core/cron";
 import Registration from "./core/registration";
 import UpholdConnector from "./service/uphold.connector";
 import TransactionManager from "./service/transaction.manager";
-import ServiceManager from "./service/service.manager";
-import { ServiceWithWalletDTO } from "./db/dto/service-wallet.dto";
 
 export default class App {
   public express: Express;
@@ -32,11 +30,11 @@ export default class App {
     // Run the monthly service cron 1st of every month
     new ServiceCron().run();
     // Monitor pending transactions on USDC and USDT
-    new TransactionManager(
-      (await new ServiceManager()
-        .getSubscriptions({ inclusive: true })
-        .then((res) => res.data)) as ServiceWithWalletDTO[]
-    );
+    new TransactionManager().monitorAllWallets().catch((error) => {
+      Logger.error(
+        `Failed to initiate wallet monitoring:${JSON.stringify(error, null, 2)}`
+      );
+    });
     // Authenticate with Uphold API service
     const uphold = await new UpholdConnector().authenticate();
     // Create Uphold cards if not exists
@@ -144,6 +142,7 @@ export default class App {
     const port: number | string = process.env.API_PORT || 8080;
     this.express.listen(port, () => {
       Logger.info(`Server running at ${process.env.API_HOST}`);
+      Cors.init();
       Registration.registerWithUI();
       this.initializeMiddlewares();
       this.initializeStaticRoutes();
