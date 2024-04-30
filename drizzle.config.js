@@ -5,8 +5,6 @@ import Logger from "@/utils/logger";
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL environment variable is required.");
 }
-if (process.env.NODE_ENV === "development")
-  Logger.info("App ENV Config: " + JSON.stringify(process.env, null, 2));
 
 export default {
   schema: "./src/db/schema.ts",

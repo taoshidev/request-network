@@ -62,7 +62,7 @@ export default class App {
     this.express.set("view engine", "ejs");
     this.express.set("views", path.join(__dirname, "views"));
     this.express.get("/", (req, res) => {
-      res.setHeader('Origin-Agent-Cluster', '?1');
+      res.setHeader("Origin-Agent-Cluster", "?1");
       res.render("index", { uiAppUrl: process.env.REQUEST_NETWORK_UI_URL });
     });
   }
@@ -144,6 +144,8 @@ export default class App {
 
   public init(): App {
     Logger.info("Initializing app config...");
+    if (process.env.NODE_ENV === "development")
+      Logger.info("App ENV Config: " + JSON.stringify(process.env, null, 2));
     Registration.registerWithUI();
     return this;
   }
