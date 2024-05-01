@@ -10,8 +10,8 @@
     "module": "commonjs",
     "baseUrl": ".",
     "declaration": true,
-    "rootDir": ".",
-    "outDir": "./dist",
+    "rootDir": "src",
+    "outDir": "dist",
     "noEmit": false,
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,
@@ -25,7 +25,7 @@
     "noImplicitAny": true,
     "resolveJsonModule": true
   },
-  "include": ["src/**/*.ts", "drizzle.config.ts"],
+  "include": ["src/**/*"],
   "typeRoots": ["./node_modules/@types"],
   "exclude": [
     "dist",
