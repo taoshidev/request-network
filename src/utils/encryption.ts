@@ -1,8 +1,4 @@
 import crypto from "crypto";
-import * as dotenv from "dotenv";
-
-dotenv.config({ path: ".env" });
-
 
 /**
  * Encryption class provides utility functions to encrypt and decrypt data securely using AES-256-CBC algorithm.

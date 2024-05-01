@@ -23,6 +23,9 @@ jobs:
         role-session-name: GitHubActionRunner
         aws-region: ${{ secrets.AWS_REGION }}
 
+    - name: Copy .env.staging to S3
+      run: aws s3 cp .env.staging s3://reqnet/files/.env.staging
+
     - name: Login to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v1
 

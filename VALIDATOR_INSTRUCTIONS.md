@@ -203,7 +203,7 @@ docker build . -t request-network:v1.0.0
 Test the build
 
 ```
-docker run -p 8080:8080 --env-file staging.env -d request-network:v1.0.0
+docker run -p 8080:8080 --env-file .env.staging -d request-network:v1.0.0
 ```
 
 Stop the app

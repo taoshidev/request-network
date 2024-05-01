@@ -24,7 +24,7 @@ export default class BlockchainManager {
     };
 
     const network =
-      process.env.NODE_ENV === "development" ? "sepolia" : "mainnet";
+      process.env.NODE_ENV !== "production" ? "sepolia" : "mainnet";
     const httpURL = `https://${network}.infura.io/v3/${process.env.INFURA_PROJECT_ID}`;
 
     this.httpProvider = new ethers.JsonRpcProvider(

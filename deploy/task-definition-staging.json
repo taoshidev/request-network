@@ -17,7 +17,7 @@
       ],
       "environmentFiles": [
         {
-          "value": "arn:aws:s3:::reqnet/files/staging.env",
+          "value": "arn:aws:s3:::reqnet/files/.env.staging",
           "type": "s3"
         }
       ],

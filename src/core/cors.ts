@@ -40,7 +40,7 @@ export default class Cors {
     await this.refreshWhitelist();
     this.intervalId = setInterval(
       this.refreshWhitelist.bind(this),
-      process.env.NODE_ENV === "development" ? 60 * 1000 : 60 * 60 * 1000
+      process.env.NODE_ENV !== "production" ? 60 * 1000 : 60 * 60 * 1000
     );
   }
 

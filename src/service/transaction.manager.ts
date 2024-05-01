@@ -31,7 +31,7 @@ export const TOKENS: Record<string, TokenConfig> = {
   USDC: {
     decimals: 6,
     address:
-      process.env.NODE_ENV === "development"
+      process.env.NODE_ENV !== "production"
         ? ADDRESSES.development.USDC
         : ADDRESSES.production.USDC,
     abi: [
@@ -42,7 +42,7 @@ export const TOKENS: Record<string, TokenConfig> = {
   USDT: {
     decimals: 6,
     address:
-      process.env.NODE_ENV === "development"
+      process.env.NODE_ENV !== "production"
         ? ADDRESSES.development.USDT
         : ADDRESSES.production.USDT,
     abi: [
@@ -76,7 +76,7 @@ export default class TransactionManager {
    */
   initializeWebSocketProvider(): ethers.WebSocketProvider {
     const network =
-      process.env.NODE_ENV === "development" ? "sepolia" : "mainnet";
+      process.env.NODE_ENV !== "production" ? "sepolia" : "mainnet";
     const wsURL = `wss://${network}.infura.io/ws/v3/${process.env.INFURA_PROJECT_ID}`;
     const provider = new ethers.WebSocketProvider(wsURL);
 

@@ -106,7 +106,7 @@ export default class App {
 
     this.express.use(
       (err: any, req: Request, res: Response, next: Function) => {
-        process.env.NODE_ENV === "development" && Logger.error(err.stack);
+        process.env.NODE_ENV !== "production" && Logger.error(err.stack);
         const statusCode = err.statusCode || 500;
         const errorMessage = err.message || "Internal Server Error";
         return res.status(statusCode).json({ error: errorMessage });
@@ -137,7 +137,7 @@ export default class App {
 
   public init(cb?: (app: App) => void): App {
     Logger.info("Initializing app config...");
-    if (process.env.NODE_ENV === "development")
+    if (process.env.NODE_ENV !== "production")
       Logger.info("App ENV Config: " + JSON.stringify(process.env, null, 2));
     const port: number | string = process.env.API_PORT || 8080;
     this.express.listen(port, () => {

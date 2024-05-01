@@ -44,7 +44,7 @@ export default class UpholdConnector {
     this.blockchain = new BlockchainManager();
     this.client = axios.create({
       baseURL:
-        process.env.NODE_ENV === "development"
+        process.env.NODE_ENV !== "production"
           ? "https://api-sandbox.uphold.com"
           : "https://api.uphold.com",
       headers: {
