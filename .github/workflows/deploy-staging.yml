@@ -31,17 +31,32 @@ jobs:
         docker build -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }} .
         docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
 
-    - name: Fill in the new image ID in the ECS task definition
-      id: task-def-update
+    - name: Update Task Definition for App
+      id: task-def-app-update
       uses: aws-actions/amazon-ecs-render-task-definition@v1
       with:
-        task-definition: deploy/task-definition-staging.json
+        task-definition: deploy/task-definition-staging-app.json
         container-name: request-network
         image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
 
-    - name: Deploy to Amazon ECS
+    - name: Update Task Definition for Cron
+      id: task-def-cron-update
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: deploy/task-definition-staging-cron.json
+        container-name: request-network
+        image: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
+
+    - name: Deploy App to Amazon ECS
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
-        service: ${{ secrets.SERVICE_NAME }}
+        service: ${{ secrets.SERVICE_NAME_APP }}
         cluster: ${{ secrets.CLUSTER_NAME }}
-        task-definition: ${{ steps.task-def-update.outputs.task-definition }}
+        task-definition: ${{ steps.task-def-app-update.outputs.task-definition }}
+
+    - name: Deploy Cron to Amazon ECS
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        service: ${{ secrets.SERVICE_NAME_CRON }}
+        cluster: ${{ secrets.CLUSTER_NAME }}
+        task-definition: ${{ steps.task-def-cron-update.outputs.task-definition }}

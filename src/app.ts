@@ -35,6 +35,9 @@ export default class App {
         `Failed to initiate wallet monitoring:${JSON.stringify(error, null, 2)}`
       );
     });
+  }
+
+  private async initializeUpholdConnector(): Promise<void> {
     // Authenticate with Uphold API service
     const uphold = await new UpholdConnector().authenticate();
     // Create Uphold cards if not exists
@@ -141,14 +144,21 @@ export default class App {
       Logger.info("App ENV Config: " + JSON.stringify(process.env, null, 2));
     const port: number | string = process.env.API_PORT || 8080;
     this.express.listen(port, () => {
-      Logger.info(`Server running at ${process.env.API_HOST}`);
+      Logger.info(
+        `Server running at ${process.env.API_HOST}... Server Role: ${
+          process.env.ROLE || "validator"
+        }`
+      );
       Cors.init();
       Registration.registerWithUI();
       this.initializeMiddlewares();
       this.initializeStaticRoutes();
       this.initializeRoutes();
       this.initializeErrorHandling();
-      this.monitorBlockchainTransactions();
+      if (process.env.ROLE === "cron_handler") {
+        this.monitorBlockchainTransactions();
+      }
+      this.initializeUpholdConnector();
       cb?.(this);
     });
 
