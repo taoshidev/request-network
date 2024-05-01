@@ -63,6 +63,12 @@ export default class App {
     });
   }
 
+  private initializeHealthCheck(): void {
+    this.express.get("/health", (req: Request, res: Response) => {
+      res.status(200).json({ status: "ok", timestamp: new Date() });
+    });
+  }
+
   private initializeRoutes(): void {
     this.express.use(Cors.getDynamicCorsMiddleware());
     // Setup consumer routes
@@ -135,23 +141,30 @@ export default class App {
     Logger.info("Initializing app config...");
     if (process.env.NODE_ENV !== "production")
       Logger.info("App ENV Config: " + JSON.stringify(process.env, null, 2));
+
     const port: number | string = process.env.API_PORT || 8080;
+
     this.express.listen(port, () => {
       Logger.info(
         `Server running at ${process.env.API_HOST}... Server Role: ${
           process.env.ROLE || "validator"
         }`
       );
+
       Cors.init();
-      Registration.registerWithUI();
-      this.initializeMiddlewares();
-      this.initializeStaticRoutes();
-      this.initializeRoutes();
+      this.initializeHealthCheck();
       this.initializeErrorHandling();
+
       if (process.env.ROLE === "cron_handler") {
         this.monitorBlockchainTransactions();
+      } else {
+        this.initializeMiddlewares();
+        this.initializeStaticRoutes();
+        this.initializeRoutes();
+        this.initializeUpholdConnector();
+        Registration.registerWithUI();
       }
-      this.initializeUpholdConnector();
+
       cb?.(this);
     });
 
