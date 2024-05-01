@@ -1,0 +1,43 @@
+{
+  "family": "request-network-staging-app",
+  "networkMode": "awsvpc",
+  "executionRoleArn": "arn:aws:iam::533267243769:role/ecs_assume_role",
+  "containerDefinitions": [
+    {
+      "name": "request-network",
+      "cpu": 256,
+      "memory": 512,
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "hostPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "environmentFiles": [
+        {
+          "value": "arn:aws:s3:::reqnet/files/staging.env",
+          "type": "s3"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "staging"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/request-network-app",
+          "awslogs-region": "us-west-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024"
+}

@@ -16,8 +16,6 @@ import ServiceCron from "./core/cron";
 import Registration from "./core/registration";
 import UpholdConnector from "./service/uphold.connector";
 import TransactionManager from "./service/transaction.manager";
-import ServiceManager from "./service/service.manager";
-import { ServiceWithWalletDTO } from "./db/dto/service-wallet.dto";
 
 export default class App {
   public express: Express;
@@ -26,22 +24,20 @@ export default class App {
   constructor() {
     this.express = express();
     this.apiPrefix = process.env.API_PREFIX || "/api/v1";
-    this.initializeMiddlewares();
-    this.initializeStaticRoutes();
-    this.initializeRoutes();
-    this.initializeErrorHandling();
-    this.monitorBlockchainTransactions();
   }
 
   private async monitorBlockchainTransactions() {
     // Run the monthly service cron 1st of every month
     new ServiceCron().run();
     // Monitor pending transactions on USDC and USDT
-    new TransactionManager(
-      (await new ServiceManager()
-        .getSubscriptions({ inclusive: true })
-        .then((res) => res.data)) as ServiceWithWalletDTO[]
-    );
+    new TransactionManager().monitorAllWallets().catch((error) => {
+      Logger.error(
+        `Failed to initiate wallet monitoring:${JSON.stringify(error, null, 2)}`
+      );
+    });
+  }
+
+  private async initializeUpholdConnector(): Promise<void> {
     // Authenticate with Uphold API service
     const uphold = await new UpholdConnector().authenticate();
     // Create Uphold cards if not exists
@@ -62,6 +58,7 @@ export default class App {
     this.express.set("view engine", "ejs");
     this.express.set("views", path.join(__dirname, "views"));
     this.express.get("/", (req, res) => {
+      res.setHeader("Origin-Agent-Cluster", "?1");
       res.render("index", { uiAppUrl: process.env.REQUEST_NETWORK_UI_URL });
     });
   }
@@ -112,7 +109,7 @@ export default class App {
 
     this.express.use(
       (err: any, req: Request, res: Response, next: Function) => {
-        process.env.NODE_ENV === "development" && Logger.error(err.stack);
+        process.env.NODE_ENV !== "production" && Logger.error(err.stack);
         const statusCode = err.statusCode || 500;
         const errorMessage = err.message || "Internal Server Error";
         return res.status(statusCode).json({ error: errorMessage });
@@ -141,16 +138,30 @@ export default class App {
     });
   }
 
-  public init(): App {
+  public init(cb?: (app: App) => void): App {
     Logger.info("Initializing app config...");
-    Registration.registerWithUI();
-    return this;
-  }
-
-  public listen(): void {
-    const port: number | string = process.env.API_PORT || 3000;
+    if (process.env.NODE_ENV !== "production")
+      Logger.info("App ENV Config: " + JSON.stringify(process.env, null, 2));
+    const port: number | string = process.env.API_PORT || 8080;
     this.express.listen(port, () => {
-      Logger.info(`Server running at ${process.env.API_HOST}`);
+      Logger.info(
+        `Server running at ${process.env.API_HOST}... Server Role: ${
+          process.env.ROLE || "validator"
+        }`
+      );
+      Cors.init();
+      Registration.registerWithUI();
+      this.initializeMiddlewares();
+      this.initializeStaticRoutes();
+      this.initializeRoutes();
+      this.initializeErrorHandling();
+      if (process.env.ROLE === "cron_handler") {
+        this.monitorBlockchainTransactions();
+      }
+      this.initializeUpholdConnector();
+      cb?.(this);
     });
+
+    return this;
   }
 }

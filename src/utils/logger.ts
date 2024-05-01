@@ -25,7 +25,7 @@ winston.addColors(logLevels.colors);
 
 const level = () => {
   const env = process.env.NODE_ENV || "development";
-  const isDevelopment = env === "development";
+  const isDevelopment = env !== "production";
   return isDevelopment ? "debug" : "warn";
 };
 
@@ -89,7 +89,7 @@ export default class Logger {
   }
 
   static debug(msg: string) {
-    if (process.env.NODE_ENV === "development") {
+    if (process.env.NODE_ENV !== "production") {
       logger.debug(msg);
     }
   }

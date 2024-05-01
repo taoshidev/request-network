@@ -40,7 +40,7 @@ export default class Cors {
     await this.refreshWhitelist();
     this.intervalId = setInterval(
       this.refreshWhitelist.bind(this),
-      process.env.NODE_ENV === "development" ? 60 * 1000 : 60 * 60 * 1000
+      process.env.NODE_ENV !== "production" ? 60 * 1000 : 60 * 60 * 1000
     );
   }
 
@@ -104,11 +104,7 @@ export default class Cors {
         };
         return cors(corsOptions)(req, res, next);
       }
-      Logger.info(`Origin not allowed: ${origin}`);
       return res.status(403).json({ error: "Not allowed" });
     };
   }
 }
-
-// Initialize the CORS whitelist refresh cycle
-Cors.init();

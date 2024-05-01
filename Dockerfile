@@ -13,8 +13,12 @@ RUN npm install -g pnpm && pnpm install
 
 COPY . .
 
+RUN pnpm build
+
+RUN ls -al ./dist
+
 RUN chmod +x ./start.sh
 
 EXPOSE 8080
 
-CMD ["./start.sh"]
+CMD ["npm", "start"]

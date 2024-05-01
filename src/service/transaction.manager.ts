@@ -31,7 +31,7 @@ export const TOKENS: Record<string, TokenConfig> = {
   USDC: {
     decimals: 6,
     address:
-      process.env.NODE_ENV === "development"
+      process.env.NODE_ENV !== "production"
         ? ADDRESSES.development.USDC
         : ADDRESSES.production.USDC,
     abi: [
@@ -42,7 +42,7 @@ export const TOKENS: Record<string, TokenConfig> = {
   USDT: {
     decimals: 6,
     address:
-      process.env.NODE_ENV === "development"
+      process.env.NODE_ENV !== "production"
         ? ADDRESSES.development.USDT
         : ADDRESSES.production.USDT,
     abi: [
@@ -62,14 +62,12 @@ export default class TransactionManager {
   contracts: Record<string, ethers.Contract>;
   services: ServiceWithWalletDTO[] = [];
 
-  constructor(services: ServiceWithWalletDTO[]) {
+  constructor() {
     Logger.info("Initializing TransactionManager...");
     this.upholdConnector = new UpholdConnector();
     this.serviceManager = new ServiceManager();
-    this.services = services;
     this.provider = this.initializeWebSocketProvider();
     this.contracts = this.initializeContracts();
-    this.monitorAllWallets();
   }
 
   /**
@@ -78,7 +76,7 @@ export default class TransactionManager {
    */
   initializeWebSocketProvider(): ethers.WebSocketProvider {
     const network =
-      process.env.NODE_ENV === "development" ? "sepolia" : "mainnet";
+      process.env.NODE_ENV !== "production" ? "sepolia" : "mainnet";
     const wsURL = `wss://${network}.infura.io/ws/v3/${process.env.INFURA_PROJECT_ID}`;
     const provider = new ethers.WebSocketProvider(wsURL);
 
@@ -123,10 +121,20 @@ export default class TransactionManager {
     return contracts;
   }
 
-  monitorAllWallets(): void {
-    this.services.forEach((service) => {
-      this.monitorTransfers(service);
-    });
+  async monitorAllWallets(): Promise<void> {
+    try {
+      const services = await new ServiceManager()
+        .getSubscriptions({ inclusive: true })
+        .then((res) => res.data as ServiceWithWalletDTO[]);
+
+      services.forEach((service) => {
+        this.monitorTransfers(service);
+      });
+    } catch (error) {
+      Logger.error(
+        `Failed to monitor all wallets: JSON: ${JSON.stringify(error, null, 2)}`
+      );
+    }
   }
 
   /**
@@ -139,69 +147,78 @@ export default class TransactionManager {
     Object.keys(this.contracts).forEach((tokenKey) => {
       // Remove any previously set listeners to avoid duplicates
       this.contracts[tokenKey].removeAllListeners("Transfer");
-
       // Listen to Transfer events specific to the current wallet
       this.contracts[tokenKey].on(
         "Transfer",
         async (from: string, to: string, amount: bigint, event: any) => {
           // Log the transfer to and from escrow
-          if (from === publicKey) {
-            Logger.info(
-              `${tokenKey} Transferred | From: ${from} To: ${to} Amount: ${ethers.formatUnits(
-                amount,
-                6
-              )}`
-            );
-          }
-          if (to === publicKey) {
-            Logger.info(
-              `${tokenKey} Received | From: ${from} To: ${to} Amount into Escrow: ${ethers.formatUnits(
-                amount,
-                6
-              )} ${tokenKey}`
-            );
-
-            try {
-              const currentService = await this.serviceManager.getSubscription(
-                id as string
-              );
-              const { data: subscription } = currentService;
-
-              if (!subscription) return;
-
-              if (!subscription.active) {
-                const balance =
-                  await this.upholdConnector.checkSubscriptionBalance(
-                    subscription
-                  );
-
-                if (!balance) return;
-                const { sufficient, balance: newBalance } = balance;
-                Logger.info(
-                  `Funds Check for Service ID ${id}: ${
-                    sufficient ? "Sufficient" : "Insufficient"
-                  } Balance: ${newBalance}`
-                );
-
-                if (sufficient) {
-                  const res = await this.upholdConnector.handleFundsTransfer(
-                    subscription
-                  );
-
-                  if (res) {
-                    await this.serviceManager.changeStatus(id as string, true);
-                    Logger.info(`Service ID ${id} activated.`);
-                  }
-                }
-              }
-            } catch (error) {
-              Logger.error(
-                `Error handling funds transfer for Service ID ${id}: ${error}`
-              );
-            }
-          }
+          this.processTransferEvent(tokenKey, from, to, amount, service);
         }
       );
     });
+  }
+
+  async processTransferEvent(
+    tokenKey: string,
+    from: string,
+    to: string,
+    amount: bigint,
+    service: ServiceWithWalletDTO
+  ): Promise<void> {
+    const { publicKey, id } = service;
+    if (from === publicKey) {
+      Logger.info(
+        `${tokenKey} Transferred | From: ${from} To: ${to} Amount: ${ethers.formatUnits(
+          amount,
+          6
+        )}`
+      );
+    }
+    if (to === publicKey) {
+      Logger.info(
+        `${tokenKey} Received | From: ${from} To: ${to} Amount into Escrow: ${ethers.formatUnits(
+          amount,
+          6
+        )} ${tokenKey}`
+      );
+
+      try {
+        const currentService = await this.serviceManager.getSubscription(
+          id as string
+        );
+        const { data: subscription } = currentService;
+
+        if (!subscription) return;
+
+        if (!subscription.active) {
+          const balance = await this.upholdConnector.checkSubscriptionBalance(
+            subscription
+          );
+
+          if (!balance) return;
+          const { sufficient, balance: newBalance } = balance;
+          Logger.info(
+            `Funds Check for Service ID ${id}: ${
+              sufficient ? "Sufficient" : "Insufficient"
+            } Balance: ${newBalance}`
+          );
+
+          if (sufficient) {
+            const res = await this.upholdConnector.handleFundsTransfer(
+              subscription
+            );
+
+            if (res) {
+              await this.serviceManager.changeStatus(id as string, true);
+              Logger.info(`Service ID ${id} activated.`);
+            }
+          }
+        }
+      } catch (error) {
+        Logger.error(
+          `Error handling funds transfer for Service ID ${id}: ${error}`
+        );
+      }
+    }
   }
 }
