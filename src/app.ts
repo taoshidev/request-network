@@ -139,6 +139,7 @@ export default class App {
 
   public init(cb?: (app: App) => void): App {
     Logger.info("Initializing app config...");
+
     if (process.env.NODE_ENV !== "production")
       Logger.info("App ENV Config: " + JSON.stringify(process.env, null, 2));
 
