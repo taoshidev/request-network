@@ -1,5 +1,5 @@
 {
-  "family": "request-network-task",
+  "family": "request-network-staging-app",
   "networkMode": "awsvpc",
   "executionRoleArn": "arn:aws:iam::533267243769:role/ecs_assume_role",
   "containerDefinitions": [
@@ -21,7 +21,12 @@
           "type": "s3"
         }
       ],
-
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "staging"
+        }
+      ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
