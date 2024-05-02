@@ -65,15 +65,16 @@ export default class App {
 
   private initializeHealthCheck(): void {
     this.express.get("/health", (req: Request, res: Response) => {
-      res.status(200).json({ status: "ok", timestamp: new Date() });
+      res.status(200).json({
+        uptime: process.uptime(),
+        message: "Ok",
+        date: new Date(),
+      });
     });
   }
 
   private initializeRoutes(): void {
     this.express.use(Cors.getDynamicCorsMiddleware());
-    // Setup consumer routes
-    // TODO: Might be deprecated in favor of dynamic routing
-    // this.express.use(new ConsumerRoute(new ConsumerCtrl()).routes());
 
     // Loop through all the schema and mount their routes
     [services, wallets].forEach((schema) => {
@@ -102,7 +103,7 @@ export default class App {
   }
 
   private initializeErrorHandling(): void {
-    console.log('hreeeee....')
+    console.log("hreeeee....");
     this.express.use((req, res, next) => {
       res.status(404).send("The resource requested cannot be found!");
     });
@@ -140,11 +141,27 @@ export default class App {
 
   public init(cb?: (app: App) => void): App {
     Logger.info("Initializing app config...");
-
-    if (process.env.NODE_ENV !== "production")
-      Logger.info("App ENV Config: " + JSON.stringify(process.env, null, 2));
-
     const port: number | string = process.env.API_PORT || 8080;
+    // Health checks
+    this.initializeHealthCheck();
+    Cors.init();
+
+    this.initializeMiddlewares();
+
+    if (process.env.ROLE !== "cron_handler") {
+      this.initializeStaticRoutes();
+      this.initializeRoutes();
+    }
+
+    // Error handling middleware
+    this.initializeErrorHandling();
+
+    if (process.env.ROLE === "cron_handler") {
+      this.monitorBlockchainTransactions();
+    } else {
+      Registration.registerWithUI();
+      this.initializeUpholdConnector();
+    }
 
     this.express.listen(port, () => {
       Logger.info(
@@ -152,21 +169,6 @@ export default class App {
           process.env.ROLE || "validator"
         }`
       );
-
-      Cors.init();
-      this.initializeHealthCheck();
-
-      if (process.env.ROLE === "cron_handler") {
-        this.monitorBlockchainTransactions();
-      } else {
-        this.initializeMiddlewares();
-        this.initializeStaticRoutes();
-        this.initializeRoutes();
-        this.initializeUpholdConnector();
-        Registration.registerWithUI();
-      }
-      this.initializeErrorHandling();
-
       cb?.(this);
     });
 
