@@ -1,17 +1,15 @@
 import express, { Express, Request, Response } from "express";
+import cors from "cors";
 import helmet from "helmet";
 import path from "path";
 import { services, wallets } from "./db/schema";
 import BaseController from "./core/base.controller";
 import BaseRouter from "./core/base.router";
-import ConsumerCtrl from "./controller/consumer.controller";
-import ConsumerRoute from "./router/consumer.router";
 import Cors from "./core/cors";
 import Logger from "./utils/logger";
 import UiRequest from "./auth/ui-request";
 import DynamicRouter from "./core/dynamic.router";
 import ConsumerRequest from "./auth/consumer-request";
-import BlockchainManager from "./service/blockchain.manager";
 import ServiceCron from "./core/cron";
 import Registration from "./core/registration";
 import UpholdConnector from "./service/uphold.connector";
@@ -64,7 +62,7 @@ export default class App {
   }
 
   private initializeHealthCheck(): void {
-    this.express.get("/health", (req: Request, res: Response) => {
+    this.express.get("/health", cors(), (req: Request, res: Response) => {
       res.status(200).json({
         uptime: process.uptime(),
         message: "Ok",
@@ -85,25 +83,18 @@ export default class App {
       );
     });
 
-    // TODO: test wallet endpoints
-    this.express.post("/wallet", (req: Request, res: Response) => {
-      const { privateKey, address } = BlockchainManager.createEscrowWallet();
-      Logger.info(JSON.stringify({ privateKey, address }));
-      res.json({ privateKey, address });
-    });
-
     // Setup dynamic routes
     this.express.use(
       "/",
       new DynamicRouter(ConsumerRequest.interceptor).mount()
     );
 
-    // TODO: for development only
-    this.printRoutes(this.express._router);
+    if (process.env.NODE_ENV !== "production") {
+      this.printRoutes(this.express._router);
+    }
   }
 
   private initializeErrorHandling(): void {
-    console.log("hreeeee....");
     this.express.use((req, res, next) => {
       res.status(404).send("The resource requested cannot be found!");
     });
@@ -139,39 +130,41 @@ export default class App {
     });
   }
 
-  public init(cb?: (app: App) => void): App {
-    Logger.info("Initializing app config...");
-    const port: number | string = process.env.API_PORT || 8080;
-    // Health checks
-    this.initializeHealthCheck();
+  public init(cb: (app: App) => void): App {
+    Logger.info("Initializing app...");
+
     Cors.init();
 
     this.initializeMiddlewares();
 
-    if (process.env.ROLE !== "cron_handler") {
-      this.initializeStaticRoutes();
-      this.initializeRoutes();
-    }
-
-    // Error handling middleware
-    this.initializeErrorHandling();
+    this.initializeHealthCheck();
 
     if (process.env.ROLE === "cron_handler") {
       this.monitorBlockchainTransactions();
+      this.startServer(cb);
     } else {
+      this.initializeStaticRoutes();
+      this.initializeRoutes();
+
       Registration.registerWithUI();
       this.initializeUpholdConnector();
+      this.startServer(cb);
     }
 
+    this.initializeErrorHandling();
+
+    return this;
+  }
+
+  private startServer(cb: (app: App) => void, message?: string): void {
+    const port: number | string = process.env.API_PORT || 8080;
     this.express.listen(port, () => {
       Logger.info(
         `Server running at ${process.env.API_HOST}... Server Role: ${
           process.env.ROLE || "validator"
-        }`
+        } ${message || ""}`
       );
       cb?.(this);
     });
-
-    return this;
   }
 }
