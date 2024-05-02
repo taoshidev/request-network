@@ -30,13 +30,6 @@ export default class ConsumerCtrl extends BaseController {
     if (!req?.body)
       return res.status(400).json({ error: "Request missing payload" });
 
-    const validatorPrivateKey = process.env.VALIDATOR_WALLET_PRIVATE_KEY;
-    if (!validatorPrivateKey) {
-      return res
-        .status(500)
-        .json({ error: "Validator private key configuration is missing." });
-    }
-
     try {
       const { data, error } = await this.create(req.body as ServiceDTO);
 
@@ -45,8 +38,7 @@ export default class ConsumerCtrl extends BaseController {
       }
 
       // Attempt to create an escrow wallet using the blockchain service
-      const escrowWallet =
-        BlockchainManager.createEscrowWallet();
+      const escrowWallet = BlockchainManager.createEscrowWallet();
       // If successful, store the keys into the database wallets table
       const { error: walletError } = await this.wallet.create({
         serviceId: data?.[0].id,

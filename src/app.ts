@@ -80,13 +80,6 @@ export default class App {
 
     // TODO: test wallet endpoints
     this.express.post("/wallet", (req: Request, res: Response) => {
-      const validatorPrivateKey = process.env.VALIDATOR_WALLET_PRIVATE_KEY;
-      if (!validatorPrivateKey) {
-        return res
-          .status(400)
-          .json({ error: "Missing Validator private wallet key." });
-      }
-
       const { privateKey, address } = BlockchainManager.createEscrowWallet();
       Logger.info(JSON.stringify({ privateKey, address }));
       res.json({ privateKey, address });

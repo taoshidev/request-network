@@ -106,7 +106,6 @@ VALIDATOR_OUTPUT_SERVER_API_URL=
 UNKEY_VERIFY_URL=
 TAOSHI_API_KEY=
 TAOSHI_VALIDATOR_API_SECRET=
-VALIDATOR_WALLET_PRIVATE_KEY=
 UPHOLD_CLIENT_ID=
 UPHOLD_CLIENT_SECRET=
 ENCRYPTION_KEY=
@@ -318,11 +317,7 @@ Which should deploy your application to AWS EB under the account that's tied the
    - The stable coins are then sent to Uphold, where they are converted into TAO. This process ensures that the funds are ready for withdrawal.
 
 3. **Withdrawal to Designated Wallet**:
-   - After conversion, the TAO is withdrawn back into the designated wallet, which is specified in the environment variables under the key `VALIDATOR_WALLET_PRIVATE_KEY`.
-   - Example of setting the private key in the environment configuration:
-     ```plaintext
-     VALIDATOR_WALLET_PRIVATE_KEY=0x7654321
-     ```
+   - After conversion, the TAO is withdrawn back into the validator's hotkey.
 
 ## Bittensor Validator Registration
 
