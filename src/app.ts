@@ -73,7 +73,7 @@ export default class App {
     this.express.use(Cors.getDynamicCorsMiddleware());
     // Setup consumer routes
     // TODO: Might be deprecated in favor of dynamic routing
-    this.express.use(new ConsumerRoute(new ConsumerCtrl()).routes());
+    // this.express.use(new ConsumerRoute(new ConsumerCtrl()).routes());
 
     // Loop through all the schema and mount their routes
     [services, wallets].forEach((schema) => {
@@ -102,6 +102,7 @@ export default class App {
   }
 
   private initializeErrorHandling(): void {
+    console.log('hreeeee....')
     this.express.use((req, res, next) => {
       res.status(404).send("The resource requested cannot be found!");
     });
@@ -154,7 +155,6 @@ export default class App {
 
       Cors.init();
       this.initializeHealthCheck();
-      this.initializeErrorHandling();
 
       if (process.env.ROLE === "cron_handler") {
         this.monitorBlockchainTransactions();
@@ -165,6 +165,7 @@ export default class App {
         this.initializeUpholdConnector();
         Registration.registerWithUI();
       }
+      this.initializeErrorHandling();
 
       cb?.(this);
     });
