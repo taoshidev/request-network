@@ -5,6 +5,8 @@ import path from "path";
 import { services, wallets } from "./db/schema";
 import BaseController from "./core/base.controller";
 import BaseRouter from "./core/base.router";
+import ConsumerCtrl from "./controller/consumer.controller";
+import ConsumerRoute from "./router/consumer.router";
 import Cors from "./core/cors";
 import Logger from "./utils/logger";
 import UiRequest from "./auth/ui-request";
@@ -73,6 +75,7 @@ export default class App {
 
   private initializeRoutes(): void {
     this.express.use(Cors.getDynamicCorsMiddleware());
+    this.express.use(new ConsumerRoute(new ConsumerCtrl()).routes());
 
     // Loop through all the schema and mount their routes
     [services, wallets].forEach((schema) => {
