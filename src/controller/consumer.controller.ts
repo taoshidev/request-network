@@ -1,22 +1,19 @@
 import { Request, Response } from "express";
 import { ServiceDTO } from "../db/dto/service.dto";
-import { services, wallets } from "../db/schema";
+import { services } from "../db/schema";
 import BaseController from "../core/base.controller";
 import axios, { AxiosError } from "axios";
 import Logger from "../utils/logger";
 import { CustomRequestDTO } from "../db/dto/custom-request.dto";
 import { ConsumerDTO } from "../db/dto/consumer.dto";
-import BlockchainManager from "../service/blockchain.manager";
 
 /**
  * Controller for handling consumer-specific actions.
  * This includes registering new consumers and forwarding consumer requests to validators.
  */
 export default class ConsumerCtrl extends BaseController {
-  private wallet: BaseController;
   constructor() {
     super(services);
-    this.wallet = new BaseController(wallets);
   }
 
   /**
@@ -37,22 +34,10 @@ export default class ConsumerCtrl extends BaseController {
         return res.status(400).json({ error: error?.message });
       }
 
-      // Attempt to create an escrow wallet using the blockchain service
-      const escrowWallet = BlockchainManager.createEscrowWallet();
-      // If successful, store the keys into the database wallets table
-      const { error: walletError } = await this.wallet.create({
-        serviceId: data?.[0].id,
-        privateKey: escrowWallet.privateKey,
-        publicKey: escrowWallet.address,
-        active: true,
-      });
-
-      if (walletError) {
-        return res.status(400).json({ error: walletError?.message });
-      }
-
-      // Respond with the public key of the escrow wallet
-      return res.status(201).json({ publicKey: escrowWallet.address });
+      // Respond with the new serviceId
+      return res
+        .status(201)
+        .json({ serviceId: data?.[0].id });
     } catch (error: Error | unknown) {
       Logger.error("Error registering consumer:" + JSON.stringify(error));
       return res
@@ -61,54 +46,4 @@ export default class ConsumerCtrl extends BaseController {
     }
   };
 
-  /**
-   * Forwards a consumer request to a validator's output server and returns the response back to the consumer.
-   * @param {Request} req - Express.js request object, containing the data to forward to the validator.
-   * @param {Response} res - Express.js response object.
-   * @returns The response from the validator to the consumer. A 500 status code is returned in case of an error.
-   */
-  handleRequestToValidator = async (req: CustomRequestDTO, res: Response) => {
-    const { consumer, body: data } = req;
-    const { valid, enabled, name, keyId, meta } = consumer as ConsumerDTO;
-    const outputServerUrl = process.env.VALIDATOR_OUTPUT_SERVER_API_URL;
-    if (!valid)
-      return res.status(400).json({ error: "Consumer is not valid." });
-    if (!enabled)
-      return res.status(400).json({ error: "Consumer is not enabled." });
-
-    Logger.info(
-      `Consumer ${name} is forwarding request to validator ${meta?.validatorId} at ${outputServerUrl}`
-    );
-
-    ["host", "content-length", "connection"].forEach(
-      (key) => delete req.headers[key]
-    );
-
-    const headers = Object.assign({}, req.headers, {
-      "Content-Type": "application/json",
-      "x-taoshi-validator-request-key": keyId,
-    });
-
-    Logger.info(`Consumer: ${consumer}`);
-
-    try {
-      // Forward the request to the validator's output server
-      const resp = await axios({
-        method: "GET",
-        url: outputServerUrl,
-        data,
-        headers,
-      });
-
-      // Return the response from the validator back to the consumer
-      res.status(resp.status).json(resp.data);
-    } catch (error: AxiosError | unknown) {
-      Logger.error(
-        `Error forwarding request to validator: ${
-          (error as AxiosError)?.response?.statusText
-        }`
-      );
-      res.status(500).json({ error: "Internal server error" });
-    }
-  };
 }

@@ -9,7 +9,7 @@
 5. [Registering as a Validator](#registering-as-a-validator)
 6. [Output Server Connection](#output-server-connection)
 7. [Deployment Workflow](#deployment-workflow)
-8. [Escrow Wallet and Payment Integration](#escrow-wallet-and-payment-integration)
+8. [Payment Integration](#payment-integration)
 9. [Maintenance and Monitoring](#maintenance-and-monitoring)
 10. [Bittensor Validator Registration](#bittensor-validator-registration)
 
@@ -291,36 +291,18 @@ pnpm deploy:staging
 
 Which should deploy your application to AWS EB under the account that's tied the configured profile.
 
-## Escrow Wallet and Payment Integration
-
-### Escrow Wallet Creation and Management
-
-1. **Escrow Wallet Setup**:
-
-   - Upon a successful consumer subscription, the Validator Node application automatically creates an Escrow Wallet. This wallet is essential for handling transactions securely.
-   - The public key of the escrow wallet is shared with the consumer. This allows the consumer to make payments in the method of their choosing, typically in stablecoins such as USDC or USDT.
-
-2. **Database Integration**:
-   - The details of the Escrow Wallet, including the public key and other relevant metadata, are securely stored in the database associated with the Validator Node. This ensures that the wallet can be retrieved and managed efficiently.
-
-### Payment Processing via Uphold API
+## Payment Integration
 
 1. **Initial Deposit and Account Activation**:
 
-   - When the consumer makes their initial deposit, the Validator Node uses the Uphold API to convert the deposited stable coins (USDC/USDT) into TAO. This conversion is crucial for activating the consumer's account.
-     - Note: USDT not supported on as of the current release
-   - If an account becomes inactive due to non-payment, it can be reactivated upon the next deposit, triggering a similar conversion process.
+   - When the consumer makes their initial deposit, their account will become activated.
+   - If an account becomes inactive due to non-payment, it can be reactivated upon the next deposit.
 
 2. **Monthly Fund Checks and Conversions**:
 
-   - Starting on the first day of each month, the Validator Node initiates a check on the escrow wallet to verify if sufficient funds are available.
-   - The stable coins are then sent to Uphold, where they are converted into TAO. This process ensures that the funds are ready for withdrawal.
-
-3. **Withdrawal to Designated Wallet**:
-   - After conversion, the TAO is withdrawn back into the validator's hotkey.
+   - Starting on the first day of each month, the Validator Node initiates a check to see if customer payment has been made. If not their account will be deactivated.
 
 ## Bittensor Validator Registration
-
 
 1. **Create Hot and Cold Keys & Subnet Registration**:
 

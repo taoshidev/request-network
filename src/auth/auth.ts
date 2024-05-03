@@ -15,7 +15,7 @@ import HttpError from "../utils/http-error";
  */
 export default class Auth {
   private static UNKEY_VERIFY_URL = process.env.UNKEY_VERIFY_URL;
-  // TODO: replace this with validator api key when available from UI app
+
   private static API_ID = process.env.TAOSHI_API_KEY;
   private static consumerCtrl = new ConsumerCtrl();
   /**
@@ -30,6 +30,7 @@ export default class Auth {
     { type }: { type: string }
   ): Promise<Partial<ConsumerDTO> | boolean | any> {
     const token = Auth.extractToken(req, { type });
+
     if (!token) {
       Logger.error("No token provided");
       return false;
@@ -60,7 +61,7 @@ export default class Auth {
         eq(services.consumerKeyId, keyId)
       );
 
-      if(!resp?.data?.[0]) {
+      if (!resp?.data?.[0]) {
         throw new HttpError(403, "No services found");
       }
 
@@ -89,6 +90,7 @@ export default class Auth {
     req: Request,
     { type }: { type: string }
   ): string | null {
+
     if (
       req.headers.authorization &&
       req.headers.authorization.split(" ")[0] === "Bearer"

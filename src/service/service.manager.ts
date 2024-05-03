@@ -6,7 +6,6 @@ import DatabaseWrapper from "../core/database.wrapper";
 import { DrizzleResult } from "../core/database.wrapper";
 import { eq, and, isNotNull } from "drizzle-orm";
 import { ServiceWithWalletDTO } from "../db/dto/service-wallet.dto";
-
 export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
   public wallet: BaseController;
   constructor() {
@@ -84,6 +83,21 @@ export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
           )
         );
       return { data: data as ServiceWithWalletDTO[], error: null };
+    } catch (error: any) {
+      Logger.error("Error get active services: " + JSON.stringify(error));
+      return { data: null, error: error.message || "Internal server error" };
+    }
+  }
+
+  async getDistinctValidators(): Promise<DrizzleResult<ServiceDTO[]>> {
+    try {
+      const data = await this.db
+        .selectDistinct({
+          validatorId: services.validatorId,
+        })
+        .from(services)
+        .orderBy(services.validatorId);
+      return { data: data as ServiceDTO[], error: null };
     } catch (error: any) {
       Logger.error("Error get active services: " + JSON.stringify(error));
       return { data: null, error: error.message || "Internal server error" };

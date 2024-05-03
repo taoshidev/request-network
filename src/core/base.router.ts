@@ -1,9 +1,4 @@
-import {
-  Router,
-  Request,
-  Response,
-  NextFunction,
-} from "express";
+import { Router, Request, Response, NextFunction } from "express";
 
 type RouteHandler = (req: Request, res: Response, next: NextFunction) => void;
 
@@ -50,6 +45,8 @@ export default class BaseRouter {
       .get(this.ctrl.findOne())
       .put(this.ctrl.mutate())
       .delete(this.ctrl.remove());
+    // [schema-name]/any-key/any-value
+    this.router.route("/:key/:value").put(this.ctrl.updateByKey());
 
     return this.router;
   }

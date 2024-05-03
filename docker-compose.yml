@@ -3,13 +3,15 @@ services:
   app:
     container_name: request-network-app
     build: .
-    command: ["pnpm", "dev"]
+    command: ["sh", "-c", "while ! nc -z db 5432; do sleep 1; done; pnpm db:migrate && pnpm dev"]
     volumes:
       - .:/usr/src/app
+      - /usr/src/app/node_modules
     depends_on:
       - db
     environment:
-      DATABASE_URL: postgres://postgres:postgres@db/postgres
+      - MIGRATE=true
+      - DATABASE_URL=postgres://postgres:postgres@db/postgres
     ports:
       - "${API_PORT}:${API_PORT}"
 

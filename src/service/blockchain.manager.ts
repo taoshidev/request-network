@@ -59,7 +59,6 @@ export default class BlockchainManager {
     // Get latest block
     const block = await this.httpProvider.getBlock("latest");
     Logger.info(`Latest block: ${block}`);
-    console.log(block);
 
     // Get transaction count for an address
     const txCount = await this.httpProvider.getTransactionCount(walletAddress);

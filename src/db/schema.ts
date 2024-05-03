@@ -21,6 +21,9 @@ export const services = authSchema.table("services", {
     .notNull(),
   type: roleTypeEnum("type").notNull(),
   name: varchar("name"),
+  validatorId: varchar("validator_id"),
+  endpointId: varchar("endpoint_id"),
+  subscriptionId: varchar("subscription_id"),
   consumerKeyId: varchar("consumer_key_id", { length: 255 }),
   consumerApiUrl: varchar("consumer_api_url"),
   price: varchar("price"),
@@ -38,7 +41,9 @@ export const wallets = authSchema.table("wallets", {
     .primaryKey()
     .notNull(),
   serviceId: uuid("service_id")
-    .references(() => services.id)
+    .references(() => services.id, {
+      onDelete: "set null",
+    })
     .notNull(),
   publicKey: varchar("public_key").unique().notNull(),
   privateKey: bytea("private_key"),

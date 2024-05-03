@@ -2,7 +2,7 @@ import express, { Express, Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import path from "path";
-import { services, wallets } from "./db/schema";
+import { services } from "./db/schema";
 import BaseController from "./core/base.controller";
 import BaseRouter from "./core/base.router";
 import ConsumerCtrl from "./controller/consumer.controller";
@@ -32,7 +32,7 @@ export default class App {
     // Monitor pending transactions on USDC and USDT
     new TransactionManager().monitorAllWallets().catch((error) => {
       Logger.error(
-        `Failed to initiate wallet monitoring:${JSON.stringify(error, null, 2)}`
+        `Failed to initiate validator ERC-20 wallet monitoring:${JSON.stringify(error, null, 2)}`
       );
     });
   }
@@ -78,7 +78,8 @@ export default class App {
     this.express.use(new ConsumerRoute(new ConsumerCtrl()).routes());
 
     // Loop through all the schema and mount their routes
-    [services, wallets].forEach((schema) => {
+    // In case there are more than 1 schema, we will loop through them
+    [services].forEach((schema) => {
       const ctrl = new BaseController(schema);
       this.express.use(
         `${this.apiPrefix}/${ctrl.tableName.toLowerCase()}`,
