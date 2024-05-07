@@ -1,0 +1,1 @@
+ALTER TABLE "auth"."services" ADD COLUMN "currency_type" varchar;

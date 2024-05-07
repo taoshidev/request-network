@@ -235,12 +235,13 @@ export default class BlockchainManager {
         Logger.info(`Transaction Receipt: ${JSON.stringify(receipt)}`);
         if (receipt.status === 1) {
           Logger.info("Transaction was successful.");
-        } else {
-          Logger.error("Transaction failed.");
+          return true;
         }
-      } else {
-        Logger.error("Receipt not found. Transaction might be pending.");
+        Logger.error("Transaction failed.");
+        return false;
       }
+      Logger.error("Receipt not found. Transaction might be pending.");
+      return false;
     } catch (error) {
       Logger.error(`Error fetching transaction receipt: ${error}`);
     }

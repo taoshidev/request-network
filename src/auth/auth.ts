@@ -65,11 +65,16 @@ export default class Auth {
         throw new HttpError(403, "No services found");
       }
 
-      const { active, meta } = resp?.data?.[0] as ServiceDTO;
+      const { active, enabled, meta } = resp?.data?.[0] as ServiceDTO;
 
       if (!active) {
         throw new HttpError(403, "Unauthorized: Subscription is not active");
       }
+
+      if (!enabled) {
+        throw new HttpError(403, "Unauthorized: Service is not enabled");
+      }
+
       if (!data?.shortId || data?.shortId !== meta?.shortId) {
         throw new HttpError(403, "Unauthorized: Invalid request key");
       }
@@ -90,7 +95,6 @@ export default class Auth {
     req: Request,
     { type }: { type: string }
   ): string | null {
-
     if (
       req.headers.authorization &&
       req.headers.authorization.split(" ")[0] === "Bearer"

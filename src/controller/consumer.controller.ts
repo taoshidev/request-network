@@ -2,10 +2,8 @@ import { Request, Response } from "express";
 import { ServiceDTO } from "../db/dto/service.dto";
 import { services } from "../db/schema";
 import BaseController from "../core/base.controller";
-import axios, { AxiosError } from "axios";
 import Logger from "../utils/logger";
 import { CustomRequestDTO } from "../db/dto/custom-request.dto";
-import { ConsumerDTO } from "../db/dto/consumer.dto";
 
 /**
  * Controller for handling consumer-specific actions.
@@ -24,11 +22,12 @@ export default class ConsumerCtrl extends BaseController {
    * @returns A 201 status code and the created consumer data on success, or a 400 status code with an error message on failure.
    */
   handleConsumerRegistration = async (req: Request, res: Response) => {
-    if (!req?.body)
+    const { body } = req as CustomRequestDTO;
+    if (!body)
       return res.status(400).json({ error: "Request missing payload" });
 
     try {
-      const { data, error } = await this.create(req.body as ServiceDTO);
+      const { data, error } = await this.create(body as ServiceDTO);
 
       if (error) {
         return res.status(400).json({ error: error?.message });
