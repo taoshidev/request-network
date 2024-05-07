@@ -107,11 +107,13 @@ export default abstract class DatabaseWrapper<T> {
 
   async updateSet(record: Partial<T>, where: SQL): Promise<DrizzleResult<T | T[]>> {
     try {
+
       const res = await this.db
         .update(this.schema)
         .set(record)
         .where(where)
         .returning();
+  
       return { data: res as T, error: null };
     } catch (error) {
       console.error(error);

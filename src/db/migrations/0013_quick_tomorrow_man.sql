@@ -1,0 +1,1 @@
+ALTER TABLE "auth"."services" ADD COLUMN "enabled" boolean DEFAULT false NOT NULL;

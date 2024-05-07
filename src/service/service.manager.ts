@@ -1,16 +1,15 @@
 import { ServiceDTO } from "../db/dto/service.dto";
-import { services, wallets } from "../db/schema";
+import { services } from "../db/schema";
 import BaseController from "../core/base.controller";
 import Logger from "../utils/logger";
 import DatabaseWrapper from "../core/database.wrapper";
 import { DrizzleResult } from "../core/database.wrapper";
 import { eq, and, isNotNull } from "drizzle-orm";
 import { ServiceWithWalletDTO } from "../db/dto/service-wallet.dto";
+
 export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
-  public wallet: BaseController;
   constructor() {
     super(services);
-    this.wallet = new BaseController(wallets);
   }
 
   /**
@@ -45,11 +44,10 @@ export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
           active: services.active,
           price: services.price,
           hotkey: services.hotkey,
-          publicKey: wallets.publicKey,
-          privateKey: wallets.privateKey,
+          consumerWalletAddress: services.consumerWalletAddress,
+          validatorWalletAddress: services.validatorWalletAddress,
         })
         .from(services)
-        .leftJoin(wallets, eq(services.id, wallets.serviceId))
         .where(eq(services.id, id));
       return { data: data?.[0] as ServiceWithWalletDTO, error: null };
     } catch (error: any) {
@@ -58,7 +56,30 @@ export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
     }
   }
 
-  async getSubscriptions({ active = true, inclusive = false } = {}): Promise<
+  async getSubscriberByAddress(
+    address: string
+  ): Promise<DrizzleResult<ServiceWithWalletDTO>> {
+    try {
+      const data = await this.db
+        .select({
+          id: services.id,
+          active: services.active,
+          createdAt: services.createdAt,
+          price: services.price,
+          hotkey: services.hotkey,
+          consumerWalletAddress: services.consumerWalletAddress,
+          validatorWalletAddress: services.validatorWalletAddress,
+        })
+        .from(services)
+        .where(eq(services.consumerWalletAddress, address));
+      return { data: data?.[0] as ServiceWithWalletDTO, error: null };
+    } catch (error: any) {
+      Logger.error("Error get service by id: " + JSON.stringify(error));
+      return { data: null, error: error.message || "Internal server error" };
+    }
+  }
+
+  async getSubscriptions({ active = true, inclusive = false, currencyType = '' } = {}): Promise<
     DrizzleResult<ServiceWithWalletDTO[]>
   > {
     try {
@@ -68,18 +89,17 @@ export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
           active: services.active,
           price: services.price,
           hotkey: services.hotkey,
-          publicKey: wallets.publicKey,
-          privateKey: wallets.privateKey,
+          createdAt: services.createdAt,
+          consumerWalletAddress: services.consumerWalletAddress,
+          validatorWalletAddress: services.validatorWalletAddress,
         })
         .from(services)
-        .leftJoin(wallets, eq(services.id, wallets.serviceId))
         .where(
           and(
+            currencyType? eq(services.currencyType, currencyType) : isNotNull(services.currencyType),
             inclusive
               ? isNotNull(services.active)
               : eq(services.active, active),
-            isNotNull(wallets.publicKey),
-            isNotNull(wallets.privateKey)
           )
         );
       return { data: data as ServiceWithWalletDTO[], error: null };
@@ -99,7 +119,25 @@ export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
         .orderBy(services.validatorId);
       return { data: data as ServiceDTO[], error: null };
     } catch (error: any) {
-      Logger.error("Error get active services: " + JSON.stringify(error));
+      Logger.error("Error get distinct validators: " + JSON.stringify(error));
+      return { data: null, error: error.message || "Internal server error" };
+    }
+  }
+
+  async getDistinctValidatorWallets(): Promise<DrizzleResult<ServiceDTO[]>> {
+    try {
+      const data = await this.db
+        .selectDistinct({
+          validatorWalletAddress: services.validatorWalletAddress,
+        })
+        .from(services)
+        .where(eq(services.currencyType, "Crypto"))
+        .orderBy(services.validatorWalletAddress);
+      return { data: data as ServiceDTO[], error: null };
+    } catch (error: any) {
+      Logger.error(
+        "Error get distinct validator wallets: " + JSON.stringify(error)
+      );
       return { data: null, error: error.message || "Internal server error" };
     }
   }

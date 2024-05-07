@@ -30,7 +30,7 @@ export default class App {
     // Run the monthly service cron 1st of every month
     new ServiceCron().run();
     // Monitor pending transactions on USDC and USDT
-    new TransactionManager().monitorAllWallets().catch((error) => {
+    new TransactionManager().monitorValidatorWallets().catch((error) => {
       Logger.error(
         `Failed to initiate validator ERC-20 wallet monitoring:${JSON.stringify(error, null, 2)}`
       );
@@ -136,9 +136,7 @@ export default class App {
 
   public init(cb: (app: App) => void): App {
     Logger.info("Initializing app...");
-
     Cors.init();
-
     this.initializeMiddlewares();
 
     this.initializeHealthCheck();
@@ -147,6 +145,7 @@ export default class App {
       this.monitorBlockchainTransactions();
       this.startServer(cb);
     } else {
+      // Cors.init();
       this.initializeStaticRoutes();
       this.initializeRoutes();
 

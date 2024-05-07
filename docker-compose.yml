@@ -12,12 +12,17 @@ services:
     environment:
       - MIGRATE=true
       - DATABASE_URL=postgres://postgres:postgres@db/postgres
+      - PATH=/usr/src/app/node_modules/.bin:$PATH
     ports:
       - "${API_PORT}:${API_PORT}"
 
   db:
     container_name: request-network-db
     image: supabase/postgres
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_HOST=db
+      - POSTGRES_USER=postgres
     ports:
       - "5432:5432"
     volumes:

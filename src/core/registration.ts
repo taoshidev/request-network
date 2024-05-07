@@ -20,12 +20,13 @@ export default class Registration {
     const validators = validatorIds?.map((v) =>
       Object.assign(
         { id: v.validatorId },
-        { apiPrefix: process.env.API_PREFIX }
+        { apiPrefix: process.env.API_PREFIX },
+        { baseApiUrl: process.env.API_HOST }
       )
     );
 
     const body = {
-      apiUrl: AuthenticatedRequest.baseURL,
+      baseApiUrl: AuthenticatedRequest.baseURL,
       apiPrefix: process.env.API_PREFIX,
       validators,
     };

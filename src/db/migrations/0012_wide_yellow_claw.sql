@@ -1,0 +1,1 @@
+ALTER TABLE "auth"."transactions" ALTER COLUMN "amount" SET DATA TYPE numeric(18, 6);

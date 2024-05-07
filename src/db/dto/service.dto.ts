@@ -9,7 +9,11 @@ export class ServiceDTO extends BaseDTO {
   endpointId?: string;
   subscriptionId?: string;
   price?: string;
+  consumerWalletAddress?: string;
+  validatorWalletAddress?: string;
+  currencyType?: string;
   hotkey?: string;
+  enabled?: boolean;
   meta?: {
     subnetId: string;
     endpoint: string;
