@@ -23,8 +23,9 @@ export default class ServiceCron {
    * This job is intended to run on the first of each month.
    */
   public run(): void {
-    const cronExpression = "*/60 * * * * *";
-    // "0 0 1 * *";
+    const cronExpression = 
+    // "*/60 * * * * *";
+    "0 0 1 * *";
     cron.schedule(cronExpression, () => this.checkCryptoSubscriptions(), {
       scheduled: true,
       timezone: "UTC",
