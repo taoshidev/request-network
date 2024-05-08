@@ -261,7 +261,9 @@ Register as a validator on Bittensor:
    - Navigate to the the Bittensor documentation page at https://docs.bittensor.com/getting-started/installation and install the Bittensor CLI. Once you have access to the cli, run:
      ```
      btcli wallet new_coldkey --wallet.name my-validator
-     btcli wallet new_hotkey --wallet.name my-validator
+     btcli wallet new_hotkey --wallet.name my-validator --wallet.hotkey default
+     btcli wallet faucet --wallet.name my-validator --subtensor.network test
+     btcli wallet list
      btcli subnet register --wallet.name my-validator --wallet.hotkey default --subtensor.network test
      ```
 
