@@ -142,7 +142,6 @@ export default class App {
     Logger.info("Initializing app...");
 
     this.initializeMiddlewares();
-
     this.initializeHealthCheck();
 
     if (process.env.ROLE === "cron_handler") {
