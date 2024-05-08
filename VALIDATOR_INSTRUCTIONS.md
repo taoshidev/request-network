@@ -62,6 +62,7 @@ Configure your environment to differentiate between development and production s
      ```
 
 4. **Docker Compose Configuration**
+
    - Review and configure services using `docker-compose.yml`.
 
 5. **Additional Configuration**
@@ -186,6 +187,7 @@ The Validator Node can be deployed anywhere that supports Node.js, with or witho
    - For detailed installation instructions, visit [AWS EB CLI Installation](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-install-advanced.html).
 
 2. **Configure AWS Credentials**:
+
    - Before using the EB CLI, configure your AWS credentials. This setup is necessary to authenticate and communicate with AWS services:
      ```bash
      aws configure
@@ -256,14 +258,15 @@ Register as a validator on Bittensor:
 
 1. **Create Hot and Cold Keys & Subnet Registration**:
 
-   - Navigate to the the Bittensor documentation page at https://docs.bittensor.com/getting-started/installation and install the Bittensor CLI. Once you have access to the cli,  run:
-      ```
-      btcli wallet new_coldkey --wallet.name my-validator
-      btcli wallet new_hotkey --wallet.name my-validator
-      btcli subnet register --wallet.name my-validator --wallet.hotkey default --subtensor.network test
-      ```
-  - You'll be prompted to:
-     - Enter password to unlock key.
-     - Enter netUid (the Subnet to register onto).
+   - Navigate to the the Bittensor documentation page at https://docs.bittensor.com/getting-started/installation and install the Bittensor CLI. Once you have access to the cli, run:
+     ```
+     btcli wallet new_coldkey --wallet.name my-validator
+     btcli wallet new_hotkey --wallet.name my-validator
+     btcli subnet register --wallet.name my-validator --wallet.hotkey default --subtensor.network test
+     ```
+
+- You'll be prompted to:
+  - Enter password to unlock key.
+  - Enter netUid (the Subnet to register onto).
 
 For detailed instructions, refer to the [Bittensor Documentation](https://docs.bittensor.com/).
