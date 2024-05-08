@@ -14,11 +14,13 @@ const app = new App();
 (async () => {
   try {
     app.init(async (app: App) => {
+      Logger.info(`Application loading environment variables from ${envPath}...`);
       if (process.env.DATABASE_URL && process.env.MIGRATE === "true") {
         const databaseMigrator = new DatabaseMigrator(
           process.env.DATABASE_URL!
         );
         await databaseMigrator.migrate();
+        // process.env.MIGRATE = "false";
       }
     });
   } catch (error) {

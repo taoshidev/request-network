@@ -84,6 +84,7 @@ export default abstract class DatabaseWrapper<T> {
         .set(record)
         .where(eq(this.schema.id, id))
         .returning();
+
       return { data: res as T, error: null };
     } catch (error) {
       console.error(error);
@@ -97,6 +98,22 @@ export default abstract class DatabaseWrapper<T> {
         .update(this.schema)
         .set(record)
         .returning();
+      return { data: res as T, error: null };
+    } catch (error) {
+      console.error(error);
+      return { data: null, error: error as DrizzleError };
+    }
+  }
+
+  async updateSet(record: Partial<T>, where: SQL): Promise<DrizzleResult<T | T[]>> {
+    try {
+
+      const res = await this.db
+        .update(this.schema)
+        .set(record)
+        .where(where)
+        .returning();
+  
       return { data: res as T, error: null };
     } catch (error) {
       console.error(error);

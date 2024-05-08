@@ -9,16 +9,20 @@ WORKDIR /usr/src/app
 
 COPY package*.json pnpm-lock.yaml ./
 
-RUN npm install -g pnpm && pnpm install
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
 
 COPY . .
+
+# ENV PATH="/usr/src/app/node_modules/.bin:$PATH"
 
 RUN pnpm build
 
 RUN ls -al ./dist
+RUN echo $PATH
+RUN ls node_modules/.bin
 
 RUN chmod +x ./start.sh
 
 EXPOSE 8080
 
-CMD ["npm", "start"]
+CMD ["pnpm", "start"]

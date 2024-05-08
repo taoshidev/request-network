@@ -59,7 +59,6 @@ export default class BlockchainManager {
     // Get latest block
     const block = await this.httpProvider.getBlock("latest");
     Logger.info(`Latest block: ${block}`);
-    console.log(block);
 
     // Get transaction count for an address
     const txCount = await this.httpProvider.getTransactionCount(walletAddress);
@@ -236,12 +235,13 @@ export default class BlockchainManager {
         Logger.info(`Transaction Receipt: ${JSON.stringify(receipt)}`);
         if (receipt.status === 1) {
           Logger.info("Transaction was successful.");
-        } else {
-          Logger.error("Transaction failed.");
+          return true;
         }
-      } else {
-        Logger.error("Receipt not found. Transaction might be pending.");
+        Logger.error("Transaction failed.");
+        return false;
       }
+      Logger.error("Receipt not found. Transaction might be pending.");
+      return false;
     } catch (error) {
       Logger.error(`Error fetching transaction receipt: ${error}`);
     }

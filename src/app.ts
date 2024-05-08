@@ -2,9 +2,11 @@ import express, { Express, Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import path from "path";
-import { services, wallets } from "./db/schema";
+import { services } from "./db/schema";
 import BaseController from "./core/base.controller";
 import BaseRouter from "./core/base.router";
+import ConsumerCtrl from "./controller/consumer.controller";
+import ConsumerRoute from "./router/consumer.router";
 import Cors from "./core/cors";
 import Logger from "./utils/logger";
 import UiRequest from "./auth/ui-request";
@@ -28,9 +30,13 @@ export default class App {
     // Run the monthly service cron 1st of every month
     new ServiceCron().run();
     // Monitor pending transactions on USDC and USDT
-    new TransactionManager().monitorAllWallets().catch((error) => {
+    new TransactionManager().monitorValidatorWallets().catch((error) => {
       Logger.error(
-        `Failed to initiate wallet monitoring:${JSON.stringify(error, null, 2)}`
+        `Failed to initiate validator ERC-20 wallet monitoring:${JSON.stringify(
+          error,
+          null,
+          2
+        )}`
       );
     });
   }
@@ -73,9 +79,11 @@ export default class App {
 
   private initializeRoutes(): void {
     this.express.use(Cors.getDynamicCorsMiddleware());
+    this.express.use(new ConsumerRoute(new ConsumerCtrl()).routes());
 
     // Loop through all the schema and mount their routes
-    [services, wallets].forEach((schema) => {
+    // In case there are more than 1 schema, we will loop through them
+    [services].forEach((schema) => {
       const ctrl = new BaseController(schema);
       this.express.use(
         `${this.apiPrefix}/${ctrl.tableName.toLowerCase()}`,
@@ -133,21 +141,21 @@ export default class App {
   public init(cb: (app: App) => void): App {
     Logger.info("Initializing app...");
 
-    Cors.init();
-
     this.initializeMiddlewares();
-
     this.initializeHealthCheck();
 
     if (process.env.ROLE === "cron_handler") {
       this.monitorBlockchainTransactions();
       this.startServer(cb);
     } else {
+      Cors.init();
       this.initializeStaticRoutes();
       this.initializeRoutes();
 
       Registration.registerWithUI();
-      this.initializeUpholdConnector();
+      if (process.env.UPHOLD_CLIENT_ID && 
+        process.env.UPHOLD_CLIENT_SECRET)
+        this.initializeUpholdConnector();
       this.startServer(cb);
     }
 

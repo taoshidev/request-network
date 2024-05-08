@@ -15,7 +15,7 @@ import HttpError from "../utils/http-error";
  */
 export default class Auth {
   private static UNKEY_VERIFY_URL = process.env.UNKEY_VERIFY_URL;
-  // TODO: replace this with validator api key when available from UI app
+
   private static API_ID = process.env.TAOSHI_API_KEY;
   private static consumerCtrl = new ConsumerCtrl();
   /**
@@ -30,6 +30,7 @@ export default class Auth {
     { type }: { type: string }
   ): Promise<Partial<ConsumerDTO> | boolean | any> {
     const token = Auth.extractToken(req, { type });
+
     if (!token) {
       Logger.error("No token provided");
       return false;
@@ -60,17 +61,22 @@ export default class Auth {
         eq(services.consumerKeyId, keyId)
       );
 
-      if(!resp?.data?.[0]) {
+      if (!resp?.data?.[0]) {
         throw new HttpError(403, "No services found");
       }
 
-      const { active, meta } = resp?.data?.[0] as ServiceDTO;
+      const { active, enabled, meta } = resp?.data?.[0] as ServiceDTO;
 
       if (!active) {
         throw new HttpError(403, "Unauthorized: Subscription is not active");
       }
+
+      if (!enabled) {
+        throw new HttpError(403, "Unauthorized: Service is not enabled");
+      }
+
       if (!data?.shortId || data?.shortId !== meta?.shortId) {
-        throw new HttpError(403, "Unauthorized: Invalid request key");
+        throw new HttpError(403, "Unauthorized: Invalid short id");
       }
 
       return response?.data;
@@ -89,12 +95,7 @@ export default class Auth {
     req: Request,
     { type }: { type: string }
   ): string | null {
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.split(" ")[0] === "Bearer"
-    ) {
-      return req.headers.authorization.split(" ")[1];
-    } else if (req.headers[type]) {
+    if (req.headers[type]) {
       return req.headers[type] as string;
     } else if (req.query && req.query.token) {
       return req.query.token as string;

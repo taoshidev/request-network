@@ -9,7 +9,7 @@
 5. [Registering as a Validator](#registering-as-a-validator)
 6. [Output Server Connection](#output-server-connection)
 7. [Deployment Workflow](#deployment-workflow)
-8. [Escrow Wallet and Payment Integration](#escrow-wallet-and-payment-integration)
+8. [Payment Integration](#payment-integration)
 9. [Maintenance and Monitoring](#maintenance-and-monitoring)
 10. [Bittensor Validator Registration](#bittensor-validator-registration)
 
@@ -29,58 +29,44 @@ The technology stack for ReqNet involves several modern and robust technologies 
 - **Version Management Tools**: NVM to manage Node.js versions and PNPM for efficient package management.
 - **Blockchain Integration**: Infura API for interfacing with the Ethereum network and Uphold API for managing crypto transactions.
 
-## Setup Process (Also see README)
+## Setup Process
 
 ### Environment Configuration
 
 Configure your environment to differentiate between development and production settings:
 
 - **Development Settings**: Connect to the Ethereum 'Sepolia' test network and configure the API to interact with mock data.
+- **Staging Settings**: Connect to the Ethereum 'Sepolia' test network and configure the API to interact with mock data. Reserved for environments that are deployed to a live server, but not yet production-ready.
 - **Production Settings**: Set up connections to the Ethereum 'mainnet' for handling live data and transactions.
 
-## Setup Instructions
+### Initial Configuration
 
 1. **Fork the Repository**
 
    - Fork the repository here: [Request Network on GitHub](https://github.com/taoshidev/request-network)
 
-2. **Get Uphold Test Keys**
+2. **Set Up Infura Project**
 
-   - Visit: [Uphold Developer](https://uphold.com/get-started/developer?modal=sandbox)
-   - Login to the sandbox:
-     - Create an account and log in.
-     - When logging in, you will be prompted to enter a 6-digit number.
-     - **IMPORTANT**: Enter all zeros: `000000`.
-     - On the left side, look for the three dots.
-     - Navigate to "Developer applications".
-     - Click the plus sign to register your application and receive your key and secret.
-   - Set your Uphold API keys:
-     - `UPHOLD_CLIENT_ID=1234356abcd`
-     - `UPHOLD_CLIENT_SECRET=98765abcd`
-
-3. **Create an Infura Project**
-
-   - Create a project here: [Infura](https://app.infura.io)
+   - Create a project on [Infura](https://app.infura.io)
    - Set the Infura Project ID:
-     - `INFURA_PROJECT_ID=7654321abcd`
+     ```
+     INFURA_PROJECT_ID=your_infura_project_id
+     ```
 
-4. **Setup Database Connection String and Variables**
+3. **Database and API Configuration**
 
-   - Configure the following database variables:
-     - `DATABASE_URL=postgres://user:pass@host:port/database`
-     - `POSTGRES_DB=postgres`
-     - `POSTGRES_PORT=5432`
-     - `POSTGRES_HOST=db`
-     - `POSTGRES_USER=postgres`
-     - `POSTGRES_PASSWORD=postgres`
-   - Note:
-     - Variables are used in the Docker container.
-     - Connection string is used by the application.
+   - Configure the database and API settings:
+     ```
+     DATABASE_URL=postgres://user:pass@host:port/database
+     NODE_ENV=development
+     ```
+
+4. **Docker Compose Configuration**
+
+   - Review and configure services using `docker-compose.yml`.
 
 5. **Additional Configuration**
 
-   - Set environment variables:
-     - `NODE_ENV=development`
    - Configure encryption keys (used by CryptoJS to encrypt keys and secrets at rest):
      - `ENCRYPTION_KEY=WANabc234=`
      - `IV_STRING=dxabcdeLAP333123abcLg==`
@@ -92,12 +78,10 @@ Configure your environment to differentiate between development and production s
    - Set Unkey verify URL:
      - `UNKEY_VERIFY_URL=https://api.unkey.dev/v1/keys.verifyKey`
 
-6. **Review Docker Compose Setup**
-   - See the `docker-compose.yml` for how the services are configured and interconnected.
-
 ### Configuring Environment Variables
 
 ```
+NODE_ENV=
 API_PORT=
 API_HOST=
 API_PREFIX=
@@ -106,40 +90,20 @@ VALIDATOR_OUTPUT_SERVER_API_URL=
 UNKEY_VERIFY_URL=
 TAOSHI_API_KEY=
 TAOSHI_VALIDATOR_API_SECRET=
-UPHOLD_CLIENT_ID=
-UPHOLD_CLIENT_SECRET=
 ENCRYPTION_KEY=
 IV_STRING=
 INFURA_PROJECT_ID=
-NODE_ENV=
-POSTGRES_DB=
-POSTGRES_PORT=
-POSTGRES_HOST=
-POSTGRES_USER=
-POSTGRES_PASSWORD=
 DATABASE_URL=
 ```
 
-## Uphold API Integration
-
-ReqNet utilizes the Uphold API to manage cryptocurrency conversions and transactions.
-
-### API Endpoints
-
-- **Development**: During the development phase, ReqNet will use the Uphold sandbox API endpoint to simulate transactions:
-  - Sandbox Endpoint: [https://api-sandbox.uphold.com](https://api-sandbox.uphold.com)
-- **Production**: In production, the live API endpoint is used for actual transactions:
-  - Live Endpoint: [https://api.uphold.com](https://api.uphold.com)
-
 ## Registering as a Validator
 
-Registering as a validator on ReqNet is a straightforward process facilitated by the ReqNet UI.
+Complete the registration through the ReqNet UI:
 
-### Registration Steps
-
-1. Navigate to the ReqNet registration page:
+1. Navigate to the ReqNet Validator Registration page:
    - [ReqNet Validator Registration](https://rn-dev.taoshi.io)
-2. Click on **Dashboard**.
+2. Authenticate using OAuth, authorize ReqNet to access your information, and set up your Validator Node.
+   - Click on **Dashboard**.
 3. Authenticate using OAuth to ensure secure access.
 4. Authorize ReqNet to access your information.
 5. Choose the account type as **Validator**.
@@ -156,15 +120,6 @@ Upon completing the registration, you will receive an API key and a secret, whic
 
 These credentials allow you to authenticate incoming requests and manage interactions between your Validator Node and the ReqNet UI.
 
-### Endpoint Creation
-
-- A verified validator can register multiple endpoints, one per subnet, up to a total of 32 subnets (SN):
-  - Example endpoints:
-    - `/api/v1/user/:id`
-    - `/api/v1/user/:id?min=1&max=50`
-
-## Output Server Connection
-
 ### Setup and Configuration
 
 ReqNet acts as a proxy between the consumer API and the Validator Output Server (OPS). To establish this connection:
@@ -180,37 +135,38 @@ ReqNet acts as a proxy between the consumer API and the Validator Output Server 
 
 This configuration ensures that your Validator Node can securely and efficiently handle requests, performing necessary conversions and transactions via the Uphold API, and managing data flow through designated endpoints.
 
-### Validator Node Configuration
+### Endpoint Creation
 
-#### Detailed Docker Setup
+- A verified validator can register multiple endpoints, one per subnet, up to a total of 32 subnets (SN):
+  - Example endpoints:
+    - `/api/v1/user/:id`
+    - `/api/v1/user/:id?min=1&max=50`
 
-#### Spin up local instance
+## Output Server Connection
 
-```
-docker compose build --no-cache
-```
+Set up the Validator Output Server (OPS) connection:
 
-```
-docker compose up -d
-```
+- Configure the OPS base URL in your `.env` file:
+  - VALIDATOR_OUTPUT_SERVER_API_URL=https://output-server-url:8080
 
-#### Build for Deployment
+## Deployment Workflow
 
-```
-docker build . -t request-network:v1.0.0
-```
+1. **Local Deployment**
 
-Test the build
+- Build and run your Docker container locally:
+  ```
+  docker compose build --no-cache
+  docker compose up -d
+  ```
 
-```
-docker run -p 8080:8080 --env-file .env.staging -d request-network:v1.0.0
-```
+2. **AWS Deployment**
 
-Stop the app
-
-```
-docker stop 18c8b3d232fe
-```
+- Deploy using AWS Elastic Beanstalk:
+  ```
+  eb init
+  eb create
+  eb open
+  ```
 
 ### Deployment Workflow
 
@@ -231,6 +187,7 @@ The Validator Node can be deployed anywhere that supports Node.js, with or witho
    - For detailed installation instructions, visit [AWS EB CLI Installation](https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3-install-advanced.html).
 
 2. **Configure AWS Credentials**:
+
    - Before using the EB CLI, configure your AWS credentials. This setup is necessary to authenticate and communicate with AWS services:
      ```bash
      aws configure
@@ -240,8 +197,6 @@ The Validator Node can be deployed anywhere that supports Node.js, with or witho
      - AWS Secret Access Key
      - Default region name
      - Default output format (optional)
-
-##### Initializing and Deploying the Application
 
 3. **Initialize Your Application**:
 
@@ -291,51 +246,29 @@ pnpm deploy:staging
 
 Which should deploy your application to AWS EB under the account that's tied the configured profile.
 
-## Escrow Wallet and Payment Integration
+## Payment Integration
 
-### Escrow Wallet Creation and Management
-
-1. **Escrow Wallet Setup**:
-
-   - Upon a successful consumer subscription, the Validator Node application automatically creates an Escrow Wallet. This wallet is essential for handling transactions securely.
-   - The public key of the escrow wallet is shared with the consumer. This allows the consumer to make payments in the method of their choosing, typically in stablecoins such as USDC or USDT.
-
-2. **Database Integration**:
-   - The details of the Escrow Wallet, including the public key and other relevant metadata, are securely stored in the database associated with the Validator Node. This ensures that the wallet can be retrieved and managed efficiently.
-
-### Payment Processing via Uphold API
-
-1. **Initial Deposit and Account Activation**:
-
-   - When the consumer makes their initial deposit, the Validator Node uses the Uphold API to convert the deposited stable coins (USDC/USDT) into TAO. This conversion is crucial for activating the consumer's account.
-     - Note: USDT not supported on as of the current release
-   - If an account becomes inactive due to non-payment, it can be reactivated upon the next deposit, triggering a similar conversion process.
-
-2. **Monthly Fund Checks and Conversions**:
-
-   - Starting on the first day of each month, the Validator Node initiates a check on the escrow wallet to verify if sufficient funds are available.
-   - The stable coins are then sent to Uphold, where they are converted into TAO. This process ensures that the funds are ready for withdrawal.
-
-3. **Withdrawal to Designated Wallet**:
-   - After conversion, the TAO is withdrawn back into the validator's hotkey.
+Ensure consumer deposits are recorded and manage account activations based on payment status. Handle monthly fund checks and conversions through Uphold API.
 
 ## Bittensor Validator Registration
 
+Register as a validator on Bittensor:
+
+- Generate keys and register:
 
 1. **Create Hot and Cold Keys & Subnet Registration**:
 
-   - Navigate to the the Bittensor documentation page at https://docs.bittensor.com/getting-started/installation and install the Bittensor CLI. Once you have access to the cli,  run:
-     ```bash
+   - Navigate to the the Bittensor documentation page at https://docs.bittensor.com/getting-started/installation and install the Bittensor CLI. Once you have access to the cli, run:
+     ```
      btcli wallet new_coldkey --wallet.name my-validator
-
      btcli wallet new_hotkey --wallet.name my-validator --wallet.hotkey default
-
      btcli wallet faucet --wallet.name my-validator --subtensor.network test
-
      btcli wallet list
-
      btcli subnet register --wallet.name my-validator --wallet.hotkey default --subtensor.network test
      ```
-   - You'll be prompted to:
-     - Enter password to unlock key.
-     - Enter netUid (the Subnet to register onto).
+
+- You'll be prompted to:
+  - Enter password to unlock key.
+  - Enter netUid (the Subnet to register onto).
+
+For detailed instructions, refer to the [Bittensor Documentation](https://docs.bittensor.com/).

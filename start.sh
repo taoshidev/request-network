@@ -3,7 +3,7 @@
 # Check for migration flag
 if [ "$MIGRATE" == "true" ]; then
   echo "Running migrations..."
-  pnpm db:push
+  pnpm db:migrate
   echo "Migrations completed."
 fi
 
