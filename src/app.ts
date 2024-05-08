@@ -32,7 +32,11 @@ export default class App {
     // Monitor pending transactions on USDC and USDT
     new TransactionManager().monitorValidatorWallets().catch((error) => {
       Logger.error(
-        `Failed to initiate validator ERC-20 wallet monitoring:${JSON.stringify(error, null, 2)}`
+        `Failed to initiate validator ERC-20 wallet monitoring:${JSON.stringify(
+          error,
+          null,
+          2
+        )}`
       );
     });
   }
@@ -136,7 +140,7 @@ export default class App {
 
   public init(cb: (app: App) => void): App {
     Logger.info("Initializing app...");
-    Cors.init();
+
     this.initializeMiddlewares();
 
     this.initializeHealthCheck();
@@ -145,12 +149,14 @@ export default class App {
       this.monitorBlockchainTransactions();
       this.startServer(cb);
     } else {
-      // Cors.init();
+      Cors.init();
       this.initializeStaticRoutes();
       this.initializeRoutes();
 
       Registration.registerWithUI();
-      this.initializeUpholdConnector();
+      if (process.env.UPHOLD_CLIENT_ID && 
+        process.env.UPHOLD_CLIENT_SECRET)
+        this.initializeUpholdConnector();
       this.startServer(cb);
     }
 
