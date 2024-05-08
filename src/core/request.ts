@@ -26,7 +26,10 @@ export default class HTTPRequest {
   private static outputServerApiUri: string =
     process.env.VALIDATOR_OUTPUT_SERVER_API_URL || "";
 
-  constructor(private headers?: { [key: string]: string }) {}
+  constructor(private headers?: { [key: string]: string }) {
+    this.fetch = this.fetch.bind(this);
+    this.filterHeaders = this.filterHeaders.bind(this);
+  }
 
   public static parseQuery(query: any): {
     [key: string]: string;
@@ -61,13 +64,12 @@ export default class HTTPRequest {
         method: method as Method,
         url: endpoint,
         headers: {
-          ...(this?.headers && this.headers),
-          ...this?.filterHeaders(headers),
+          ...(this.headers && this.headers),
+          ...this.filterHeaders(headers),
         },
         ...(Object.keys(query).length && { params: query }),
         ...(["POST", "PUT", "PATCH"].includes(method) && { data: body }),
       };
-
       const response = await axios.request(options);
       HTTPRequest.send(res, response.data);
     } catch (error: AxiosError | Error | unknown) {
@@ -87,12 +89,19 @@ export default class HTTPRequest {
     const excludedHeaders = ["host", "content-length", "connection"];
     return Object.entries(headers).reduce(
       (acc: { [key: string]: string }, [key, value]: any) => {
-        if (!excludedHeaders.includes(key.toLowerCase())) {
+        if (
+          !excludedHeaders.includes(key.toLowerCase()) &&
+          key.toLowerCase() !== "authorization"
+        ) {
           acc[key] = Array.isArray(value) ? value.join(",") : value;
         }
         return acc;
       },
-      {}
+      {
+        ...(headers.authorization
+          ? { Authorization: headers.authorization }
+          : {}),
+      }
     );
   }
 

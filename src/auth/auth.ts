@@ -76,7 +76,7 @@ export default class Auth {
       }
 
       if (!data?.shortId || data?.shortId !== meta?.shortId) {
-        throw new HttpError(403, "Unauthorized: Invalid request key");
+        throw new HttpError(403, "Unauthorized: Invalid short id");
       }
 
       return response?.data;
@@ -95,12 +95,7 @@ export default class Auth {
     req: Request,
     { type }: { type: string }
   ): string | null {
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.split(" ")[0] === "Bearer"
-    ) {
-      return req.headers.authorization.split(" ")[1];
-    } else if (req.headers[type]) {
+    if (req.headers[type]) {
       return req.headers[type] as string;
     } else if (req.query && req.query.token) {
       return req.query.token as string;
