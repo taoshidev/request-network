@@ -278,5 +278,3 @@ For detailed instructions, refer to the [Bittensor Documentation](https://docs.b
 ## Cron Server
 
 ReqNet uses Infura Provider to listen to crypto transfer event and initiates cron services to track payment activities to enable / disable services. For a single instance of ReqNet, there's nothing to do other than to deploy ReqNet to your preferred infrastructure. However, if deployed using a multi instance / autoscaling infrastructure like AWS EB or AWS ECS, an additional cron_handler server is needed. To spin up the cron server (Cron Handler), set the environment variable ROLE to "cron_handler" and deploy ReqNet as a separate instance.
-
-For detailed instructions, refer to the [Bittensor Documentation](https://docs.bittensor.com/).
