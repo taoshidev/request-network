@@ -250,7 +250,7 @@ Which should deploy your application to AWS EB under the account that's tied the
 
 ## Payment Integration
 
-Ensure consumer deposits are recorded and manage account activations based on payment status. Handle monthly fund checks and conversions through Uphold API.
+When registering a validator on the ReqNet UI, and when the currency type of "Crypto" is selected, ReqNet will trigger cron service, and transaction event listener through Infura provider. These services ensure payments go through to the specified ERC-20 wallets (setup during registration on the UI). When currency type of "Fiat" is selected during registration, payments are not tracked, stored or managed through ReqNet in any way. Fiat transactions are managed externally, through the validator's external payment system.
 
 ## Bittensor Validator Registration
 
