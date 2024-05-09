@@ -7,7 +7,6 @@ dotenv.config({ path: envPath });
 import App from "./app";
 import DatabaseMigrator from "./db/migrator";
 import Logger from "./utils/logger";
-Logger.info(`Loading environment variables from ${envPath}...`);
 
 const app = new App();
 
@@ -20,7 +19,6 @@ const app = new App();
           process.env.DATABASE_URL!
         );
         await databaseMigrator.migrate();
-        // process.env.MIGRATE = "false";
       }
     });
   } catch (error) {

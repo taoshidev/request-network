@@ -12,6 +12,7 @@
 8. [Payment Integration](#payment-integration)
 9. [Maintenance and Monitoring](#maintenance-and-monitoring)
 10. [Bittensor Validator Registration](#bittensor-validator-registration)
+11. [Cron Server and Event Listener](#cron-server)
 
 ## Introduction
 
@@ -85,15 +86,16 @@ NODE_ENV=
 API_PORT=
 API_HOST=
 API_PREFIX=
+DATABASE_URL=
 REQUEST_NETWORK_UI_URL=
 VALIDATOR_OUTPUT_SERVER_API_URL=
-UNKEY_VERIFY_URL=
 TAOSHI_API_KEY=
 TAOSHI_VALIDATOR_API_SECRET=
 ENCRYPTION_KEY=
 IV_STRING=
+UNKEY_VERIFY_URL=
 INFURA_PROJECT_ID=
-DATABASE_URL=
+ROLE=
 ```
 
 ## Registering as a Validator
@@ -253,6 +255,29 @@ Ensure consumer deposits are recorded and manage account activations based on pa
 ## Bittensor Validator Registration
 
 Register as a validator on Bittensor:
+
+- Generate keys and register:
+
+1. **Create Hot and Cold Keys & Subnet Registration**:
+
+   - Navigate to the the Bittensor documentation page at https://docs.bittensor.com/getting-started/installation and install the Bittensor CLI. Once you have access to the cli, run:
+     ```
+     btcli wallet new_coldkey --wallet.name my-validator
+     btcli wallet new_hotkey --wallet.name my-validator --wallet.hotkey default
+     btcli wallet faucet --wallet.name my-validator --subtensor.network test
+     btcli wallet list
+     btcli subnet register --wallet.name my-validator --wallet.hotkey default --subtensor.network test
+     ```
+
+- You'll be prompted to:
+  - Enter password to unlock key.
+  - Enter netUid (the Subnet to register onto).
+
+For detailed instructions, refer to the [Bittensor Documentation](https://docs.bittensor.com/).
+
+## Cron Server
+
+ReqNet uses Infura Provider to listen to crypto transfer event and initiates cron services to track payment activities to enable / disable services. For a single instance of ReqNet, there's nothing to do other than to deploy ReqNet to your preferred infrastructure. However, if deployed using a multi instance / autoscaling infrastructure like AWS EB or AWS ECS, an additional cron_handler server is needed. To spin up the cron server (Cron Handler), set the environment variable ROLE to "cron_handler" and deploy ReqNet as a separate instance.
 
 - Generate keys and register:
 
