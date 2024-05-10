@@ -43,7 +43,7 @@ export const services = authSchema.table(
     hotkey: varchar("hotkey", { length: 255 }),
     meta: jsonb("meta"),
     enabled: boolean("enabled").default(false).notNull(),
-    active: boolean("active").default(false).notNull(),
+    active: boolean("active").default(true).notNull(),
     createdAt: timestamp("created_at").default(sql`now()`),
     updatedAt: timestamp("updated_at").default(sql`now()`),
     deletedAt: timestamp("deleted_at"),
