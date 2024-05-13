@@ -144,19 +144,16 @@ export default class App {
     this.initializeMiddlewares();
     this.initializeHealthCheck();
   
-    // Check for the specific role or no role set for running both modes
     if (!process.env.ROLE || process.env.ROLE === "cron_handler") {
-      // Role is either not set or explicitly set to 'cron_handler'
+
       this.monitorBlockchainTransactions();
       
-      // Optionally, run server initialization here only if you want it exclusively for cron handling
       if (process.env.ROLE === "cron_handler") {
         this.startServer(cb, "Running in cron mode.");
-        return this; // Early return to prevent other initializations
+        return this;
       }
     }
   
-    // If ROLE is not set, or for any other case, initialize normal server routes
     if (!process.env.ROLE || process.env.ROLE !== "cron_handler") {
       Cors.init();
       this.initializeStaticRoutes();
