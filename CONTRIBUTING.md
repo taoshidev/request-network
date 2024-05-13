@@ -2,6 +2,18 @@
 
 Thank you for your interest in contributing to Request Network! This document provides guidelines and instructions for contributing to this project. We value your contributions and want to ensure a welcoming and productive environment for all community members.
 
+## Technology Stack Overview
+
+The technology stack for ReqNet involves several modern and robust technologies optimized for high performance and reliability:
+
+- **Backend Technologies**: Node.js with Express for building fast, scalable network applications.
+- **Frontend Framework**: React with Next.js for improved SEO and optimized page loading by server-side rendering.
+- **Database Systems**: PostgreSQL for its advanced features and excellent concurrency support without read locks.
+- **Containerization**: Docker for creating, deploying, and running applications in isolated environments.
+- **Cloud Infrastructure**: AWS services including ECS (Elastic Container Service) and Elastic Beanstalk for deployment and scaling.
+- **Version Management Tools**: NVM to manage Node.js versions and PNPM for efficient package management.
+- **Blockchain Integration**: Infura API for interfacing with the Ethereum network and Uphold API for managing crypto transactions.
+
 ## Code of Conduct
 
 Our project is dedicated to providing a welcoming and harassment-free experience for everyone, regardless of age, body size, disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, religion, or sexual identity and orientation. We expect everyone to abide by our **Code of Conduct**. Please read the [CODE OF CONDUCT.md](CODE_OF_CONDUCT.md) file for details.
