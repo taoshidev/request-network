@@ -140,29 +140,39 @@ export default class App {
 
   public init(cb: (app: App) => void): App {
     Logger.info("Initializing app...");
-
+  
     this.initializeMiddlewares();
     this.initializeHealthCheck();
-
-    if (process.env.ROLE === "cron_handler") {
+  
+    // Check for the specific role or no role set for running both modes
+    if (!process.env.ROLE || process.env.ROLE === "cron_handler") {
+      // Role is either not set or explicitly set to 'cron_handler'
       this.monitorBlockchainTransactions();
-      this.startServer(cb);
-    } else {
+      
+      // Optionally, run server initialization here only if you want it exclusively for cron handling
+      if (process.env.ROLE === "cron_handler") {
+        this.startServer(cb, "Running in cron mode.");
+        return this; // Early return to prevent other initializations
+      }
+    }
+  
+    // If ROLE is not set, or for any other case, initialize normal server routes
+    if (!process.env.ROLE || process.env.ROLE !== "cron_handler") {
       Cors.init();
       this.initializeStaticRoutes();
       this.initializeRoutes();
-
       Registration.registerWithUI();
-      if (process.env.UPHOLD_CLIENT_ID && 
-        process.env.UPHOLD_CLIENT_SECRET)
+  
+      if (process.env.UPHOLD_CLIENT_ID && process.env.UPHOLD_CLIENT_SECRET) {
         this.initializeUpholdConnector();
-      this.startServer(cb);
+      }
     }
-
+  
     this.initializeErrorHandling();
-
+    this.startServer(cb, "Running in validator mode.");
     return this;
   }
+  
 
   private startServer(cb: (app: App) => void, message?: string): void {
     const port: number | string = process.env.API_PORT || 8080;
