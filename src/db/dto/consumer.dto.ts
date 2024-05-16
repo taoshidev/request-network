@@ -10,6 +10,7 @@ export interface ConsumerDTO {
     subnetId: string;
     endpoint: string;
     subscriptionId: string;
+    consumerServiceId: string;
     consumerApiUrl?: string;
   };
   enabled: boolean;

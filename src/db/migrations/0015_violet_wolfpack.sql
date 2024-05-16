@@ -1,0 +1,1 @@
+ALTER TABLE "auth"."services" ADD COLUMN "consumer_service_id" varchar;

@@ -4,7 +4,7 @@ import BaseController from "../core/base.controller";
 import Logger from "../utils/logger";
 import DatabaseWrapper from "../core/database.wrapper";
 import { DrizzleResult } from "../core/database.wrapper";
-import { eq, and, isNotNull } from "drizzle-orm";
+import { eq, ne, and, isNotNull } from "drizzle-orm";
 import { ServiceWithWalletDTO } from "../db/dto/service-wallet.dto";
 
 export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
@@ -79,9 +79,11 @@ export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
     }
   }
 
-  async getSubscriptions({ active = true, inclusive = false, currencyType = '' } = {}): Promise<
-    DrizzleResult<ServiceWithWalletDTO[]>
-  > {
+  async getSubscriptions({
+    active = true,
+    inclusive = false,
+    currencyType = "",
+  } = {}): Promise<DrizzleResult<ServiceWithWalletDTO[]>> {
     try {
       const data = await this.db
         .select({
@@ -96,10 +98,10 @@ export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
         .from(services)
         .where(
           and(
-            currencyType? eq(services.currencyType, currencyType) : isNotNull(services.currencyType),
-            inclusive
-              ? isNotNull(services.active)
-              : eq(services.active, active),
+            currencyType === "Crypto"
+              ? ne(services.currencyType, "FIAT")
+              : isNotNull(services.currencyType),
+            inclusive ? isNotNull(services.active) : eq(services.active, active)
           )
         );
       return { data: data as ServiceWithWalletDTO[], error: null };
@@ -131,7 +133,7 @@ export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
           validatorWalletAddress: services.validatorWalletAddress,
         })
         .from(services)
-        .where(eq(services.currencyType, "Crypto"))
+        .where(ne(services.currencyType, "FIAT"))
         .orderBy(services.validatorWalletAddress);
       return { data: data as ServiceDTO[], error: null };
     } catch (error: any) {

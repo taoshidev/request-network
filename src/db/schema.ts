@@ -36,6 +36,7 @@ export const services = authSchema.table(
     validatorId: varchar("validator_id"),
     endpointId: varchar("endpoint_id"),
     subscriptionId: varchar("subscription_id"),
+    consumerServiceId: varchar("consumer_service_id"),
     consumerKeyId: varchar("consumer_key_id", { length: 255 }),
     consumerApiUrl: varchar("consumer_api_url"),
     currencyType: varchar("currency_type"),
