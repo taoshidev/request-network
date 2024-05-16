@@ -140,29 +140,36 @@ export default class App {
 
   public init(cb: (app: App) => void): App {
     Logger.info("Initializing app...");
-
+  
     this.initializeMiddlewares();
     this.initializeHealthCheck();
+  
+    if (!process.env.ROLE || process.env.ROLE === "cron_handler") {
 
-    if (process.env.ROLE === "cron_handler") {
       this.monitorBlockchainTransactions();
-      this.startServer(cb);
-    } else {
+      
+      if (process.env.ROLE === "cron_handler") {
+        this.startServer(cb, "Running in cron mode.");
+        return this;
+      }
+    }
+  
+    if (!process.env.ROLE || process.env.ROLE !== "cron_handler") {
       Cors.init();
       this.initializeStaticRoutes();
       this.initializeRoutes();
-
       Registration.registerWithUI();
-      if (process.env.UPHOLD_CLIENT_ID && 
-        process.env.UPHOLD_CLIENT_SECRET)
+  
+      if (process.env.UPHOLD_CLIENT_ID && process.env.UPHOLD_CLIENT_SECRET) {
         this.initializeUpholdConnector();
-      this.startServer(cb);
+      }
     }
-
+  
     this.initializeErrorHandling();
-
+    this.startServer(cb, "Running in validator mode.");
     return this;
   }
+  
 
   private startServer(cb: (app: App) => void, message?: string): void {
     const port: number | string = process.env.API_PORT || 8080;

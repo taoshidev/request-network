@@ -1,6 +1,6 @@
 {
   "name": "request-network",
-  "version": "v1.1.0",
+  "version": "v1.2.0",
   "main": "dist/index.js",
   "description": "",
   "types": "dist/index.d.ts",
@@ -25,6 +25,7 @@
     "introspect:pg": "drizzle-kit introspect:pg",
     "db:generate": "drizzle-kit generate:pg",
     "db:push": "drizzle-kit push:pg --config=drizzle.config.ts",
+    "db:drop": "drizzle-kit drop --config=drizzle.config.ts",
     "db:migrate": "pnpm db:push && cross-env MIGRATE=true node -r tsconfig-paths/register dist/db/migrate.js"
   },
   "dependencies": {
