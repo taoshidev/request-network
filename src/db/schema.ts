@@ -132,6 +132,37 @@ export const wallets = authSchema.table(
   })
 );
 
+export const stripe = authSchema.table(
+  "stripe",
+  {
+    id: uuid("id")
+      .default(sql`gen_random_uuid()`)
+      .primaryKey()
+      .notNull(),
+    serviceId: uuid("service_id")
+      .references(() => services.id, {
+        onDelete: "set null",
+      })
+      .notNull(),
+    stripeSubscriptionId: varchar("stripe_subscription_id").unique().notNull(),
+    email: varchar("email").unique().notNull(),
+    lastFour: varchar("last_four").unique().notNull(),
+    expMonth: varchar("exp_month").unique().notNull(),
+    expYear: varchar("exp_year").unique().notNull(),
+    firstPayment: timestamp("first_payment").notNull(),
+    paid: boolean("paid").default(true).notNull(),
+    currentPeriodEnd: timestamp("current_period_end").notNull(),
+    createdAt: timestamp("created_at").default(sql`now()`),
+    updatedAt: timestamp("updated_at").default(sql`now()`),
+    deletedAt: timestamp("deleted_at"),
+  },
+  (table) => ({
+    emailPublicKeyIdx: uniqueIndex("email_public_key_idx").on(
+      table.email
+    ),
+  })
+);
+
 export const serviceWalletsRelations = relations(services, ({ many }) => ({
   wallets: many(wallets),
 }));
