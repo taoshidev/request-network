@@ -18,7 +18,7 @@ body {
   background-color: #f7f6f3;
 }
 
-.welcome-container {
+.welcome-container, .subscribe-container {
   text-align: center;
   justify-content: center;
   align-items: center;
@@ -28,6 +28,29 @@ body {
   margin: 3em;
   padding: 3em;
   max-width: 580px;
+}
+.subscribe-container {
+  display: none;
+  min-width: 300px;
+}
+.subscribe-container.open {
+  animation: open .3s ease-in-out;
+  will-change: opacity transform;
+  display: block;
+}
+button[disabled] {
+  opacity: .5;
+}
+
+@keyframes open {
+  0% {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 h1 {
@@ -87,6 +110,9 @@ form {
   min-height: 1.4rem;
   color: red;
   font-size: .9rem;
+}
+.server-error {
+  text-align: center;
 }
 #submit-btn {
   margin-top: .5rem;

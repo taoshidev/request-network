@@ -13,15 +13,13 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <div class="welcome-container">
-      <h1>
-        Subscribe to Service
-      </h1>
+    <div id="subscribe" class="subscribe-container open">
+      <h1>Subscribe to Service</h1>
       <div class="form-container">
         <form id="payment-form" action="">
           <label>Service Name<span class="required">*</span></label>
           <input name="serviceName" readonly type="text" value="Service Name" />
-          <div class="error"></div>
+          <div id="service-error" class="error"></div>
           <input
             name="serviceId"
             class="hidden"
@@ -40,6 +38,12 @@
           </button>
         </form>
       </div>
+      <br />
+      <div id="api-error" class="error server-error"></div>
+    </div>
+    <div id="complete" class="subscribe-container">
+      <h1>Subscription Complete</h1>
+      <a href="<%= uiAppUrl %>" class="button">Return to Request Network</a>
     </div>
     <div id="key" data-key="<%= key %>" data-api="<%= api %>"></div>
     <script src="https://js.stripe.com/v3" type="text/javascript"></script>

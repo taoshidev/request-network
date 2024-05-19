@@ -72,7 +72,8 @@ export default class App {
       res.setHeader("Content-Security-Policy", "default-src 'self' data: ; script-src 'self' https://js.stripe.com; connect-src 'self' https://api.stripe.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com; img-src 'self' https://*.stripe.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;")
       res.render("subscribe", {
         api: btoa(process.env.API_HOST || ''),
-        key: btoa(process.env.STRIPE_PUBLIC_KEY || '')
+        key: btoa(process.env.STRIPE_PUBLIC_KEY || ''),
+        uiAppUrl: process.env.REQUEST_NETWORK_UI_URL
       });
     });
   }

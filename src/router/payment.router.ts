@@ -1,11 +1,11 @@
 import BaseRouter from "../core/base.router";
 import PaymentCtrl from "src/controller/payment.controller";
-import { services } from "../db/schema";
+import { enrollments } from "../db/schema";
 import UiRequest from "../auth/ui-request";
 
 export default class PaymentRoute extends BaseRouter {
   constructor(private paymentCtrl: PaymentCtrl) {
-    super(services, paymentCtrl);
+    super(enrollments, paymentCtrl);
   }
 
   public routes() {
@@ -15,6 +15,11 @@ export default class PaymentRoute extends BaseRouter {
       handler: this.paymentCtrl.handleConsumerPayment,
       interceptor: UiRequest.interceptor,
     });
+    this.register({
+      method: "post",
+      path: "/webhooks",
+      handler: this.paymentCtrl.webhooks
+    })
 
     return this.router;
   }
