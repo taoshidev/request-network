@@ -132,8 +132,8 @@ export const wallets = authSchema.table(
   })
 );
 
-export const stripe = authSchema.table(
-  "stripe",
+export const enrollments = authSchema.table(
+  "enrollments",
   {
     id: uuid("id")
       .default(sql`gen_random_uuid()`)
@@ -144,14 +144,14 @@ export const stripe = authSchema.table(
         onDelete: "set null",
       })
       .notNull(),
+    stripeCustomerId: varchar("stripe_customer_id").unique().notNull(),
     stripeSubscriptionId: varchar("stripe_subscription_id").unique().notNull(),
     email: varchar("email").unique().notNull(),
-    lastFour: varchar("last_four").unique().notNull(),
-    expMonth: varchar("exp_month").unique().notNull(),
-    expYear: varchar("exp_year").unique().notNull(),
-    firstPayment: timestamp("first_payment").notNull(),
+    expMonth: integer("exp_month").unique().notNull(),
+    expYear: integer("exp_year").unique().notNull(),
+    firstPayment: timestamp("first_payment"),
     paid: boolean("paid").default(true).notNull(),
-    currentPeriodEnd: timestamp("current_period_end").notNull(),
+    currentPeriodEnd: timestamp("current_period_end"),
     createdAt: timestamp("created_at").default(sql`now()`),
     updatedAt: timestamp("updated_at").default(sql`now()`),
     deletedAt: timestamp("deleted_at"),

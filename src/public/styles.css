@@ -9,6 +9,7 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
+  min-height: 650px;
 }
 
 body {
@@ -33,7 +34,14 @@ h1 {
   margin-bottom: 20px;
   font-size: 26px;
 }
-
+.hidden {
+  display: none;
+}
+button, input {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
 .button {
   font-family: "Space Mono", monospace;
   font-weight: 400;
@@ -47,7 +55,46 @@ h1 {
   text-decoration: none;
   transition: background-color 0.3s;
 }
-
 .button:hover {
   background-color: #ca4f17;
+}
+input {
+  padding: 8px 15px;
+  width: 100%;
+  display: inline-block;
+}
+label {
+  padding-bottom: .5rem;
+  display: inline-block;
+}
+.form-container {
+  text-align: left;
+  width: 300px;
+  margin: 0 auto;
+  position: relative;
+}
+form {
+  position: relative;
+}
+#card {
+  display: inline-block;
+  padding: .5rem 1rem;
+  min-height: 1.1rem;
+  border: .07rem solid #444;
+  width: 266px;
+}
+.error {
+  min-height: 1.4rem;
+  color: red;
+  font-size: .9rem;
+}
+#submit-btn {
+  margin-top: .5rem;
+  outline: none;
+  border: 1px solid #555;
+  width: 100%;
+}
+.required {
+  padding-left: .25rem;
+  color: #e35f25;
 }

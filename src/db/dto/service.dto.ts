@@ -16,6 +16,7 @@ export class ServiceDTO extends BaseDTO {
   hotkey?: string;
   enabled?: boolean;
   meta?: {
+    consumerId?: string;
     subnetId: string;
     endpoint: string;
     validatorId: string;
