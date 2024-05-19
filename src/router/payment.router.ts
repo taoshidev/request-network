@@ -13,7 +13,7 @@ export default class PaymentRoute extends BaseRouter {
       method: "post",
       path: "/payment",
       handler: this.paymentCtrl.handleConsumerPayment,
-      // interceptor: UiRequest.interceptor,
+      interceptor: UiRequest.interceptor,
     });
 
     return this.router;
