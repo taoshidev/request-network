@@ -28,12 +28,13 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
         return { data: null, error: "Not Authorized" };
       } else {
         // get service user signed up for
-        const service = await this.serviceManager.one(transaction.serviceId);
+        const serviceReq = await this.serviceManager.find(eq(services.subscriptionId, transaction.tokenData.subscriptionId));
+        const service = serviceReq?.data?.[0];
         const stripeEnrollment: any = {
           metadata: {
             'App': 'Request Network',
-            'User ID': (service?.data as ServiceDTO[])?.[0]?.meta?.consumerId,
-            Service: (service?.data as ServiceDTO[])?.[0]?.name,
+            'User ID': service?.meta?.consumerId,
+            Service: service?.name,
             Email: transaction.email
           }
         };
@@ -44,30 +45,33 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
         }
 
         let userEnrollment: Partial<EnrollmentDTO> = {
-          serviceId: (service?.data as ServiceDTO[])?.[0]?.id
+          serviceId: service?.id
         };
 
         // get or create stripe record for service
-        if (transaction.serviceId) {
+        if (transaction.tokenData.serviceId) {
+          // get customer id with matching email if it exists.
           const enrollmentForEmail = await this.find(eq(enrollments.email, transaction.email));
           const stripeCustomerId = enrollmentForEmail?.data?.[0]?.stripeCustomerId;
 
-          if (transaction.serviceId === enrollmentForEmail?.data?.[0]?.serviceId) {
+          // matches service to be updated
+          if (transaction.tokenData.serviceId === enrollmentForEmail?.data?.[0]?.serviceId) {
             userEnrollment = enrollmentForEmail?.data?.[0];
+          // is another service
           } else {
-            const enrollmentRes = await this.find(eq(enrollments.serviceId, transaction.serviceId));
+            const enrollmentRes = await this.find(eq(enrollments.serviceId, transaction.tokenData.serviceId));
             if (enrollmentRes.data?.[0]?.serviceId) {
               userEnrollment = enrollmentRes.data?.[0]
             }
           }
           let customer;
-
           if (stripeCustomerId) {
             customer = await stripe.customers.retrieve(stripeCustomerId);
           }
 
           if (customer && !customer.deleted) {
             customer = await stripe.customers.update(customer.id, stripeEnrollment);
+            userEnrollment.stripeCustomerId = customer.id;
           } else {
             customer = await stripe.customers.create(stripeEnrollment);
             userEnrollment.stripeCustomerId = customer.id;
@@ -77,8 +81,8 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
           userEnrollment.stripeCustomerId = customer.id;
         }
 
-        if (service?.data) {
-          return await this.stripeProcess({ transaction, service: (service.data as ServiceDTO[])?.[0] as ServiceDTO, userEnrollment });
+        if (service) {
+          return await this.stripeProcess({ transaction, service, userEnrollment });
         }
         else throw Error('Service not found.')
       }

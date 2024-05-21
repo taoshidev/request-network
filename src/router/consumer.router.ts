@@ -14,6 +14,11 @@ export default class ConsumerRoute extends BaseRouter {
       path: "/register-consumer",
       handler: this.consumerCtrl.handleConsumerRegistration,
       interceptor: UiRequest.interceptor,
+    }).register({
+      method: "post",
+      path: '/request-payment',
+      handler: this.consumerCtrl.getPaymentToken,
+      interceptor: UiRequest.interceptor
     });
 
     return this.router;

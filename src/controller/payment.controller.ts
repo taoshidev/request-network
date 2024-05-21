@@ -5,6 +5,7 @@ import Logger from "../utils/logger";
 import StripeManager from "src/service/stripe.manager";
 import { EnrollmentPaymentRequestDTO } from "src/db/dto/enrollment-payment-request.dto";
 import { EnrollmentPaymentDTO } from "src/db/dto/enrollment-payment.dto";
+import * as jwt from 'jsonwebtoken';
 
 /**
  * Controller for handling payments.
@@ -23,10 +24,11 @@ export default class PaymentCtrl extends BaseController {
    * @returns A 201 status code and the enrollment id and enrollment email on success, or a 400 status code with an error message on failure.
    */
   handleConsumerPayment = async (req: Request, res: Response) => {
-    const { body } = req as EnrollmentPaymentRequestDTO;
+    const { body, body: { tokenData} } = req as EnrollmentPaymentRequestDTO;
 
-    if (!body)
+    if (!body?.rnToken)
       return res.status(400).json({ error: "Request missing payload" });
+
 
     try {
       const enrollment = await this.stripeService.enroll(body as EnrollmentPaymentDTO);

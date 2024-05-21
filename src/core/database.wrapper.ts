@@ -60,7 +60,7 @@ export default abstract class DatabaseWrapper<T> {
         .select()
         .from(this.schema)
         .where(eq(this.schema.id, id));
-      return { data: res as T, error: null };
+      return { data: res?.[0] as T, error: null };
     } catch (error) {
       console.error(error);
       return { data: null, error: error as DrizzleError };

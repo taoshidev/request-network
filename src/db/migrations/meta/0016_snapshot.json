@@ -1,5 +1,5 @@
 {
-  "id": "b2b8a031-b50b-4f62-959b-209603d749e2",
+  "id": "35779f38-65b3-4163-b61b-f1e48b989275",
   "prevId": "4ce54283-03ad-4c34-91a6-f2affbd1609f",
   "version": "5",
   "dialect": "pg",
@@ -91,15 +91,7 @@
           "notNull": false
         }
       },
-      "indexes": {
-        "email_public_key_idx": {
-          "name": "email_public_key_idx",
-          "columns": [
-            "email"
-          ],
-          "isUnique": true
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "enrollments_service_id_services_id_fk": {
           "name": "enrollments_service_id_services_id_fk",
@@ -118,39 +110,11 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "enrollments_stripe_customer_id_unique": {
-          "name": "enrollments_stripe_customer_id_unique",
+        "enrollments_id_unique": {
+          "name": "enrollments_id_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "stripe_customer_id"
-          ]
-        },
-        "enrollments_stripe_subscription_id_unique": {
-          "name": "enrollments_stripe_subscription_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "stripe_subscription_id"
-          ]
-        },
-        "enrollments_email_unique": {
-          "name": "enrollments_email_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
-        },
-        "enrollments_exp_month_unique": {
-          "name": "enrollments_exp_month_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "exp_month"
-          ]
-        },
-        "enrollments_exp_year_unique": {
-          "name": "enrollments_exp_year_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "exp_year"
+            "id"
           ]
         }
       }

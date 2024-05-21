@@ -1,7 +1,7 @@
 import BaseRouter from "../core/base.router";
 import PaymentCtrl from "src/controller/payment.controller";
 import { enrollments } from "../db/schema";
-import UiRequest from "../auth/ui-request";
+import PaymentRequest from "../auth/payment-request";
 
 export default class PaymentRoute extends BaseRouter {
   constructor(private paymentCtrl: PaymentCtrl) {
@@ -13,12 +13,11 @@ export default class PaymentRoute extends BaseRouter {
       method: "post",
       path: "/payment",
       handler: this.paymentCtrl.handleConsumerPayment,
-      interceptor: UiRequest.interceptor,
-    });
-    this.register({
+      interceptor: PaymentRequest.interceptor
+    }).register({
       method: "post",
       path: "/webhooks",
-      handler: this.paymentCtrl.webhooks
+      handler: this.paymentCtrl.webhooks,
     })
 
     return this.router;

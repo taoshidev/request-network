@@ -12,6 +12,7 @@ import {
   integer,
   index,
   uniqueIndex,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 import { bytea } from "./types";
 
@@ -138,17 +139,18 @@ export const enrollments = authSchema.table(
     id: uuid("id")
       .default(sql`gen_random_uuid()`)
       .primaryKey()
+      .unique()
       .notNull(),
     serviceId: uuid("service_id")
       .references(() => services.id, {
         onDelete: "set null",
       })
       .notNull(),
-    stripeCustomerId: varchar("stripe_customer_id").unique().notNull(),
-    stripeSubscriptionId: varchar("stripe_subscription_id").unique().notNull(),
-    email: varchar("email").unique().notNull(),
-    expMonth: integer("exp_month").unique().notNull(),
-    expYear: integer("exp_year").unique().notNull(),
+    stripeCustomerId: varchar("stripe_customer_id").notNull(),
+    stripeSubscriptionId: varchar("stripe_subscription_id").notNull(),
+    email: varchar("email").notNull(),
+    expMonth: integer("exp_month").notNull(),
+    expYear: integer("exp_year").notNull(),
     firstPayment: timestamp("first_payment"),
     paid: boolean("paid").default(true).notNull(),
     currentPeriodEnd: timestamp("current_period_end"),
@@ -156,11 +158,7 @@ export const enrollments = authSchema.table(
     updatedAt: timestamp("updated_at").default(sql`now()`),
     deletedAt: timestamp("deleted_at"),
   },
-  (table) => ({
-    emailPublicKeyIdx: uniqueIndex("email_public_key_idx").on(
-      table.email
-    ),
-  })
+  (table) => ({})
 );
 
 export const serviceWalletsRelations = relations(services, ({ many }) => ({
