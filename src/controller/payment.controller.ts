@@ -109,4 +109,21 @@ export default class PaymentCtrl extends BaseController {
         .json({ error: (error as Error)?.message || "Internal server error" });
     }
   }
+
+  checkForStripe = async (req: Request, res: Response) => {
+    try {
+      let ok = false;
+      if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PUBLIC_KEY && process.env.ENROLLMENT_SECRET) {
+        ok = true;
+      }
+      return res
+        .status(200)
+        .json({ ok });
+    } catch (error: Error | unknown) {
+      Logger.error("Error creating token:" + JSON.stringify(error));
+      return res
+        .status(500)
+        .json({ ok: false, error: (error as Error)?.message || "Internal server error" });
+    }
+  }
 }

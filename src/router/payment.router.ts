@@ -27,6 +27,11 @@ export default class PaymentRoute extends BaseRouter {
       interceptor: UiRequest.interceptor
     }).register({
       method: "post",
+      path: '/has-stripe',
+      handler: this.paymentCtrl.checkForStripe,
+      interceptor: UiRequest.interceptor
+    }).register({
+      method: "post",
       path: "/webhooks",
       handler: this.paymentCtrl.webhooks,
     });
