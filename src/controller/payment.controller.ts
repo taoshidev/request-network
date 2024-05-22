@@ -47,8 +47,17 @@ export default class PaymentCtrl extends BaseController {
 
   handleUnsubscribe = async (req: Request, res: Response) => {
     try {
-    } catch (error) {
+      const { serviceId } = req.body;
+      const unsubscribedService = await this.stripeService.cancelSubscription(serviceId);
 
+      return res
+        .status(201)
+        .json(unsubscribedService);
+    } catch (error) {
+      Logger.error("Error cancelling subscription:" + JSON.stringify(error));
+      return res
+        .status(500)
+        .json({ error: (error as Error)?.message || "Internal server error" });
     }
   }
 

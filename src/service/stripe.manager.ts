@@ -134,14 +134,15 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
 
       const subscriptionId = userEnrollment.stripeSubscriptionId;
       let subscription: any;
-
       if (subscriptionId) {
+        subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      }
+
+      if (subscriptionId && !subscription.canceled_at) {
         const basePrice = service.price ? +service.price * 100 : 0;
 
-        subscription = await stripe.subscriptions.retrieve(subscriptionId);
-
         if (basePrice === 0) {
-          stripe.subscriptions.del(subscription.id);
+          stripe.subscriptions.cancel(subscription.id);
           userEnrollment.stripeSubscriptionId = null;
         } else {
           subscription = await stripe.subscriptions.update(
@@ -209,6 +210,40 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
           active: statusRes?.data?.active
         }], error: enrollment.error && 'Error processing payment.'
       }
+    } catch (error: any) {
+      Logger.error("Error stripe process: " + JSON.stringify(error));
+      return { data: null, error: error.message || "Internal server error" };
+    }
+  }
+
+  async cancelSubscription(serviceId: string) {
+    try {
+      const enrollmentRes = await this.find(eq(enrollments.serviceId, serviceId));
+      const enrollment = enrollmentRes?.data?.[0];
+
+      if (!enrollment) throw new Error('Enrollment not found.');
+
+      const subscription = await stripe.subscriptions.retrieve(enrollment.stripeSubscriptionId);
+
+      // option to cancel at end of subscription period
+      // const subscription = await stripe.subscriptions.update(
+      //   enrollment.stripeSubscriptionId,
+      //   {cancel_at_period_end: true}
+      // );
+
+      if (!subscription?.canceled_at) {
+        await stripe.subscriptions.cancel(enrollment.stripeSubscriptionId);
+      }
+      const statusRes = await this.serviceManager.changeStatus(enrollment.serviceId as string, false);
+
+      await AuthenticatedRequest.send({
+        method: "PUT",
+        path: "/api/status",
+        body: { subscriptionId: (statusRes.data as ServiceDTO[])?.[0]?.subscriptionId, active: false },
+        xTaoshiKey: XTaoshiHeaderKeyType.Validator,
+      });
+
+      return statusRes;
     } catch (error: any) {
       Logger.error("Error stripe process: " + JSON.stringify(error));
       return { data: null, error: error.message || "Internal server error" };
