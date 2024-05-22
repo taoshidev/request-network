@@ -12,6 +12,7 @@ import {
   integer,
   index,
   uniqueIndex,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 import { bytea } from "./types";
 
@@ -130,6 +131,35 @@ export const wallets = authSchema.table(
       table.publicKey
     ),
   })
+);
+
+export const enrollments = authSchema.table(
+  "enrollments",
+  {
+    id: uuid("id")
+      .default(sql`gen_random_uuid()`)
+      .primaryKey()
+      .unique()
+      .notNull(),
+    serviceId: uuid("service_id")
+      .references(() => services.id, {
+        onDelete: "set null",
+      })
+      .notNull(),
+    stripeCustomerId: varchar("stripe_customer_id").notNull(),
+    stripeSubscriptionId: varchar("stripe_subscription_id").notNull(),
+    email: varchar("email").notNull(),
+    expMonth: integer("exp_month").notNull(),
+    expYear: integer("exp_year").notNull(),
+    lastFour: integer("last_four"),
+    firstPayment: timestamp("first_payment"),
+    paid: boolean("paid").default(true).notNull(),
+    currentPeriodEnd: timestamp("current_period_end"),
+    createdAt: timestamp("created_at").default(sql`now()`),
+    updatedAt: timestamp("updated_at").default(sql`now()`),
+    deletedAt: timestamp("deleted_at"),
+  },
+  (table) => ({})
 );
 
 export const serviceWalletsRelations = relations(services, ({ many }) => ({

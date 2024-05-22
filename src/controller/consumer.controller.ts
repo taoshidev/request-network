@@ -44,5 +44,4 @@ export default class ConsumerCtrl extends BaseController {
         .json({ error: (error as Error)?.message || "Internal server error" });
     }
   };
-
 }

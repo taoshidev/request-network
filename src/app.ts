@@ -16,6 +16,8 @@ import ServiceCron from "./core/cron";
 import Registration from "./core/registration";
 import UpholdConnector from "./service/uphold.connector";
 import TransactionManager from "./service/transaction.manager";
+import PaymentRoute from "./router/payment.router";
+import PaymentCtrl from "./controller/payment.controller";
 
 export default class App {
   public express: Express;
@@ -65,6 +67,15 @@ export default class App {
       res.setHeader("Origin-Agent-Cluster", "?1");
       res.render("index", { uiAppUrl: process.env.REQUEST_NETWORK_UI_URL });
     });
+    this.express.get("/subscribe", (req, res) => {
+      res.setHeader("Origin-Agent-Cluster", "?1");
+      res.setHeader("Content-Security-Policy", "default-src 'self' data: ; script-src 'self' https://js.stripe.com; connect-src 'self' https://api.stripe.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com; img-src 'self' https://*.stripe.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;")
+      res.render("subscribe", {
+        api: btoa(process.env.API_HOST || ''),
+        key: btoa(process.env.STRIPE_PUBLIC_KEY || ''),
+        uiAppUrl: process.env.REQUEST_NETWORK_UI_URL || ''
+      });
+    });
   }
 
   private initializeHealthCheck(): void {
@@ -80,6 +91,7 @@ export default class App {
   private initializeRoutes(): void {
     this.express.use(Cors.getDynamicCorsMiddleware());
     this.express.use(new ConsumerRoute(new ConsumerCtrl()).routes());
+    this.express.use(new PaymentRoute(new PaymentCtrl()).routes());
 
     // Loop through all the schema and mount their routes
     // In case there are more than 1 schema, we will loop through them
@@ -140,43 +152,42 @@ export default class App {
 
   public init(cb: (app: App) => void): App {
     Logger.info("Initializing app...");
-  
+
     this.initializeMiddlewares();
     this.initializeHealthCheck();
-  
+
     if (!process.env.ROLE || process.env.ROLE === "cron_handler") {
 
       this.monitorBlockchainTransactions();
-      
+
       if (process.env.ROLE === "cron_handler") {
         this.startServer(cb, "Running in cron mode.");
         return this;
       }
     }
-  
+
     if (!process.env.ROLE || process.env.ROLE !== "cron_handler") {
       Cors.init();
       this.initializeStaticRoutes();
       this.initializeRoutes();
       Registration.registerWithUI();
-  
+
       if (process.env.UPHOLD_CLIENT_ID && process.env.UPHOLD_CLIENT_SECRET) {
         this.initializeUpholdConnector();
       }
     }
-  
+
     this.initializeErrorHandling();
     this.startServer(cb, "Running in validator mode.");
     return this;
   }
-  
+
 
   private startServer(cb: (app: App) => void, message?: string): void {
     const port: number | string = process.env.API_PORT || 8080;
     this.express.listen(port, () => {
       Logger.info(
-        `Server running at ${process.env.API_HOST}... Server Role: ${
-          process.env.ROLE || "validator"
+        `Server running at ${process.env.API_HOST}... Server Role: ${process.env.ROLE || "validator"
         } ${message || ""}`
       );
       cb?.(this);
