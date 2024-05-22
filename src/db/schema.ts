@@ -151,6 +151,7 @@ export const enrollments = authSchema.table(
     email: varchar("email").notNull(),
     expMonth: integer("exp_month").notNull(),
     expYear: integer("exp_year").notNull(),
+    lastFour: integer("last_four"),
     firstPayment: timestamp("first_payment"),
     paid: boolean("paid").default(true).notNull(),
     currentPeriodEnd: timestamp("current_period_end"),

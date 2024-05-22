@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import { enrollments, services } from "../db/schema";
 import { EnrollmentPaymentDTO } from "src/db/dto/enrollment-payment.dto";
 import { ServiceDTO } from "src/db/dto/service.dto";
+import { AuthenticatedRequest, XTaoshiHeaderKeyType } from "src/core/auth-request";
 
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
@@ -35,7 +36,9 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
             'App': 'Request Network',
             'User ID': service?.meta?.consumerId,
             Service: service?.name,
-            Email: transaction.email
+            'Service ID': transaction.tokenData?.serviceId,
+            Email: transaction.email,
+            'Endpoint Url': transaction.tokenData?.url
           }
         };
 
@@ -57,7 +60,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
           // matches service to be updated
           if (transaction.tokenData.serviceId === enrollmentForEmail?.data?.[0]?.serviceId) {
             userEnrollment = enrollmentForEmail?.data?.[0];
-          // is another service
+            // is another service
           } else {
             const enrollmentRes = await this.find(eq(enrollments.serviceId, transaction.tokenData.serviceId));
             if (enrollmentRes.data?.[0]?.serviceId) {
@@ -106,10 +109,18 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
 
       if (!plan) {
         plan = await stripe.plans.create({
-          amount: service?.price,
+          amount: service?.price ? +service?.price * 100 : undefined,
           interval: 'month',
           product: {
             name: service?.name
+          },
+          metadata: {
+            'App': 'Request Network',
+            'User ID': service?.meta?.consumerId,
+            Service: service.name,
+            'Service ID': transaction.tokenData?.serviceId,
+            Email: transaction.email,
+            'Endpoint Url': transaction.tokenData?.url
           },
           currency: 'usd'
         })
@@ -125,7 +136,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
       let subscription: any;
 
       if (subscriptionId) {
-        const basePrice = +(service.price || 0);
+        const basePrice = service.price ? +service.price * 100 : 0;
 
         subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
@@ -143,7 +154,11 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
               }],
               metadata: {
                 'App': 'Request Network',
+                'User ID': service?.meta?.consumerId,
                 Service: service.name,
+                'Service ID': transaction.tokenData?.serviceId,
+                Email: transaction.email,
+                'Endpoint Url': transaction.tokenData?.url
               }
             }
           );
@@ -157,7 +172,11 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
           }],
           metadata: {
             'App': 'Request Network',
+            'User ID': service?.meta?.consumerId,
             Service: service.name,
+            'Service ID': transaction.tokenData?.serviceId,
+            Email: transaction.email,
+            'Endpoint Url': transaction.tokenData?.url
           }
         });
         userEnrollment.stripeSubscriptionId = subscription.id;
@@ -167,15 +186,27 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
         userEnrollment.email = transaction.email;
         userEnrollment.expMonth = transaction.expMonth;
         userEnrollment.expYear = transaction.expYear;
+        userEnrollment.lastFour = +transaction.lastFour;
       }
 
       userEnrollment.currentPeriodEnd = DateTime.fromSeconds(+subscription.current_period_end).toJSDate();
       const enrollment = userEnrollment.id ? await this.update(userEnrollment.id, userEnrollment as EnrollmentDTO) : await this.create(userEnrollment as EnrollmentDTO);
       const data = (enrollment.data as EnrollmentDTO[])?.[0];
+
+      const statusRes = await this.serviceManager.changeStatus(service?.id as string, true);
+
+      await AuthenticatedRequest.send({
+        method: "PUT",
+        path: "/api/status",
+        body: { subscriptionId: service.subscriptionId, active: true },
+        xTaoshiKey: XTaoshiHeaderKeyType.Validator,
+      });
+
       return {
         data: [{
           id: data.id,
-          email: data.email
+          email: data.email,
+          active: statusRes?.data?.active
         }], error: enrollment.error && 'Error processing payment.'
       }
     } catch (error: any) {

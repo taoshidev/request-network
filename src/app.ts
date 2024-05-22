@@ -73,7 +73,7 @@ export default class App {
       res.render("subscribe", {
         api: btoa(process.env.API_HOST || ''),
         key: btoa(process.env.STRIPE_PUBLIC_KEY || ''),
-        uiAppUrl: process.env.REQUEST_NETWORK_UI_URL
+        uiAppUrl: process.env.REQUEST_NETWORK_UI_URL || ''
       });
     });
   }

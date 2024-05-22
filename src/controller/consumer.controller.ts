@@ -4,7 +4,6 @@ import { services } from "../db/schema";
 import BaseController from "../core/base.controller";
 import Logger from "../utils/logger";
 import { CustomRequestDTO } from "../db/dto/custom-request.dto";
-import * as jwt from 'jsonwebtoken';
 
 /**
  * Controller for handling consumer-specific actions.
@@ -45,41 +44,4 @@ export default class ConsumerCtrl extends BaseController {
         .json({ error: (error as Error)?.message || "Internal server error" });
     }
   };
-
-  /**
- * Creates a token that will need to be sent back to create a stripe subscription.
- * @param {Request} req - Express.js request object containing the service id in the body.
- * @param {Response} res - Express.js response object.
- * @param {NextFunction} next - Express.js next middleware function.
- * @returns A 201 status code and the token on success, or a 400 status code with an error message on failure.
- */
-  getPaymentToken = async (req: Request, res: Response) => {
-    try {
-      const { body } = req;
-      const secret = process.env.ENROLLMENT_SECRET || '';
-      const service = await this.one(body.serviceId);
-
-      if (service.data) {
-        const token = jwt.sign({
-          serviceId: service.data.id,
-          name: service.data.name,
-          url: body.url,
-          email: body.email,
-          subscriptionId: service.data.subscriptionId,
-          endpointId: service.data.endpointId
-        }, secret, { expiresIn: '120m' });
-
-        return res
-          .status(200)
-          .json({ token });
-      } else {
-        throw Error('Error finding service.');
-      }
-    } catch (error: Error | unknown) {
-      Logger.error("Error creating token:" + JSON.stringify(error));
-      return res
-        .status(500)
-        .json({ error: (error as Error)?.message || "Internal server error" });
-    }
-  }
 }

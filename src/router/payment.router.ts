@@ -2,6 +2,7 @@ import BaseRouter from "../core/base.router";
 import PaymentCtrl from "src/controller/payment.controller";
 import { enrollments } from "../db/schema";
 import PaymentRequest from "../auth/payment-request";
+import UiRequest from "src/auth/ui-request";
 
 export default class PaymentRoute extends BaseRouter {
   constructor(private paymentCtrl: PaymentCtrl) {
@@ -16,9 +17,19 @@ export default class PaymentRoute extends BaseRouter {
       interceptor: PaymentRequest.interceptor
     }).register({
       method: "post",
+      path: "/cancel-subscription",
+      handler: this.paymentCtrl.handleUnsubscribe,
+      interceptor: UiRequest.interceptor,
+    }).register({
+      method: "post",
+      path: '/request-payment',
+      handler: this.paymentCtrl.getPaymentToken,
+      interceptor: UiRequest.interceptor
+    }).register({
+      method: "post",
       path: "/webhooks",
       handler: this.paymentCtrl.webhooks,
-    })
+    });
 
     return this.router;
   }

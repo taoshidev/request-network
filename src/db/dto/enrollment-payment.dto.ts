@@ -10,7 +10,7 @@ export interface EnrollmentPaymentDTO {
   };
   email: string;
   token: string;
-  LastFour: string;
+  lastFour: string;
   expMonth: number;
   expYear: number;
 }

@@ -14,7 +14,9 @@
 
   var stripeKey = atob(keyElement.getAttribute("data-key"));
   var apiUrl = atob(keyElement.getAttribute("data-api"));
+  var uiApiUrl = keyElement.getAttribute("data-ui-api");
   var focus = "";
+  var redirect = "";
 
   document.getElementById("payment-form").addEventListener("submit", enroll);
   document.addEventListener("focusin", (e) => (focus = e.target.name));
@@ -42,6 +44,7 @@
     serviceNameInput.value = data.name;
     emailInput.value = data.email;
     serviceRouteInput.value = data.url;
+    redirect = data.redirect;
   } catch (e) {
     apiError.innerText = "Error: Invalid token.";
   }
@@ -64,14 +67,11 @@
   function enroll(e) {
     if (e) e.preventDefault();
 
-    var { email, serviceRoute } = Object.fromEntries(
-      new FormData(e.target)
-    );
+    var { email, serviceRoute } = Object.fromEntries(new FormData(e.target));
 
     if (card._complete && email && serviceRoute) {
       submitBtn.disabled = true;
       stripeObj.createToken(card, email).then(async ({ token, error }) => {
-
         if (error) {
           this.submittedChange.emit(false);
         } else {
@@ -110,6 +110,10 @@
           subscribe.classList.remove("open");
           complete.classList.add("open");
           form.reset();
+          setTimeout(() => {
+            window.close();
+            // window.open(`${uiApiUrl}${redirect}`, "_blank");
+          }, 3000);
         } else {
           apiError.innerText = "Payment error: " + res.error;
           submitBtn.disabled = false;
