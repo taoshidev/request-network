@@ -181,7 +181,6 @@ export default class App {
     this.startServer(cb, "Running in validator mode.");
     return this;
   }
-
   private startServer(cb: (app: App) => void, message?: string): void {
     const port: number | string = process.env.API_PORT || 8080;
     this.express.listen(port, () => {
