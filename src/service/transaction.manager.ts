@@ -33,6 +33,9 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
   private provider!: ethers.WebSocketProvider;
   private contracts!: Record<string, ethers.Contract>;
 
+  private validatorWallets: Set<string> = new Set();
+  private static instance: TransactionManager;
+
   constructor() {
     super(transactions);
 
@@ -40,11 +43,19 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
     try {
       this.provider = this.initializeWebSocketProvider();
       this.contracts = this.initializeContracts();
+      // this.startMonitoring()
     } catch (error: Error | unknown) {
       Logger.error(
         `Failed to initialize Transaction Manager: ${(error as Error)?.message}`
       );
     }
+  }
+
+  static getInstance(): TransactionManager {
+    if (!TransactionManager.instance) {
+      TransactionManager.instance = new TransactionManager();
+    }
+    return TransactionManager.instance;
   }
 
   /**
@@ -125,13 +136,7 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
 
   async monitorValidatorWallets(): Promise<void> {
     try {
-      const { data: publicKeys } =
-        await this.serviceManager.getDistinctValidatorWallets();
-
-      this.monitorTransfers(
-        undefined,
-        publicKeys as Array<{ validatorWalletAddress: string } | undefined>
-      );
+      this.monitorTransfers(undefined);
     } catch (error) {
       Logger.error(
         `Failed to monitor all wallets: JSON: ${JSON.stringify(error, null, 2)}`
@@ -143,40 +148,33 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
    * Monitors transfer events for a specific wallet address.
    * @param walletAddress The wallet address to monitor for transfers.
    */
-  monitorTransfers(
-    service?: ServiceWithWalletDTO | undefined,
-    validatorErcAddresses?: Array<
-      { validatorWalletAddress: string } | undefined
-    >
-  ): void {
+  monitorTransfers(service?: ServiceWithWalletDTO | undefined): void {
+    const publicKeys = Array.from(this.validatorWallets);
+
     if (service) {
       const { consumerWalletAddress } = service;
       Logger.info(
         `Listening for Transfer events for wallet: ${consumerWalletAddress}`
       );
-    } else if (validatorErcAddresses) {
+    } else if (publicKeys) {
       Logger.info(
-        `Listening for Transfer events for validator wallet: ${JSON.stringify(
-          validatorErcAddresses
+        `Monitoring validator wallets: ${Array.from(this.validatorWallets).join(
+          ", "
         )}`
       );
     } else {
       Logger.info(`No wallet or validator erc-20 address provided.`);
     }
     Object.keys(this.contracts).forEach((tokenKey) => {
-      // Remove any previously set listeners to avoid duplicates
-      this.contracts[tokenKey].removeAllListeners("Transfer");
-      // Listen to Transfer events specific to the current wallet
+      if (!this.validatorWallets.size) {
+        this.contracts[tokenKey].removeAllListeners("Transfer");
+      }
       this.contracts[tokenKey].on(
         "Transfer",
         async (from: string, to: string, amount: bigint, event: any) => {
           if (service) {
-            // Log the transfer to and from escrow
             this.processTransferEvent(tokenKey, from, to, amount, service);
-          } else if (validatorErcAddresses) {
-            const publicKeys = (validatorErcAddresses || [])?.map(
-              (k) => k?.validatorWalletAddress!
-            );
+          } else {
             this.processConsumerDepositEvent(
               tokenKey,
               from,
@@ -279,7 +277,6 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
         )} ${tokenKey}`
       );
 
-      // Get the service associated with the consumer wallet address
       const currentService = await this.serviceManager.getSubscriberByAddress(
         from as string
       );
@@ -289,7 +286,6 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
       try {
         if (!subscription) return;
 
-        // Track the transaction
         await this.trackTransactions(
           id!,
           to,
@@ -301,7 +297,6 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
         );
 
         if (!subscription.active) {
-          // return the balance to see if the balance is sufficient to activate the service
           const balance = await this.checkSubscriptionBalance(subscription);
 
           if (!balance) return;
@@ -355,8 +350,8 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
       const outstandingBalance = totalAmountDue - +totalDeposits;
 
       const sufficient = balance && parseFloat(balance) >= outstandingBalance;
-      // Calculate grace period end date
-      const graceEndDate = addDays(startDate, 40);
+
+      const graceEndDate = addDays(startDate, 14);
       const inGracePeriod = now <= graceEndDate;
 
       if (!sufficient) {
@@ -475,5 +470,34 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
       totalDeposits: sum(transactions.amount),
     });
     return transaction?.data?.[0]?.totalDeposits || 0;
+  }
+
+  public startMonitoring() {
+    this.updateValidatorWallets();
+  }
+
+  public async updateValidatorWallets(): Promise<void> {
+    try {
+      const { data: publicKeys } =
+        await this.serviceManager.getDistinctValidatorWallets();
+      (
+        (publicKeys as Array<{ validatorWalletAddress: string } | undefined>) ||
+        []
+      ).forEach((key) => {
+        if (key && key?.validatorWalletAddress) {
+          this.validatorWallets.add(key?.validatorWalletAddress);
+        }
+      });
+
+      this.monitorValidatorWallets();
+    } catch (error) {
+      Logger.error(
+        `Failed to update validator wallets: JSON: ${JSON.stringify(
+          error,
+          null,
+          2
+        )}`
+      );
+    }
   }
 }
