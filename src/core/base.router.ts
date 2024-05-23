@@ -47,6 +47,7 @@ export default class BaseRouter {
       .delete(this.ctrl.remove());
     // [schema-name]/any-key/any-value
     this.router.route("/:key/:value").put(this.ctrl.updateByKey());
+    this.router.route("/query").post(this.ctrl.query());
 
     return this.router;
   }

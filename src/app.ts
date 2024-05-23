@@ -30,17 +30,18 @@ export default class App {
 
   private async monitorBlockchainTransactions() {
     // Run the monthly service cron 1st of every month
-    new ServiceCron().run();
+    ServiceCron.getInstance().run();
     // Monitor pending transactions on USDC and USDT
-    new TransactionManager().monitorValidatorWallets().catch((error) => {
-      Logger.error(
-        `Failed to initiate validator ERC-20 wallet monitoring:${JSON.stringify(
-          error,
-          null,
-          2
-        )}`
-      );
-    });
+    TransactionManager.getInstance().startMonitoring();
+    // transactionManager.monitorValidatorWallets().catch((error) => {
+    //   Logger.error(
+    //     `Failed to initiate validator ERC-20 wallet monitoring:${JSON.stringify(
+    //       error,
+    //       null,
+    //       2
+    //     )}`
+    //   );
+    // });
   }
 
   private async initializeUpholdConnector(): Promise<void> {
@@ -157,7 +158,6 @@ export default class App {
     this.initializeHealthCheck();
 
     if (!process.env.ROLE || process.env.ROLE === "cron_handler") {
-
       this.monitorBlockchainTransactions();
 
       if (process.env.ROLE === "cron_handler") {
@@ -181,7 +181,10 @@ export default class App {
     this.startServer(cb, "Running in validator mode.");
     return this;
   }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 4a1255e (feat(dynamic-endpoint): added dynamic endpoint, fetch anything)
 
   private startServer(cb: (app: App) => void, message?: string): void {
     const port: number | string = process.env.API_PORT || 8080;

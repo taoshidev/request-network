@@ -114,4 +114,14 @@ export default class BaseController extends DatabaseWrapper<any> {
       return res?.status(404).json(data);
     };
   }
+
+  public query() {
+    return async (req: Request, res: Response, next: NextFunction) => {
+      const data = await this.dynamicQuery(req?.body);
+      if (data) {
+        return res?.status(200).json(data);
+      }
+      return res?.status(404).json(data);
+    };
+  }
 }

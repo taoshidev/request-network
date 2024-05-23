@@ -1,6 +1,17 @@
 import Database from "../db/database";
 import { PgTableWithColumns, SelectedFields } from "drizzle-orm/pg-core";
-import { eq, getTableName, SQL } from "drizzle-orm";
+import {
+  and,
+  eq,
+  getTableName,
+  gt,
+  gte,
+  inArray,
+  lt,
+  lte,
+  sql,
+  SQL,
+} from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../db/schema";
 
@@ -19,6 +30,9 @@ export interface DrizzleResult<T> {
   error: DrizzleError | null;
 }
 
+type Schema = typeof schema;
+type SchemaTableNames = keyof Schema;
+
 export default abstract class DatabaseWrapper<T> {
   public tableName: string;
   protected db: PostgresJsDatabase<any>;
@@ -30,7 +44,7 @@ export default abstract class DatabaseWrapper<T> {
 
   async find(
     where: SQL,
-    filters?: SelectedFields,
+    filters?: SelectedFields
   ): Promise<DrizzleResult<T[]>> {
     try {
       const res = await this.db
@@ -94,10 +108,7 @@ export default abstract class DatabaseWrapper<T> {
 
   async updateMany(record: Partial<T>): Promise<DrizzleResult<T | T[]>> {
     try {
-      const res = await this.db
-        .update(this.schema)
-        .set(record)
-        .returning();
+      const res = await this.db.update(this.schema).set(record).returning();
       return { data: res as T, error: null };
     } catch (error) {
       console.error(error);
@@ -105,15 +116,17 @@ export default abstract class DatabaseWrapper<T> {
     }
   }
 
-  async updateSet(record: Partial<T>, where: SQL): Promise<DrizzleResult<T | T[]>> {
+  async updateSet(
+    record: Partial<T>,
+    where: SQL
+  ): Promise<DrizzleResult<T | T[]>> {
     try {
-
       const res = await this.db
         .update(this.schema)
         .set(record)
         .where(where)
         .returning();
-  
+
       return { data: res as T, error: null };
     } catch (error) {
       console.error(error);
@@ -128,6 +141,53 @@ export default abstract class DatabaseWrapper<T> {
         .where(eq(this.schema.id, id))
         .returning({ deletedId: this.schema.id });
       return { data: res as T, error: null };
+    } catch (error) {
+      console.error(error);
+      return { data: null, error: error as DrizzleError };
+    }
+  }
+
+  public async dynamicQuery(query: any): Promise<DrizzleResult<any[]>> {
+    try {
+      const { where, with: withRelations } = query;
+
+      const tableQuery = (this.db.query as { [key: string]: any })[
+        this.tableName as SchemaTableNames
+      ];
+
+      let whereClause = undefined;
+      if (where) {
+        whereClause = and(
+          ...where.map((condition: any) => {
+            switch (condition.type) {
+              case "eq":
+                return eq(this.schema[condition.column], condition.value);
+              case "in":
+                return inArray(this.schema[condition.column], condition.value);
+              case "lt":
+                return lt(this.schema[condition.column], condition.value);
+              case "gt":
+                return gt(this.schema[condition.column], condition.value);
+              case "lte":
+                return lte(this.schema[condition.column], condition.value);
+              case "gte":
+                return gte(this.schema[condition.column], condition.value);
+              default:
+                throw new Error(
+                  `Unsupported condition type: ${condition.type}`
+                );
+            }
+          })
+        );
+      }
+
+      const dbQuery = tableQuery.findMany({
+        where: whereClause,
+        with: withRelations,
+      });
+
+      const results = await dbQuery;
+      return { data: results, error: null };
     } catch (error) {
       console.error(error);
       return { data: null, error: error as DrizzleError };
