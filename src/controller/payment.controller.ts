@@ -2,11 +2,11 @@ import { Request, Response } from "express";
 import { enrollments } from "../db/schema";
 import BaseController from "../core/base.controller";
 import Logger from "../utils/logger";
-import StripeManager from "src/service/stripe.manager";
-import { EnrollmentPaymentRequestDTO } from "src/db/dto/enrollment-payment-request.dto";
-import { EnrollmentPaymentDTO } from "src/db/dto/enrollment-payment.dto";
+import StripeManager from "../service/stripe.manager";
+import { EnrollmentPaymentRequestDTO } from "../db/dto/enrollment-payment-request.dto";
+import { EnrollmentPaymentDTO } from "../db/dto/enrollment-payment.dto";
 import * as jwt from 'jsonwebtoken';
-import ServiceManager from "src/service/service.manager";
+import ServiceManager from "../service/service.manager";
 
 /**
  * Controller for handling payments.
