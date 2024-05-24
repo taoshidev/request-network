@@ -25,6 +25,10 @@
         {
           "name": "NODE_ENV",
           "value": "staging"
+        },
+        {
+          "name": "ROLE",
+          "value": "validator"
         }
       ],
       "logConfiguration": {
