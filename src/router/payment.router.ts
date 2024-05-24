@@ -2,7 +2,7 @@ import BaseRouter from "../core/base.router";
 import PaymentCtrl from "src/controller/payment.controller";
 import { enrollments } from "../db/schema";
 import PaymentRequest from "../auth/payment-request";
-import UiRequest from "src/auth/ui-request";
+import UiRequest from "../auth/ui-request";
 
 export default class PaymentRoute extends BaseRouter {
   constructor(private paymentCtrl: PaymentCtrl) {
