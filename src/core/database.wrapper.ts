@@ -1,19 +1,9 @@
 import Database from "../db/database";
 import { PgTableWithColumns, SelectedFields } from "drizzle-orm/pg-core";
-import {
-  and,
-  eq,
-  getTableName,
-  gt,
-  gte,
-  inArray,
-  lt,
-  lte,
-  sql,
-  SQL,
-} from "drizzle-orm";
+import { eq, getTableName, SQL } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../db/schema";
+import { createWhereClause, Condition } from "../utils/query-helper";
 
 export interface DrizzleError {
   severity_local: string;
@@ -32,6 +22,17 @@ export interface DrizzleResult<T> {
 
 type Schema = typeof schema;
 type SchemaTableNames = keyof Schema;
+
+interface NestedConditions {
+  where: Condition[];
+}
+
+interface Query {
+  where?: Condition[];
+  with?: {
+    [relation: string]: NestedConditions;
+  };
+}
 
 export default abstract class DatabaseWrapper<T> {
   public tableName: string;
@@ -147,7 +148,7 @@ export default abstract class DatabaseWrapper<T> {
     }
   }
 
-  public async dynamicQuery(query: any): Promise<DrizzleResult<any[]>> {
+  public async dynamicQuery(query: Query): Promise<DrizzleResult<any[]>> {
     try {
       const { where, with: withRelations } = query;
 
@@ -155,35 +156,57 @@ export default abstract class DatabaseWrapper<T> {
         this.tableName as SchemaTableNames
       ];
 
-      let whereClause = undefined;
-      if (where) {
-        whereClause = and(
-          ...where.map((condition: any) => {
-            switch (condition.type) {
-              case "eq":
-                return eq(this.schema[condition.column], condition.value);
-              case "in":
-                return inArray(this.schema[condition.column], condition.value);
-              case "lt":
-                return lt(this.schema[condition.column], condition.value);
-              case "gt":
-                return gt(this.schema[condition.column], condition.value);
-              case "lte":
-                return lte(this.schema[condition.column], condition.value);
-              case "gte":
-                return gte(this.schema[condition.column], condition.value);
-              default:
-                throw new Error(
-                  `Unsupported condition type: ${condition.type}`
-                );
+      const whereClause = where
+        ? createWhereClause(where, this.schema)
+        : undefined;
+
+      const createNestedWhereClauses = (
+        nestedQueries: { [key: string]: Query },
+        schema: any
+      ) => {
+        let nestedWhereClauses: { [key: string]: any } = {};
+
+        for (const [relation, nestedQuery] of Object.entries(nestedQueries)) {
+          if (nestedQuery.where) {
+            const nestedSchema = (schema as { [key: string]: any })[relation];
+            if (!nestedSchema) {
+              throw new Error(`Schema for relation "${relation}" not found`);
             }
-          })
-        );
-      }
+
+            nestedWhereClauses[relation] = createWhereClause(
+              nestedQuery.where,
+              nestedSchema
+            );
+          }
+
+          if (nestedQuery.with) {
+            nestedWhereClauses[relation] = {
+              ...nestedWhereClauses[relation],
+              with: createNestedWhereClauses(nestedQuery.with, schema),
+            };
+          }
+        }
+
+        return nestedWhereClauses;
+      };
+
+      const nestedWhereClauses = withRelations
+        ? createNestedWhereClauses(withRelations, schema)
+        : {};
+
+      console.log({
+        where: JSON.stringify(where, null, 2),
+        with: withRelations,
+      });
 
       const dbQuery = tableQuery.findMany({
         where: whereClause,
-        with: withRelations,
+        with: Object.keys(nestedWhereClauses).length
+          ? Object.entries(nestedWhereClauses).reduce((acc, [key, value]) => {
+              acc[key] = value;
+              return acc;
+            }, {} as any)
+          : withRelations,
       });
 
       const results = await dbQuery;
