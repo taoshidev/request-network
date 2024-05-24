@@ -2,13 +2,13 @@ import DatabaseWrapper from "../core/database.wrapper";
 import { Request, Response } from "express";
 import Logger from "../utils/logger";
 import ServiceManager from "./service.manager";
-import { EnrollmentDTO } from "src/db/dto/enrollment.dto";
+import { EnrollmentDTO } from "../db/dto/enrollment.dto";
 import { DateTime } from "luxon";
 import { eq } from "drizzle-orm";
 import { enrollments, services } from "../db/schema";
-import { EnrollmentPaymentDTO } from "src/db/dto/enrollment-payment.dto";
-import { ServiceDTO } from "src/db/dto/service.dto";
-import { AuthenticatedRequest, XTaoshiHeaderKeyType } from "src/core/auth-request";
+import { EnrollmentPaymentDTO } from "../db/dto/enrollment-payment.dto";
+import { ServiceDTO } from "../db/dto/service.dto";
+import { AuthenticatedRequest, XTaoshiHeaderKeyType } from "../core/auth-request";
 
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
