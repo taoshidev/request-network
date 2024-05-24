@@ -46,9 +46,15 @@ export const services = authSchema.table(
     meta: jsonb("meta"),
     enabled: boolean("enabled").default(true).notNull(),
     active: boolean("active").default(false).notNull(),
-    createdAt: timestamp("created_at").default(sql`now()`),
-    updatedAt: timestamp("updated_at").default(sql`now()`),
-    deletedAt: timestamp("deleted_at"),
+    createdAt: timestamp("created_at", {
+      precision: 6,
+      withTimezone: true,
+    }).default(sql`now()`),
+    updatedAt: timestamp("updated_at", {
+      precision: 6,
+      withTimezone: true,
+    }).default(sql`now()`),
+    deletedAt: timestamp("deleted_at", { precision: 6, withTimezone: true }),
   },
   (table) => ({
     serviceValidatorIdx: index("service_validator_idx").on(table.validatorId),
@@ -81,9 +87,15 @@ export const transactions = authSchema.table(
     tokenAddress: varchar("token_address"),
     meta: jsonb("meta"),
     active: boolean("active").default(true).notNull(),
-    createdAt: timestamp("created_at").default(sql`now()`),
-    updatedAt: timestamp("updated_at").default(sql`now()`),
-    deletedAt: timestamp("deleted_at"),
+    createdAt: timestamp("created_at", {
+      precision: 6,
+      withTimezone: true,
+    }).default(sql`now()`),
+    updatedAt: timestamp("updated_at", {
+      precision: 6,
+      withTimezone: true,
+    }).default(sql`now()`),
+    deletedAt: timestamp("deleted_at", { precision: 6, withTimezone: true }),
   },
   (table) => ({
     transactionHashIdx: uniqueIndex("transaction_hash_idx").on(
@@ -122,9 +134,15 @@ export const wallets = authSchema.table(
     publicKey: varchar("public_key").unique().notNull(),
     privateKey: bytea("private_key"),
     active: boolean("active").default(true).notNull(),
-    createdAt: timestamp("created_at").default(sql`now()`),
-    updatedAt: timestamp("updated_at").default(sql`now()`),
-    deletedAt: timestamp("deleted_at"),
+    createdAt: timestamp("created_at", {
+      precision: 6,
+      withTimezone: true,
+    }).default(sql`now()`),
+    updatedAt: timestamp("updated_at", {
+      precision: 6,
+      withTimezone: true,
+    }).default(sql`now()`),
+    deletedAt: timestamp("deleted_at", { precision: 6, withTimezone: true }),
   },
   (table) => ({
     walletPublicKeyIdx: uniqueIndex("wallet_public_key_idx").on(
@@ -155,9 +173,15 @@ export const enrollments = authSchema.table(
     firstPayment: timestamp("first_payment"),
     paid: boolean("paid").default(true).notNull(),
     currentPeriodEnd: timestamp("current_period_end"),
-    createdAt: timestamp("created_at").default(sql`now()`),
-    updatedAt: timestamp("updated_at").default(sql`now()`),
-    deletedAt: timestamp("deleted_at"),
+    createdAt: timestamp("created_at", {
+      precision: 6,
+      withTimezone: true,
+    }).default(sql`now()`),
+    updatedAt: timestamp("updated_at", {
+      precision: 6,
+      withTimezone: true,
+    }).default(sql`now()`),
+    deletedAt: timestamp("deleted_at", { precision: 6, withTimezone: true }),
   },
   (table) => ({})
 );

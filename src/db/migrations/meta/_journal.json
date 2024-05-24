@@ -127,6 +127,13 @@
       "when": 1716336473618,
       "tag": "0017_ordinary_the_spike",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1716516623688,
+      "tag": "0018_rapid_lady_deathstrike",
+      "breakpoints": true
     }
   ]
 }
