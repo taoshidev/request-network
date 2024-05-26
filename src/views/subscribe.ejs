@@ -17,15 +17,29 @@
       <h1>Subscribe to Service</h1>
       <div class="form-container">
         <form id="payment-form" action="">
-          <label>Service Name<span class="required">*</span></label>
-          <input id="service-name-input" name="serviceName" readonly type="text"/>
-          <div id="service-error" class="error"></div>
-          <label>Service Route<span class="required">*</span></label>
-          <input id="service-route-input" name="serviceRoute" readonly type="text" />
-          <div id="service-route-error" class="error"></div>
-          <label>Email<span class="required">*</span></label>
-          <input name="email" id="email-input" readonly type="text" />
-          <div id="email-error" class="error"></div>
+          <label>Service Name: </label>
+          <input
+            id="service-name-input"
+            name="serviceName"
+            readonly
+            type="text"
+          /><br />
+          <label>Service Route: </label>
+          <input
+            id="service-route-input"
+            name="serviceRoute"
+            readonly
+            type="text"
+          /><br />
+          <label>Email: </label>
+          <input name="email" id="email-input" readonly type="text" /><br />
+          <label>Price: </label>
+          <input
+            name="price"
+            id="price-input"
+            readonly
+            type="text"
+          /><br /><br />
           <label>Credit Card<span class="required">*</span></label>
           <div id="card" class="form-control"></div>
           <div id="card-error" class="error"></div>
@@ -41,7 +55,12 @@
       <h1>Subscription Complete</h1>
       <p>Return to Request Network...</p>
     </div>
-    <div id="key" data-key="<%= key %>" data-api="<%= api %>" data-ui-api="<%= uiAppUrl %>"></div>
+    <div
+      id="key"
+      data-key="<%= key %>"
+      data-api="<%= api %>"
+      data-ui-api="<%= uiAppUrl %>"
+    ></div>
     <script src="https://js.stripe.com/v3" type="text/javascript"></script>
     <script src="./subscribe-scripts.js" type="text/javascript"></script>
   </body>

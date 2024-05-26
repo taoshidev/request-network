@@ -86,6 +86,11 @@ input {
   width: 100%;
   display: inline-block;
 }
+input:read-only {
+  padding: 0;
+  border: none;
+  width: auto;
+}
 label {
   padding-bottom: .5rem;
   display: inline-block;

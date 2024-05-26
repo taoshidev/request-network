@@ -13,6 +13,7 @@
 9. [Maintenance and Monitoring](#maintenance-and-monitoring)
 10. [Bittensor Validator Registration](#bittensor-validator-registration)
 11. [Cron Server and Event Listener](#cron-server)
+12. [Configuring Stripe Payments](#stripe-payments)
 
 ## Introduction
 
@@ -278,3 +279,18 @@ For detailed instructions, refer to the [Bittensor Documentation](https://docs.b
 ## Cron Server
 
 ReqNet uses Infura Provider to listen to crypto transfer event and initiates cron services to track payment activities to enable / disable services. For a single instance of ReqNet, there's nothing to do other than to deploy ReqNet to your preferred infrastructure. However, if deployed using a multi instance / autoscaling infrastructure like AWS EB or AWS ECS, an additional cron_handler server is needed. To spin up the cron server (Cron Handler), set the environment variable ROLE to "cron_handler" and deploy ReqNet as a separate instance.
+
+## Stripe Payments
+
+To enable Stripe payments you will need to create a Stripe account and store the credentials in your .env file.
+
+1. Go to [stripe.com](https://stripe.com) to register and create credentials.
+2. Complete registration to enable use account out of test mode and accept live payments.
+3. Store the credentials in your env file.
+
+```
+    ENROLLMENT_SECRET=<random string to be used for jwt token verification>
+    STRIPE_PUBLIC_KEY=pk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    STRIPE_SECRET_KEY=sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    STRIPE_WEBHOOKS_KEY=<Webhooks key only required if webhooks have been configured on Stripe.con>
+```

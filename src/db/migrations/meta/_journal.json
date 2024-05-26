@@ -134,6 +134,13 @@
       "when": 1716516623688,
       "tag": "0018_rapid_lady_deathstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1716692187633,
+      "tag": "0019_crazy_jackal",
+      "breakpoints": true
     }
   ]
 }

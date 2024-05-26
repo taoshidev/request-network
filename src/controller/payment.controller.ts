@@ -26,7 +26,7 @@ export default class PaymentCtrl extends BaseController {
    * @returns A 201 status code and the enrollment id and enrollment email on success, or a 400 status code with an error message on failure.
    */
   handleConsumerPayment = async (req: Request, res: Response) => {
-    const { body, body: { tokenData } } = req as EnrollmentPaymentRequestDTO;
+    const { body } = req as EnrollmentPaymentRequestDTO;
 
     if (!body?.rnToken)
       return res.status(400).json({ error: "Request missing payload" });
@@ -100,6 +100,7 @@ export default class PaymentCtrl extends BaseController {
           name: service.data.name,
           url: body.url,
           email: body.email,
+          price: service.data.price,
           redirect: body.redirect,
           subscriptionId: service.data.subscriptionId,
           endpointId: service.data.endpointId

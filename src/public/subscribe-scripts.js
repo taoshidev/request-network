@@ -4,34 +4,19 @@
   var serviceNameInput = document.getElementById("service-name-input");
   var serviceRouteInput = document.getElementById("service-route-input");
   var emailInput = document.getElementById("email-input");
+  var priceInput = document.getElementById("price-input");
   var submitBtn = document.getElementById("submit-btn");
   var cardError = document.getElementById("card-error");
   var subscribe = document.getElementById("subscribe");
   var complete = document.getElementById("complete");
-  var emailError = document.getElementById("email-error");
-  var serviceRouteError = document.getElementById("service-route-error");
   var apiError = document.getElementById("api-error");
 
   var stripeKey = atob(keyElement.getAttribute("data-key"));
   var apiUrl = atob(keyElement.getAttribute("data-api"));
   var uiApiUrl = keyElement.getAttribute("data-ui-api");
-  var focus = "";
   var redirect = "";
 
   document.getElementById("payment-form").addEventListener("submit", enroll);
-  document.addEventListener("focusin", (e) => (focus = e.target.name));
-  document.addEventListener("focusout", (e) => {
-    e.target.value = (e.target.value || "").trim();
-    focus = "";
-
-    if (e.target.name === "email" && !e.target.value)
-      emailError.innerText = "Email required.";
-    if (e.target.name === "serviceRoute" && !e.target.value)
-      serviceRouteError.innerText = "Service Route required.";
-  });
-  document.addEventListener("keydown", (e) => {
-    if (focus === "email") emailError.innerText = "";
-  });
 
   var data;
   var params;
@@ -43,6 +28,7 @@
     data = JSON.parse(atob(params.token.split(".")[1]));
     serviceNameInput.value = data.name;
     emailInput.value = data.email;
+    priceInput.value = `$${data.price}`;
     serviceRouteInput.value = data.url;
     redirect = data.redirect;
   } catch (e) {
@@ -90,9 +76,6 @@
     } else {
       if (!card._complete)
         cardError.innerText = "Credit card information not correct.";
-      if (!email) emailError.innerText = "Email required.";
-      if (!serviceRoute)
-        serviceRouteError.innerText = "Service Route required.";
     }
   }
 
