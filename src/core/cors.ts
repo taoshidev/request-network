@@ -50,6 +50,7 @@ export default class Cors {
       const uniqueWhitelist = new Set([
         process.env.REQUEST_NETWORK_UI_URL as string,
         `${process.env.API_HOST}`,
+        `${process.env.STRIPE_HOST}`,
         ...newWhitelist,
       ]);
       this.cachedWhitelist = Array.from(uniqueWhitelist).filter(Boolean);
@@ -87,8 +88,9 @@ export default class Cors {
 
   public static getDynamicCorsMiddleware(): RequestHandler {
     return async (req: Request, res: Response, next: NextFunction) => {
+      const host = req.get('Host');
       const origin = req.header("Origin") as string;
-      const allowed = this.cachedWhitelist.includes(origin);
+      const allowed = this.cachedWhitelist.includes(origin) || (process.env.STRIPE_HOST && host === process.env.STRIPE_HOST);
       const keys = [
         "x-taoshi-consumer-request-key",
         "x-taoshi-request-key",

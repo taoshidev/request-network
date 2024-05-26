@@ -56,7 +56,14 @@ export default class App {
 
   private async initializeMiddlewares(): Promise<void> {
     this.express.use(helmet());
-    this.express.use(express.json());
+    this.express.use(express.json({
+      verify: (req, res, buf) => {
+        // set rawBody in request only for stripe webhook requests
+        if ((req as any).originalUrl.startsWith('/webhooks')) {
+          (req as any).rawBody = buf.toString();
+        }
+      }
+    }));
     this.express.use(express.urlencoded({ extended: false }));
   }
 
