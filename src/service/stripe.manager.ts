@@ -190,6 +190,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
       }
 
       userEnrollment.currentPeriodEnd = DateTime.fromSeconds(+subscription.current_period_end).toJSDate();
+      userEnrollment.active = true;
       const enrollment = userEnrollment.id ? await this.update(userEnrollment.id, userEnrollment as EnrollmentDTO) : await this.create(userEnrollment as EnrollmentDTO);
       const data = (enrollment.data as EnrollmentDTO[])?.[0];
 
@@ -234,6 +235,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
         await stripe.subscriptions.cancel(enrollment.stripeSubscriptionId);
       }
       const statusRes = await this.serviceManager.changeStatus(enrollment.serviceId as string, false);
+      await this.update(enrollment.id as string, { active: false });
 
       await AuthenticatedRequest.send({
         method: "PUT",
