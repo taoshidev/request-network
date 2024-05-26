@@ -10,7 +10,6 @@ import { EnrollmentPaymentDTO } from "../db/dto/enrollment-payment.dto";
 import { ServiceDTO } from "../db/dto/service.dto";
 import { AuthenticatedRequest, XTaoshiHeaderKeyType } from "../core/auth-request";
 
-
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
@@ -285,38 +284,40 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
 
         if (app === 'Request Network') {
           const enrollmentRes = await this.find(eq(enrollments.stripeSubscriptionId, stripeSubscriptionId));
-          const statusRes = await this.serviceManager.find(eq(services.id, enrollmentRes?.data?.[0]));
+          const enrollmentId = enrollmentRes.data?.[0]?.id;
+          const serviceId = enrollmentRes?.data?.[0]?.serviceId;
 
-          if (enrollmentRes.data?.[0]?.id) {
+          if (enrollmentId && serviceId) {
+            const serviceRes = await this.serviceManager.find(eq(services.id, serviceId));
+            const subscriptionId = (serviceRes.data as ServiceDTO[])?.[0]?.subscriptionId;
+
             switch (event.type) {
               case event?.data.object.paid == true && 'invoice.payment_succeeded':
-                await this.update(enrollmentRes.data[0].id as string, { currentPeriodEnd: currentPeriodEnd, active: true });
-                await this.serviceManager.update(enrollmentRes.data[0].id as string, { active: true });
+                await this.update(enrollmentId as string, { currentPeriodEnd: currentPeriodEnd, active: true });
+                await this.serviceManager.update(serviceId as string, { active: true });
 
                 await AuthenticatedRequest.send({
                   method: "PUT",
                   path: "/api/status",
-                  body: { subscriptionId: (statusRes.data as ServiceDTO[])?.[0]?.subscriptionId, active: true },
+                  body: { subscriptionId: subscriptionId, active: true },
                   xTaoshiKey: XTaoshiHeaderKeyType.Validator,
                 });
 
                 break;
               case 'invoice.payment_failed':
-                await this.update(enrollmentRes.data[0].id as string, { currentPeriodEnd: null, active: false })
-                await this.serviceManager.update(enrollmentRes.data[0].id as string, { active: false });
-
-                stripe.set('current_period_end', null);
+              case 'customer.subscription.deleted':
+                await this.update(enrollmentId as string, { currentPeriodEnd: null, active: false })
+                await this.serviceManager.update(serviceId as string, { active: false });
 
                 await AuthenticatedRequest.send({
                   method: "PUT",
                   path: "/api/status",
-                  body: { subscriptionId: (statusRes.data as ServiceDTO[])?.[0]?.subscriptionId, active: false },
+                  body: { subscriptionId: subscriptionId, active: false },
                   xTaoshiKey: XTaoshiHeaderKeyType.Validator,
                 });
-                await stripe.save();
                 break;
               case 'customer.subscription.updated':
-                await this.update(enrollmentRes.data[0].id as string, { currentPeriodEnd: currentPeriodEnd })
+                await this.update(enrollmentId as string, { currentPeriodEnd: currentPeriodEnd })
                 break;
               default:
                 break;
