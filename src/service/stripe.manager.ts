@@ -51,7 +51,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
         };
 
         // get or create stripe record for service
-        if (transaction.tokenData.serviceId) {
+        if (transaction.tokenData?.serviceId) {
           // get customer id with matching email if it exists.
           const enrollmentForEmail = await this.find(eq(enrollments.email, transaction.email));
           const stripeCustomerId = enrollmentForEmail?.data?.[0]?.stripeCustomerId;
@@ -191,6 +191,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
 
       userEnrollment.currentPeriodEnd = DateTime.fromSeconds(+subscription.current_period_end).toJSDate();
       userEnrollment.active = true;
+
       const enrollment = userEnrollment.id ? await this.update(userEnrollment.id, userEnrollment as EnrollmentDTO) : await this.create(userEnrollment as EnrollmentDTO);
       const data = (enrollment.data as EnrollmentDTO[])?.[0];
 
