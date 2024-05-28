@@ -194,11 +194,6 @@ export default abstract class DatabaseWrapper<T> {
         ? createNestedWhereClauses(withRelations, schema)
         : {};
 
-      console.log({
-        where: JSON.stringify(where, null, 2),
-        with: withRelations,
-      });
-
       const dbQuery = tableQuery.findMany({
         where: whereClause,
         with: Object.keys(nestedWhereClauses).length

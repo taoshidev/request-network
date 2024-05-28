@@ -173,6 +173,7 @@ export const enrollments = authSchema.table(
     firstPayment: timestamp("first_payment"),
     paid: boolean("paid").default(true).notNull(),
     currentPeriodEnd: timestamp("current_period_end"),
+    active: boolean("active").default(true).notNull(),
     createdAt: timestamp("created_at", {
       precision: 6,
       withTimezone: true,
