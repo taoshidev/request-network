@@ -18,12 +18,29 @@ import UpholdConnector from "./service/uphold.connector";
 import TransactionManager from "./service/transaction.manager";
 import PaymentRoute from "./router/payment.router";
 import PaymentCtrl from "./controller/payment.controller";
+import * as  Sentry from '@sentry/node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
 
 export default class App {
   public express: Express;
   private apiPrefix: string;
 
   constructor() {
+
+    Sentry.init({
+      dsn: process.env.SENTRY_DSN,
+      enabled: ['production', 'staging'].includes(process.env.NODE_ENV as string),
+      integrations: [nodeProfilingIntegration()],
+
+      // Add Performance Monitoring by setting tracesSampleRate
+      // We recommend adjusting this value in production
+      tracesSampleRate: 1.0,
+
+      // Set sampling rate for profiling
+      // This is relative to tracesSampleRate
+      profilesSampleRate: 1.0,
+    });
+
     this.express = express();
     this.apiPrefix = process.env.API_PREFIX || "/api/v1";
   }
@@ -101,6 +118,12 @@ export default class App {
     this.express.use(new ConsumerRoute(new ConsumerCtrl()).routes());
     this.express.use(new PaymentRoute(new PaymentCtrl()).routes());
 
+    // for testing sentry
+    this.express.get("/debug-sentry", function mainHandler(req, res) {
+      throw new Error("My first Sentry error!");
+    });
+
+
     // Loop through all the schema and mount their routes
     // In case there are more than 1 schema, we will loop through them
     [services].forEach((schema) => {
@@ -120,6 +143,11 @@ export default class App {
     if (process.env.NODE_ENV !== "production") {
       this.printRoutes(this.express._router);
     }
+  }
+
+  private initializeSentry(): void {
+    // The error handler must be registered before any other error middleware and after all controllers
+    Sentry.setupExpressErrorHandler(this.express);
   }
 
   private initializeErrorHandling(): void {
@@ -184,6 +212,7 @@ export default class App {
       }
     }
 
+    this.initializeSentry();
     this.initializeErrorHandling();
     this.startServer(cb, "Running in validator mode.");
     return this;
