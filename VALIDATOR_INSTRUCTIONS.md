@@ -301,7 +301,7 @@ To enable Stripe payments you will need to create a Stripe account and store the
 
 ## Sentry Error Tracking
 
-Sentry error tracking can optionally be enabled by providing credentials. Got to [https://sentry.io/](https://sentry.io/) to configure.
+- Sentry error tracking can optionally be enabled by providing credentials. Got to [https://sentry.io/](https://sentry.io/) to configure.
 
 
 ```
