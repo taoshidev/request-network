@@ -293,5 +293,7 @@ To enable Stripe payments you will need to create a Stripe account and store the
     ENROLLMENT_SECRET=<random string to be used for jwt token verification>
     STRIPE_PUBLIC_KEY=pk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     STRIPE_SECRET_KEY=sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-    STRIPE_WEBHOOKS_KEY=<Webhooks key only required if webhooks have been configured on Stripe.con>
+    STRIPE_WEBHOOKS_KEY=<Webhooks key required for payment status updates>
 ```
+
+4. For Stipe subscriptions to be updated properly webhooks need to be set up. A webhook configuration will need to be set up on the Stripe website that points at "https://\<location of your api server\>/webhooks.
