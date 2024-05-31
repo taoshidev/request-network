@@ -11,6 +11,9 @@ export class ServiceDTO extends BaseDTO {
   consumerServiceId?: string;
   price?: string;
   consumerWalletAddress?: string;
+  serviceStatusType?: string;
+  outstandingBalance?: number | string;
+  daysPassDue?: number;
   validatorWalletAddress?: string;
   currencyType?: string;
   hotkey?: string;

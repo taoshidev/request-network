@@ -4,18 +4,32 @@ import { ServiceWithWalletDTO } from "../db/dto/service-wallet.dto";
 import UpholdConnector from "./uphold.connector";
 import ServiceManager from "./service.manager";
 import BlockchainManager from "./blockchain.manager";
-import { differenceInCalendarMonths, addDays } from "date-fns";
+import {
+  differenceInCalendarMonths,
+  differenceInDays,
+  setDate,
+  isAfter,
+} from "date-fns";
 import { getConfig, setupTokenConfig } from "../utils/config";
 import { transactions } from "../db/schema";
 import { TransactionDTO } from "../db/dto/transaction.dto";
 import DatabaseWrapper from "../core/database.wrapper";
 import { eq, sum } from "drizzle-orm";
 import { replacer } from "../utils/bigint-replacer";
+import { ServiceDTO } from "../db/dto/service.dto";
 
 interface TokenConfig {
   address: string;
   abi: ethers.InterfaceAbi;
   decimals: number;
+}
+
+export enum SERVICE_STATUS_TYPE {
+  NEW = "new",
+  IN_GRACE_PERIOD = "in grace period",
+  ON_TIME = "on time",
+  DELINQUENT = "delinquent",
+  CANCELLED = "cancelled",
 }
 
 /**
@@ -296,21 +310,15 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
           event
         );
 
+        const result = await this.checkSubscriptionBalance(subscription);
+
+        if (!result) return;
+        const { status } = result;
+        Logger.info(`Funds Check for Service ID ${id}: ${status}`);
+
         if (!subscription.active) {
-          const balance = await this.checkSubscriptionBalance(subscription);
-
-          if (!balance) return;
-          const { sufficient, balance: newBalance } = balance;
-          Logger.info(
-            `Funds Check for Service ID ${id}: ${
-              sufficient ? "Sufficient" : "Insufficient"
-            } Balance: ${newBalance}`
-          );
-
-          if (sufficient) {
-            await this.serviceManager.changeStatus(id as string, true);
-            Logger.info(`Service ID ${id} activated.`);
-          }
+          await this.serviceManager.changeStatus(id as string, true);
+          Logger.info(`Payment success! Service ID ${id} activated.`);
         }
       } catch (error) {
         Logger.error(
@@ -321,10 +329,8 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
   }
 
   async checkSubscriptionBalance(service: ServiceWithWalletDTO): Promise<{
-    sufficient: boolean;
-    balance: string;
+    status: string;
     gracePeriod: boolean;
-    message?: string;
   } | void> {
     if (
       service.id &&
@@ -333,59 +339,81 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
       service.price &&
       service.createdAt
     ) {
-      const data = await this.blockchainManager.getTokenBalances(
-        service.consumerWalletAddress
-      );
-
-      const balance = data.usdc as string;
-
+ 
       const startDate = new Date(service.createdAt);
       const now = new Date();
+
+      const registrationDay = startDate.getDate();
+      const lastDueDate = setDate(now, registrationDay);
+
+      if (isAfter(lastDueDate, now)) {
+        lastDueDate.setMonth(lastDueDate.getMonth() - 1);
+      }
+
       const monthsPassed =
         Math.max(differenceInCalendarMonths(now, startDate), 0) + 1;
-
       const totalAmountDue = monthsPassed * parseFloat(service.price);
-
       const totalDeposits = await this.getTotalDeposits(service.id);
       const outstandingBalance = totalAmountDue - +totalDeposits;
 
-      const sufficient = balance && parseFloat(balance) >= outstandingBalance;
+      const daysPassDue = differenceInDays(now, lastDueDate);
+      const inGracePeriod = daysPassDue <= 14;
+      let active = service.active;
+      let serviceStatusType = service.serviceStatusType as string;
 
-      const graceEndDate = addDays(startDate, 14);
-      const inGracePeriod = now <= graceEndDate;
-
-      if (!sufficient) {
+      if (outstandingBalance > 0) {
         if (inGracePeriod) {
-          Logger.info(
-            `Insufficient funds detected but within grace period for wallet ${service.consumerWalletAddress}. Balance: ${balance} USDC, Required: ${totalAmountDue} USDC.`
-          );
-          return {
-            sufficient: false,
-            balance,
-            gracePeriod: true,
-            message: "Currently in grace period.",
-          };
-        } else {
-          Logger.info(
-            `Insufficient funds and grace period has elapsed for wallet ${service.consumerWalletAddress}. Setting active flag to false.`
-          );
-
-          await this.serviceManager.changeStatus(service.id, false);
-
-          return {
-            sufficient: false,
-            balance,
-            gracePeriod: false,
-            message: "Subscription cancelled after grace period.",
-          };
+          serviceStatusType = SERVICE_STATUS_TYPE.IN_GRACE_PERIOD;
+        } else if (daysPassDue > 14) {
+          serviceStatusType = SERVICE_STATUS_TYPE.DELINQUENT;
+          active = false;
         }
       }
 
-      Logger.info(
-        `Sufficient funds detected for wallet ${service.consumerWalletAddress}: ${balance} USDC`
+      if (outstandingBalance <= 0) {
+        serviceStatusType = SERVICE_STATUS_TYPE.ON_TIME;
+        active = true;
+      }
+
+      if (daysPassDue >= 30) {
+        serviceStatusType = SERVICE_STATUS_TYPE.CANCELLED;
+        active = false;
+      }
+
+      const { data: updatedService, error } = await this.serviceManager.update(
+        service?.id,
+        {
+          outstandingBalance,
+          daysPassDue,
+          serviceStatusType,
+          active,
+        } as ServiceDTO
       );
 
-      return { sufficient, balance, gracePeriod: inGracePeriod };
+      if (inGracePeriod) {
+        Logger.info(
+          `Within grace period for wallet ${service.consumerWalletAddress}.`
+        );
+        return {
+          status: serviceStatusType,
+          gracePeriod: true,
+        };
+      }
+
+      if (serviceStatusType === SERVICE_STATUS_TYPE.CANCELLED) {
+        Logger.info(
+          `Grace period has elapsed for wallet ${service.consumerWalletAddress}. Setting active flag to false.`
+        );
+        return {
+          status: serviceStatusType,
+          gracePeriod: false,
+        };
+      }
+
+      return {
+        status: serviceStatusType,
+        gracePeriod: inGracePeriod,
+      };
     }
   }
 

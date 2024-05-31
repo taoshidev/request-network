@@ -23,6 +23,15 @@ export const transactionTypeEnum = pgEnum("transactionType", [
   "withdrawal",
 ]);
 
+export const serviceStatusTypeEnum = pgEnum("serviceStatusType", [
+  "new",
+  "on time",
+  "in grace period",
+  "delinquent",
+  "cancelled"
+]);
+
+
 export const services = authSchema.table(
   "services",
   {
@@ -31,6 +40,9 @@ export const services = authSchema.table(
       .primaryKey()
       .notNull(),
     type: roleTypeEnum("type").notNull(),
+    serviceStatusType: serviceStatusTypeEnum("service_status_type").notNull().default("new"),
+    daysPassDue: integer("days_pass_due").notNull().default(0),
+    outstandingBalance: numeric("outstanding_balance", { precision: 18, scale: 6 }),
     name: varchar("name"),
     validatorWalletAddress: varchar("validator_wallet_address"),
     consumerWalletAddress: varchar("consumer_wallet_address"),
