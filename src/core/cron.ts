@@ -86,22 +86,15 @@ export default class ServiceCron {
       }
 
       for (const service of subscriptions.data) {
-        const balance = await this.transactionManager.checkSubscriptionBalance(
+        const result = await this.transactionManager.checkSubscriptionBalance(
           service
         );
 
-        if (!balance) return;
-        const { sufficient, balance: newBalance, gracePeriod } = balance;
-        if (!sufficient) {
-          Logger.info(
-            `Monthly crypto account check balance not sufficient for service ${service.id}. Current balance: ${newBalance}.`
-          );
-          if (!gracePeriod)
-            Logger.info(
-              `Grace period expired. Disabling access for service ${service.id}.`
-            );
-          await this.serviceManager.changeStatus(service.id as string, false);
-        }
+        if (!result) return;
+        const { status } = result;
+        Logger.info(
+          `Monthly crypto account check for service ${service.id}. status: ${status}`
+        );
       }
     } catch (error) {
       Logger.error(`Error during blockchain checks: ${error}`);
