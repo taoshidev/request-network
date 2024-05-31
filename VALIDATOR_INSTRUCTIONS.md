@@ -5,16 +5,15 @@
 1. [Introduction](#introduction)
 2. [Technology Stack Overview](#technology-stack-overview)
 3. [Setup Process](#setup-process)
-4. [Uphold API Integration](#uphold-api-integration)
-5. [Registering as a Validator](#registering-as-a-validator)
-6. [Output Server Connection](#output-server-connection)
-7. [Deployment Workflow](#deployment-workflow)
-8. [Payment Integration](#payment-integration)
-9. [Maintenance and Monitoring](#maintenance-and-monitoring)
-10. [Bittensor Validator Registration](#bittensor-validator-registration)
-11. [Cron Server and Event Listener](#cron-server)
-12. [Configuring Stripe Payments](#stripe-payments)
-12. [Sentry Error Tracking](#sentry-error-tracking)
+4. [Registering as a Validator](#registering-as-a-validator)
+5. [Output Server Connection](#output-server-connection)
+6. [Deployment Workflow](#deployment-workflow)
+7. [Payment Integration](#payment-integration)
+8. [Bittensor Validator Registration](#bittensor-validator-registration)
+9. [Cron Server and Event Listener](#cron-server)
+10. [Configuring Stripe Payments](#stripe-payments)
+11. [Sentry Error Tracking](#sentry-error-tracking)
+12. [Example License](#example-license)
 
 ## Introduction
 
@@ -309,3 +308,5 @@ To enable Stripe payments you will need to create a Stripe account and store the
     SENTRY_AUTH_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
+## Example License
+[License on Github](https://github.com/taoshidev/request-network/blob/staging/EXAMPLE_TOS.md)
