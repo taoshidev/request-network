@@ -8,13 +8,21 @@ export default class ServiceCron {
   private serviceManager: ServiceManager;
   private upholdConnector: UpholdConnector;
   private transactionManager: TransactionManager;
+  private static instance: ServiceCron;
 
   constructor() {
     this.serviceManager = new ServiceManager();
     this.upholdConnector = new UpholdConnector();
-    this.transactionManager = new TransactionManager();
+    this.transactionManager = TransactionManager.getInstance();
     this.checkSubscriptions = this.checkSubscriptions.bind(this);
     this.checkCryptoSubscriptions = this.checkCryptoSubscriptions.bind(this);
+  }
+
+  static getInstance(): ServiceCron {
+    if (!ServiceCron.instance) {
+      ServiceCron.instance = new ServiceCron();
+    }
+    return ServiceCron.instance;
   }
 
   /**
@@ -23,9 +31,9 @@ export default class ServiceCron {
    * This job is intended to run on the first of each month.
    */
   public run(): void {
-    const cronExpression = 
-    // "*/60 * * * * *";
-    "0 0 1 * *";
+    const cronExpression =
+      // "*/60 * * * * *";
+      "0 0 1 * *";
     cron.schedule(cronExpression, () => this.checkCryptoSubscriptions(), {
       scheduled: true,
       timezone: "UTC",
@@ -78,22 +86,15 @@ export default class ServiceCron {
       }
 
       for (const service of subscriptions.data) {
-        const balance = await this.transactionManager.checkSubscriptionBalance(
+        const result = await this.transactionManager.checkSubscriptionBalance(
           service
         );
 
-        if (!balance) return;
-        const { sufficient, balance: newBalance, gracePeriod } = balance;
-        if (!sufficient) {
-          Logger.info(
-            `Monthly crypto account check balance not sufficient for service ${service.id}. Current balance: ${newBalance}.`
-          );
-          if (!gracePeriod)
-            Logger.info(
-              `Grace period expired. Disabling access for service ${service.id}.`
-            );
-          await this.serviceManager.changeStatus(service.id as string, false);
-        }
+        if (!result) return;
+        const { status } = result;
+        Logger.info(
+          `Monthly crypto account check for service ${service.id}. status: ${status}`
+        );
       }
     } catch (error) {
       Logger.error(`Error during blockchain checks: ${error}`);

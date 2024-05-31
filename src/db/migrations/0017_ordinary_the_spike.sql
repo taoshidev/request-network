@@ -1,0 +1,1 @@
+ALTER TABLE "auth"."enrollments" ADD COLUMN "last_four" integer;

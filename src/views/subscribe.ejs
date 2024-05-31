@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to the Taoshi Request Network</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=ADLaM+Display&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="subscribe" class="subscribe-container open">
+      <h1>Subscribe to Service</h1>
+      <div class="form-container">
+        <form id="payment-form" action="">
+          <label>Service Name: </label>
+          <input
+            id="service-name-input"
+            name="serviceName"
+            readonly
+            type="text"
+          /><br />
+          <label>Service Route: </label>
+          <input
+            id="service-route-input"
+            name="serviceRoute"
+            readonly
+            type="text"
+          /><br />
+          <label>Email: </label>
+          <input name="email" id="email-input" readonly type="text" /><br />
+          <label>Price: </label>
+          <input
+            name="price"
+            id="price-input"
+            readonly
+            type="text"
+          /><br /><br />
+          <label>Credit Card<span class="required">*</span></label>
+          <div id="card" class="form-control"></div>
+          <div id="card-error" class="error"></div>
+          <button id="submit-btn" class="button" type="submit">
+            Pay For Subscription
+          </button>
+        </form>
+      </div>
+      <br />
+      <div id="api-error" class="error server-error"></div>
+    </div>
+    <div id="complete" class="subscribe-container">
+      <h1>Subscription Complete</h1>
+      <p>Return to Request Network...</p>
+    </div>
+    <div
+      id="key"
+      data-key="<%= key %>"
+      data-api="<%= api %>"
+      data-ui-api="<%= uiAppUrl %>"
+    ></div>
+    <script src="https://js.stripe.com/v3" type="text/javascript"></script>
+    <script src="./subscribe-scripts.js" type="text/javascript"></script>
+  </body>
+</html>
