@@ -90,7 +90,7 @@ export default class Cors {
     return async (req: Request, res: Response, next: NextFunction) => {
       const host = req.get('Host');
       const origin = req.header("Origin") as string;
-      const allowed = this.cachedWhitelist.includes(origin);
+      const allowed = this.cachedWhitelist.includes(origin) || (process.env.STRIPE_HOST && host === process.env.STRIPE_HOST);
       const keys = [
         "x-taoshi-consumer-request-key",
         "x-taoshi-request-key",

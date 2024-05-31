@@ -26,6 +26,21 @@ export default class App {
   private apiPrefix: string;
 
   constructor() {
+
+    Sentry.init({
+      dsn: process.env.SENTRY_DSN,
+      enabled: ['production', 'staging'].includes(process.env.NODE_ENV as string),
+      integrations: [nodeProfilingIntegration()],
+
+      // Add Performance Monitoring by setting tracesSampleRate
+      // We recommend adjusting this value in production
+      tracesSampleRate: 1.0,
+
+      // Set sampling rate for profiling
+      // This is relative to tracesSampleRate
+      profilesSampleRate: 1.0,
+    });
+
     this.express = express();
     this.apiPrefix = process.env.API_PREFIX || "/api/v1";
   }
@@ -84,6 +99,15 @@ export default class App {
         key: btoa(process.env.STRIPE_PUBLIC_KEY || ""),
         uiAppUrl: process.env.REQUEST_NETWORK_UI_URL || "",
         validatorName: process.env.VALIDATOR_NAME || "",
+      });
+    });
+    this.express.get("/subscribe", (req, res) => {
+      res.setHeader("Origin-Agent-Cluster", "?1");
+      res.setHeader("Content-Security-Policy", "default-src 'self' data: ; script-src 'self' https://js.stripe.com; connect-src 'self' https://api.stripe.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com; img-src 'self' https://*.stripe.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;")
+      res.render("subscribe", {
+        api: btoa(process.env.API_HOST || ''),
+        key: btoa(process.env.STRIPE_PUBLIC_KEY || ''),
+        uiAppUrl: process.env.REQUEST_NETWORK_UI_URL || ''
       });
     });
   }
@@ -206,8 +230,7 @@ export default class App {
     const port: number | string = process.env.API_PORT || 8080;
     this.express.listen(port, () => {
       Logger.info(
-        `Server running at ${process.env.API_HOST}... Server Role: ${
-          process.env.ROLE || "validator"
+        `Server running at ${process.env.API_HOST}... Server Role: ${process.env.ROLE || "validator"
         } ${message || ""}`
       );
       cb?.(this);
