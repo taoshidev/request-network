@@ -123,7 +123,12 @@ export default class PaymentCtrl extends BaseController {
   checkForStripe = async (req: Request, res: Response) => {
     try {
       let ok = false;
-      if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PUBLIC_KEY && process.env.ENROLLMENT_SECRET) {
+      if
+        (process.env.STRIPE_SECRET_KEY &&
+        process.env.STRIPE_PUBLIC_KEY &&
+        process.env.ENROLLMENT_SECRET &&
+        process.env.STRIPE_WEBHOOKS_KEY
+      ) {
         ok = true;
       }
       return res
