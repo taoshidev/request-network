@@ -91,18 +91,11 @@ export default class ServiceCron {
         );
 
         if (!result) return;
-        const { status, gracePeriod } = result;
-        // if (!success) {
-          Logger.info(
-            `Monthly crypto account check for service ${service.id}. status: ${status}`
-          );
-          // if (!gracePeriod)
-          //   Logger.info(
-          //     `Grace period expired. Disabling access for service ${service.id}.`
-          //   );
-          // await this.serviceManager.changeStatus(service.id as string, false);
-        }
-      // }
+        const { status } = result;
+        Logger.info(
+          `Monthly crypto account check for service ${service.id}. status: ${status}`
+        );
+      }
     } catch (error) {
       Logger.error(`Error during blockchain checks: ${error}`);
     }

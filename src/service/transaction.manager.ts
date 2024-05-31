@@ -339,7 +339,6 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
       service.price &&
       service.createdAt
     ) {
- 
       const startDate = new Date(service.createdAt);
       const now = new Date();
 
@@ -388,6 +387,7 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
           serviceStatusType,
           active,
         } as ServiceDTO
+        // TODO: send a request to the UI app to trigger a notification to the consumer and validator notifying them about the status change.
       );
 
       if (inGracePeriod) {
@@ -455,6 +455,7 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
 
     try {
       await this.create(transaction);
+      // TODO: send a request to the UI app to trigger a notification to the validator saying payment has been received.
       Logger.info(`Transaction saved: ${JSON.stringify(transaction)}`);
     } catch (error) {
       Logger.error(`Error saving transaction: ${JSON.stringify(error)}`);
@@ -469,6 +470,8 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
       { confirmed: isConfirmed },
       eq(transactions.transactionHash, transactionHash)
     );
+    // TODO: send a request to the UI app to trigger a notification to the consumer saying payment has been received and confirmed.
+    // Also, send a notification to the validator saying payment has been made.
   }
 
   async checkPendingTransactionsConfirmations() {
