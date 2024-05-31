@@ -1,1 +1,0 @@
-ALTER TYPE "serviceStatusType" ADD VALUE 'in grace period';

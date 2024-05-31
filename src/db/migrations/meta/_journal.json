@@ -113,48 +113,6 @@
       "when": 1715835124732,
       "tag": "0015_violet_wolfpack",
       "breakpoints": true
-    },
-    {
-      "idx": 16,
-      "version": "5",
-      "when": 1716270171109,
-      "tag": "0016_tiny_komodo",
-      "breakpoints": true
-    },
-    {
-      "idx": 17,
-      "version": "5",
-      "when": 1716336473618,
-      "tag": "0017_ordinary_the_spike",
-      "breakpoints": true
-    },
-    {
-      "idx": 18,
-      "version": "5",
-      "when": 1716516623688,
-      "tag": "0018_rapid_lady_deathstrike",
-      "breakpoints": true
-    },
-    {
-      "idx": 19,
-      "version": "5",
-      "when": 1716692187633,
-      "tag": "0019_crazy_jackal",
-      "breakpoints": true
-    },
-    {
-      "idx": 20,
-      "version": "5",
-      "when": 1717112653772,
-      "tag": "0020_common_northstar",
-      "breakpoints": true
-    },
-    {
-      "idx": 21,
-      "version": "5",
-      "when": 1717118026185,
-      "tag": "0021_yellow_thor_girl",
-      "breakpoints": true
     }
   ]
 }

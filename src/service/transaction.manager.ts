@@ -4,32 +4,18 @@ import { ServiceWithWalletDTO } from "../db/dto/service-wallet.dto";
 import UpholdConnector from "./uphold.connector";
 import ServiceManager from "./service.manager";
 import BlockchainManager from "./blockchain.manager";
-import {
-  differenceInCalendarMonths,
-  differenceInDays,
-  setDate,
-  isAfter,
-} from "date-fns";
+import { differenceInCalendarMonths, addDays } from "date-fns";
 import { getConfig, setupTokenConfig } from "../utils/config";
 import { transactions } from "../db/schema";
 import { TransactionDTO } from "../db/dto/transaction.dto";
 import DatabaseWrapper from "../core/database.wrapper";
 import { eq, sum } from "drizzle-orm";
 import { replacer } from "../utils/bigint-replacer";
-import { ServiceDTO } from "../db/dto/service.dto";
 
 interface TokenConfig {
   address: string;
   abi: ethers.InterfaceAbi;
   decimals: number;
-}
-
-export enum SERVICE_STATUS_TYPE {
-  NEW = "new",
-  IN_GRACE_PERIOD = "in grace period",
-  ON_TIME = "on time",
-  DELINQUENT = "delinquent",
-  CANCELLED = "cancelled",
 }
 
 /**
@@ -47,9 +33,6 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
   private provider!: ethers.WebSocketProvider;
   private contracts!: Record<string, ethers.Contract>;
 
-  private validatorWallets: Set<string> = new Set();
-  private static instance: TransactionManager;
-
   constructor() {
     super(transactions);
 
@@ -57,19 +40,11 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
     try {
       this.provider = this.initializeWebSocketProvider();
       this.contracts = this.initializeContracts();
-      // this.startMonitoring()
     } catch (error: Error | unknown) {
       Logger.error(
         `Failed to initialize Transaction Manager: ${(error as Error)?.message}`
       );
     }
-  }
-
-  static getInstance(): TransactionManager {
-    if (!TransactionManager.instance) {
-      TransactionManager.instance = new TransactionManager();
-    }
-    return TransactionManager.instance;
   }
 
   /**
@@ -150,7 +125,13 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
 
   async monitorValidatorWallets(): Promise<void> {
     try {
-      this.monitorTransfers(undefined);
+      const { data: publicKeys } =
+        await this.serviceManager.getDistinctValidatorWallets();
+
+      this.monitorTransfers(
+        undefined,
+        publicKeys as Array<{ validatorWalletAddress: string } | undefined>
+      );
     } catch (error) {
       Logger.error(
         `Failed to monitor all wallets: JSON: ${JSON.stringify(error, null, 2)}`
@@ -162,33 +143,40 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
    * Monitors transfer events for a specific wallet address.
    * @param walletAddress The wallet address to monitor for transfers.
    */
-  monitorTransfers(service?: ServiceWithWalletDTO | undefined): void {
-    const publicKeys = Array.from(this.validatorWallets);
-
+  monitorTransfers(
+    service?: ServiceWithWalletDTO | undefined,
+    validatorErcAddresses?: Array<
+      { validatorWalletAddress: string } | undefined
+    >
+  ): void {
     if (service) {
       const { consumerWalletAddress } = service;
       Logger.info(
         `Listening for Transfer events for wallet: ${consumerWalletAddress}`
       );
-    } else if (publicKeys) {
+    } else if (validatorErcAddresses) {
       Logger.info(
-        `Monitoring validator wallets: ${Array.from(this.validatorWallets).join(
-          ", "
+        `Listening for Transfer events for validator wallet: ${JSON.stringify(
+          validatorErcAddresses
         )}`
       );
     } else {
       Logger.info(`No wallet or validator erc-20 address provided.`);
     }
     Object.keys(this.contracts).forEach((tokenKey) => {
-      if (!this.validatorWallets.size) {
-        this.contracts[tokenKey].removeAllListeners("Transfer");
-      }
+      // Remove any previously set listeners to avoid duplicates
+      this.contracts[tokenKey].removeAllListeners("Transfer");
+      // Listen to Transfer events specific to the current wallet
       this.contracts[tokenKey].on(
         "Transfer",
         async (from: string, to: string, amount: bigint, event: any) => {
           if (service) {
+            // Log the transfer to and from escrow
             this.processTransferEvent(tokenKey, from, to, amount, service);
-          } else {
+          } else if (validatorErcAddresses) {
+            const publicKeys = (validatorErcAddresses || [])?.map(
+              (k) => k?.validatorWalletAddress!
+            );
             this.processConsumerDepositEvent(
               tokenKey,
               from,
@@ -291,6 +279,7 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
         )} ${tokenKey}`
       );
 
+      // Get the service associated with the consumer wallet address
       const currentService = await this.serviceManager.getSubscriberByAddress(
         from as string
       );
@@ -300,6 +289,7 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
       try {
         if (!subscription) return;
 
+        // Track the transaction
         await this.trackTransactions(
           id!,
           to,
@@ -310,15 +300,22 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
           event
         );
 
-        const result = await this.checkSubscriptionBalance(subscription);
-
-        if (!result) return;
-        const { status } = result;
-        Logger.info(`Funds Check for Service ID ${id}: ${status}`);
-
         if (!subscription.active) {
-          await this.serviceManager.changeStatus(id as string, true);
-          Logger.info(`Payment success! Service ID ${id} activated.`);
+          // return the balance to see if the balance is sufficient to activate the service
+          const balance = await this.checkSubscriptionBalance(subscription);
+
+          if (!balance) return;
+          const { sufficient, balance: newBalance } = balance;
+          Logger.info(
+            `Funds Check for Service ID ${id}: ${
+              sufficient ? "Sufficient" : "Insufficient"
+            } Balance: ${newBalance}`
+          );
+
+          if (sufficient) {
+            await this.serviceManager.changeStatus(id as string, true);
+            Logger.info(`Service ID ${id} activated.`);
+          }
         }
       } catch (error) {
         Logger.error(
@@ -329,8 +326,10 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
   }
 
   async checkSubscriptionBalance(service: ServiceWithWalletDTO): Promise<{
-    status: string;
+    sufficient: boolean;
+    balance: string;
     gracePeriod: boolean;
+    message?: string;
   } | void> {
     if (
       service.id &&
@@ -339,81 +338,59 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
       service.price &&
       service.createdAt
     ) {
+      const data = await this.blockchainManager.getTokenBalances(
+        service.consumerWalletAddress
+      );
+
+      const balance = data.usdc as string;
+
       const startDate = new Date(service.createdAt);
       const now = new Date();
-
-      const registrationDay = startDate.getDate();
-      const lastDueDate = setDate(now, registrationDay);
-
-      if (isAfter(lastDueDate, now)) {
-        lastDueDate.setMonth(lastDueDate.getMonth() - 1);
-      }
-
       const monthsPassed =
         Math.max(differenceInCalendarMonths(now, startDate), 0) + 1;
+
       const totalAmountDue = monthsPassed * parseFloat(service.price);
+
       const totalDeposits = await this.getTotalDeposits(service.id);
       const outstandingBalance = totalAmountDue - +totalDeposits;
 
-      const daysPassDue = differenceInDays(now, lastDueDate);
-      const inGracePeriod = daysPassDue <= 14;
-      let active = service.active;
-      let serviceStatusType = service.serviceStatusType as string;
+      const sufficient = balance && parseFloat(balance) >= outstandingBalance;
+      // Calculate grace period end date
+      const graceEndDate = addDays(startDate, 40);
+      const inGracePeriod = now <= graceEndDate;
 
-      if (outstandingBalance > 0) {
+      if (!sufficient) {
         if (inGracePeriod) {
-          serviceStatusType = SERVICE_STATUS_TYPE.IN_GRACE_PERIOD;
-        } else if (daysPassDue > 14) {
-          serviceStatusType = SERVICE_STATUS_TYPE.DELINQUENT;
-          active = false;
+          Logger.info(
+            `Insufficient funds detected but within grace period for wallet ${service.consumerWalletAddress}. Balance: ${balance} USDC, Required: ${totalAmountDue} USDC.`
+          );
+          return {
+            sufficient: false,
+            balance,
+            gracePeriod: true,
+            message: "Currently in grace period.",
+          };
+        } else {
+          Logger.info(
+            `Insufficient funds and grace period has elapsed for wallet ${service.consumerWalletAddress}. Setting active flag to false.`
+          );
+
+          await this.serviceManager.changeStatus(service.id, false);
+
+          return {
+            sufficient: false,
+            balance,
+            gracePeriod: false,
+            message: "Subscription cancelled after grace period.",
+          };
         }
       }
 
-      if (outstandingBalance <= 0) {
-        serviceStatusType = SERVICE_STATUS_TYPE.ON_TIME;
-        active = true;
-      }
-
-      if (daysPassDue >= 30) {
-        serviceStatusType = SERVICE_STATUS_TYPE.CANCELLED;
-        active = false;
-      }
-
-      const { data: updatedService, error } = await this.serviceManager.update(
-        service?.id,
-        {
-          outstandingBalance,
-          daysPassDue,
-          serviceStatusType,
-          active,
-        } as ServiceDTO
-        // TODO: send a request to the UI app to trigger a notification to the consumer and validator notifying them about the status change.
+      Logger.info(
+        `Sufficient funds detected for wallet ${service.consumerWalletAddress}: ${balance} USDC`
       );
 
-      if (inGracePeriod) {
-        Logger.info(
-          `Within grace period for wallet ${service.consumerWalletAddress}.`
-        );
-        return {
-          status: serviceStatusType,
-          gracePeriod: true,
-        };
-      }
-
-      if (serviceStatusType === SERVICE_STATUS_TYPE.CANCELLED) {
-        Logger.info(
-          `Grace period has elapsed for wallet ${service.consumerWalletAddress}. Setting active flag to false.`
-        );
-        return {
-          status: serviceStatusType,
-          gracePeriod: false,
-        };
-      }
-
-      return {
-        status: serviceStatusType,
-        gracePeriod: inGracePeriod,
-      };
+      return { sufficient, balance, gracePeriod: inGracePeriod };
     }
   }
 
@@ -455,7 +432,6 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
 
     try {
       await this.create(transaction);
-      // TODO: send a request to the UI app to trigger a notification to the validator saying payment has been received.
       Logger.info(`Transaction saved: ${JSON.stringify(transaction)}`);
     } catch (error) {
       Logger.error(`Error saving transaction: ${JSON.stringify(error)}`);
@@ -470,8 +446,6 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
       { confirmed: isConfirmed },
       eq(transactions.transactionHash, transactionHash)
     );
-    // TODO: send a request to the UI app to trigger a notification to the consumer saying payment has been received and confirmed.
-    // Also, send a notification to the validator saying payment has been made.
   }
 
   async checkPendingTransactionsConfirmations() {
@@ -501,34 +475,5 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
       totalDeposits: sum(transactions.amount),
     });
     return transaction?.data?.[0]?.totalDeposits || 0;
-  }
-
-  public startMonitoring() {
-    this.updateValidatorWallets();
-  }
-
-  public async updateValidatorWallets(): Promise<void> {
-    try {
-      const { data: publicKeys } =
-        await this.serviceManager.getDistinctValidatorWallets();
-      (
-        (publicKeys as Array<{ validatorWalletAddress: string } | undefined>) ||
-        []
-      ).forEach((key) => {
-        if (key && key?.validatorWalletAddress) {
-          this.validatorWallets.add(key?.validatorWalletAddress);
-        }
-      });
-
-      this.monitorValidatorWallets();
-    } catch (error) {
-      Logger.error(
-        `Failed to update validator wallets: JSON: ${JSON.stringify(
-          error,
-          null,
-          2
-        )}`
-      );
-    }
   }
 }

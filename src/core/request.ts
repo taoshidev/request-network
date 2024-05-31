@@ -1,7 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosError, Method } from "axios";
 import { Request, Response } from "express";
 import Logger from "../utils/logger";
-import { XTaoshiHeaderKeyType } from "./auth-request";
 
 export enum StatusCode {
   NotFound = 404,
@@ -26,8 +25,6 @@ export enum Message {
 export default class HTTPRequest {
   private static outputServerApiUri: string =
     process.env.VALIDATOR_OUTPUT_SERVER_API_URL || "";
-
-  private static taoshiRequestKey: string = process.env.TAOSHI_API_KEY || "";
 
   constructor(private headers?: { [key: string]: string }) {
     this.fetch = this.fetch.bind(this);
@@ -69,7 +66,6 @@ export default class HTTPRequest {
         headers: {
           ...(this.headers && this.headers),
           ...this.filterHeaders(headers),
-          [XTaoshiHeaderKeyType.Validator]: HTTPRequest.taoshiRequestKey || "",
         },
         ...(Object.keys(query).length && { params: query }),
         ...(["POST", "PUT", "PATCH"].includes(method) && { data: body }),

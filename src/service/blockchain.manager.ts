@@ -121,20 +121,19 @@ export default class BlockchainManager {
       const decimals = await tokenContract.decimals();
       return ethers.formatUnits(balance, decimals);
     } catch (error) {
-      Logger.error(
-        `Error fetching balance for wallet: ${walletAddress} contract: ${contractAddress}: ${error}`
-      );
+      Logger.error(`Error fetching balance for ${contractAddress}: ${error}`);
       return null;
     }
   }
 
-  async getTokenBalances(walletAddress: string, type: string = "USDC") {
-    const tokenAddress = TOKENS[type].address;
-    const balance = await this.getTokenBalance(tokenAddress, walletAddress);
+  async getTokenBalances(walletAddress: string) {
+    const usdcAddress = TOKENS.USDC.address;
+    // const usdtAddress = TOKENS.USDT.address;
+    const usdcBalance = await this.getTokenBalance(usdcAddress, walletAddress);
+    // const usdtBalance = await this.getTokenBalance(usdtAddress, walletAddress, 6);
     return {
-      balance,
-      type,
-      [type.toLowerCase()]: balance,
+      usdc: usdcBalance,
+      usdt: null,
     };
   }
 

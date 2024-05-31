@@ -12,7 +12,6 @@ import {
   integer,
   index,
   uniqueIndex,
-  primaryKey,
 } from "drizzle-orm/pg-core";
 import { bytea } from "./types";
 
@@ -23,15 +22,6 @@ export const transactionTypeEnum = pgEnum("transactionType", [
   "withdrawal",
 ]);
 
-export const serviceStatusTypeEnum = pgEnum("serviceStatusType", [
-  "new",
-  "on time",
-  "in grace period",
-  "delinquent",
-  "cancelled"
-]);
-
-
 export const services = authSchema.table(
   "services",
   {
@@ -40,9 +30,6 @@ export const services = authSchema.table(
       .primaryKey()
       .notNull(),
     type: roleTypeEnum("type").notNull(),
-    serviceStatusType: serviceStatusTypeEnum("service_status_type").notNull().default("new"),
-    daysPassDue: integer("days_pass_due").notNull().default(0),
-    outstandingBalance: numeric("outstanding_balance", { precision: 18, scale: 6 }),
     name: varchar("name"),
     validatorWalletAddress: varchar("validator_wallet_address"),
     consumerWalletAddress: varchar("consumer_wallet_address"),
@@ -58,15 +45,9 @@ export const services = authSchema.table(
     meta: jsonb("meta"),
     enabled: boolean("enabled").default(true).notNull(),
     active: boolean("active").default(false).notNull(),
-    createdAt: timestamp("created_at", {
-      precision: 6,
-      withTimezone: true,
-    }).default(sql`now()`),
-    updatedAt: timestamp("updated_at", {
-      precision: 6,
-      withTimezone: true,
-    }).default(sql`now()`),
-    deletedAt: timestamp("deleted_at", { precision: 6, withTimezone: true }),
+    createdAt: timestamp("created_at").default(sql`now()`),
+    updatedAt: timestamp("updated_at").default(sql`now()`),
+    deletedAt: timestamp("deleted_at"),
   },
   (table) => ({
     serviceValidatorIdx: index("service_validator_idx").on(table.validatorId),
@@ -99,15 +80,9 @@ export const transactions = authSchema.table(
     tokenAddress: varchar("token_address"),
     meta: jsonb("meta"),
     active: boolean("active").default(true).notNull(),
-    createdAt: timestamp("created_at", {
-      precision: 6,
-      withTimezone: true,
-    }).default(sql`now()`),
-    updatedAt: timestamp("updated_at", {
-      precision: 6,
-      withTimezone: true,
-    }).default(sql`now()`),
-    deletedAt: timestamp("deleted_at", { precision: 6, withTimezone: true }),
+    createdAt: timestamp("created_at").default(sql`now()`),
+    updatedAt: timestamp("updated_at").default(sql`now()`),
+    deletedAt: timestamp("deleted_at"),
   },
   (table) => ({
     transactionHashIdx: uniqueIndex("transaction_hash_idx").on(
@@ -146,57 +121,15 @@ export const wallets = authSchema.table(
     publicKey: varchar("public_key").unique().notNull(),
     privateKey: bytea("private_key"),
     active: boolean("active").default(true).notNull(),
-    createdAt: timestamp("created_at", {
-      precision: 6,
-      withTimezone: true,
-    }).default(sql`now()`),
-    updatedAt: timestamp("updated_at", {
-      precision: 6,
-      withTimezone: true,
-    }).default(sql`now()`),
-    deletedAt: timestamp("deleted_at", { precision: 6, withTimezone: true }),
+    createdAt: timestamp("created_at").default(sql`now()`),
+    updatedAt: timestamp("updated_at").default(sql`now()`),
+    deletedAt: timestamp("deleted_at"),
   },
   (table) => ({
     walletPublicKeyIdx: uniqueIndex("wallet_public_key_idx").on(
       table.publicKey
     ),
   })
-);
-
-export const enrollments = authSchema.table(
-  "enrollments",
-  {
-    id: uuid("id")
-      .default(sql`gen_random_uuid()`)
-      .primaryKey()
-      .unique()
-      .notNull(),
-    serviceId: uuid("service_id")
-      .references(() => services.id, {
-        onDelete: "set null",
-      })
-      .notNull(),
-    stripeCustomerId: varchar("stripe_customer_id").notNull(),
-    stripeSubscriptionId: varchar("stripe_subscription_id").notNull(),
-    email: varchar("email").notNull(),
-    expMonth: integer("exp_month").notNull(),
-    expYear: integer("exp_year").notNull(),
-    lastFour: integer("last_four"),
-    firstPayment: timestamp("first_payment"),
-    paid: boolean("paid").default(true).notNull(),
-    currentPeriodEnd: timestamp("current_period_end"),
-    active: boolean("active").default(true).notNull(),
-    createdAt: timestamp("created_at", {
-      precision: 6,
-      withTimezone: true,
-    }).default(sql`now()`),
-    updatedAt: timestamp("updated_at", {
-      precision: 6,
-      withTimezone: true,
-    }).default(sql`now()`),
-    deletedAt: timestamp("deleted_at", { precision: 6, withTimezone: true }),
-  },
-  (table) => ({})
 );
 
 export const serviceWalletsRelations = relations(services, ({ many }) => ({

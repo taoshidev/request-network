@@ -35,8 +35,6 @@ export default class BaseRouter {
 
   public mount() {
     if (this.requestInterceptor) this.router.use("/", this.requestInterceptor);
-
-    this.router.route("/query").post(this.ctrl.query());
     // [schema-name]/id/ab3445
     this.router.use("/:id", this.ctrl.findByIdInterceptor());
     // [schema-name]/
@@ -49,7 +47,6 @@ export default class BaseRouter {
       .delete(this.ctrl.remove());
     // [schema-name]/any-key/any-value
     this.router.route("/:key/:value").put(this.ctrl.updateByKey());
-    // this.router.route("/query").post(this.ctrl.query());
 
     return this.router;
   }
