@@ -17,6 +17,7 @@ import DatabaseWrapper from "../core/database.wrapper";
 import { eq, sum } from "drizzle-orm";
 import { replacer } from "../utils/bigint-replacer";
 import { ServiceDTO } from "../db/dto/service.dto";
+import { AuthenticatedRequest, XTaoshiHeaderKeyType } from "../core/auth-request";
 
 interface TokenConfig {
   address: string;
@@ -243,8 +244,7 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
           if (!balance) return;
           const { sufficient, balance: newBalance } = balance;
           Logger.info(
-            `Funds Check for Service ID ${id}: ${
-              sufficient ? "Sufficient" : "Insufficient"
+            `Funds Check for Service ID ${id}: ${sufficient ? "Sufficient" : "Insufficient"
             } Balance: ${newBalance}`
           );
 
@@ -307,7 +307,8 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
           from,
           to,
           amount,
-          event
+          event,
+          subscription
         );
 
         const result = await this.checkSubscriptionBalance(subscription);
@@ -387,8 +388,18 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
           serviceStatusType,
           active,
         } as ServiceDTO
-        // TODO: send a request to the UI app to trigger a notification to the consumer and validator notifying them about the status change.
       );
+
+      // Request to the UI app to trigger a notification to the consumer and validator notifying them about the status change.
+      await AuthenticatedRequest.send({
+        method: "POST",
+        path: "/api/notify/payment",
+        body: {
+          subscriptionId: service?.subscriptionId,
+          serviceStatusType
+        },
+        xTaoshiKey: XTaoshiHeaderKeyType.Validator,
+      });
 
       if (inGracePeriod) {
         Logger.info(
@@ -424,7 +435,8 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
     from: string,
     to: string,
     amount: bigint,
-    event: any
+    event: any,
+    service: ServiceDTO
   ) {
     if (!event?.log) {
       throw new Error("Event log is not available");
@@ -455,7 +467,18 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
 
     try {
       await this.create(transaction);
-      // TODO: send a request to the UI app to trigger a notification to the validator saying payment has been received.
+
+      // Send a request to the UI app to trigger a notification to the validator saying payment has been initiated.
+      await AuthenticatedRequest.send({
+        method: "POST",
+        path: "/api/notify/payment",
+        body: {
+          subscriptionId: service?.subscriptionId,
+          serviceStatusType: service?.serviceStatusType
+        },
+        xTaoshiKey: XTaoshiHeaderKeyType.Validator,
+      });
+
       Logger.info(`Transaction saved: ${JSON.stringify(transaction)}`);
     } catch (error) {
       Logger.error(`Error saving transaction: ${JSON.stringify(error)}`);
@@ -463,15 +486,27 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
   }
 
   async updateTransactionConfirmation(
-    transactionHash: string,
+    transaction: TransactionDTO,
     isConfirmed: boolean
   ) {
     await this.updateSet(
       { confirmed: isConfirmed },
-      eq(transactions.transactionHash, transactionHash)
+      eq(transactions.transactionHash, transaction?.transactionHash!)
     );
-    // TODO: send a request to the UI app to trigger a notification to the consumer saying payment has been received and confirmed.
+    // Send a request to the UI app to trigger a notification to the consumer saying payment has been received and confirmed.
     // Also, send a notification to the validator saying payment has been made.
+    const currentService = await this.serviceManager.getSubscriberByAddress(transaction?.walletAddress as string);
+    const { data: service } = currentService;
+
+    await AuthenticatedRequest.send({
+      method: "POST",
+      path: "/api/notify/payment",
+      body: {
+        subscriptionId: service?.subscriptionId,
+        serviceStatusType: service?.serviceStatusType
+      },
+      xTaoshiKey: XTaoshiHeaderKeyType.Validator,
+    });
   }
 
   async checkPendingTransactionsConfirmations() {
@@ -488,7 +523,7 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
       );
 
       if (confirmed) {
-        this.updateTransactionConfirmation(transaction?.transactionHash!, true);
+        this.updateTransactionConfirmation(transaction, true);
         Logger.info(
           `Transaction ${transaction?.transactionHash!} is confirmed.`
         );
