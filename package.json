@@ -21,7 +21,7 @@
     "start": "cross-env node -r tsconfig-paths/register dist/index.js",
     "dev": "pnpm build && nodemon --exec 'ts-node' src/index.ts",
     "build": "rm -rf dist && tsc && cp -r src/views dist/views && cp -r src/public dist/public",
-    "deploy:staging": "pnpm build && eb deploy rn-staging --profile taoshi",
+    "deploy:staging": "pnpm build && eb deploy request-network-staging --profile taoshi",
     "introspect:pg": "drizzle-kit introspect:pg",
     "db:generate": "drizzle-kit generate:pg",
     "db:push": "drizzle-kit push:pg --config=drizzle.config.ts",
