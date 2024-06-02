@@ -396,7 +396,8 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
         path: "/api/notify/payment",
         body: {
           subscriptionId: service?.subscriptionId,
-          serviceStatusType
+          serviceStatusType,
+          eventType: 'balance-checked'
         },
         xTaoshiKey: XTaoshiHeaderKeyType.Validator,
       });
@@ -474,7 +475,8 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
         path: "/api/notify/payment",
         body: {
           subscriptionId: service?.subscriptionId,
-          serviceStatusType: service?.serviceStatusType
+          serviceStatusType: service?.serviceStatusType,
+          eventType: 'transaction-checked'
         },
         xTaoshiKey: XTaoshiHeaderKeyType.Validator,
       });
@@ -503,7 +505,8 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
       path: "/api/notify/payment",
       body: {
         subscriptionId: service?.subscriptionId,
-        serviceStatusType: service?.serviceStatusType
+        serviceStatusType: service?.serviceStatusType,
+        eventType: 'transaction-confirmed'
       },
       xTaoshiKey: XTaoshiHeaderKeyType.Validator,
     });
