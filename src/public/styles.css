@@ -1,3 +1,7 @@
+h1, h2 {
+  margin: 0;
+  margin-bottom: 10px;
+}
 html,
 body {
   margin: 0;
@@ -23,10 +27,11 @@ body {
   justify-content: center;
   align-items: center;
   background-color: white;
-  border: 1px dashed black;
+  border: 1px solid rgb(229 231 235);
+  box-shadow: 0 0 #0000,  0 0 #0000, 0 1px 2px 0 rgb(0 0 0 / 0.05);
   text-align: center;
   margin: 3em;
-  padding: 3em;
+  padding: 2em;
   max-width: 580px;
 }
 .subscribe-container {
@@ -54,7 +59,6 @@ button[disabled] {
 }
 
 h1 {
-  margin-bottom: 20px;
   font-size: 26px;
 }
 .hidden {
@@ -77,6 +81,8 @@ button, input {
   margin-top: 25px;
   text-decoration: none;
   transition: background-color 0.3s;
+  border: 0 solid rgb(229 231 235);
+  box-shadow: 0 0 #0000,  0 0 #0000, 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 .button:hover {
   background-color: #ca4f17;
@@ -108,7 +114,8 @@ form {
   display: inline-block;
   padding: .5rem 1rem;
   min-height: 1.1rem;
-  border: .07rem solid #444;
+  border: 1px solid rgb(229 231 235);
+  box-shadow: 0 0 #0000,  0 0 #0000, 0 1px 2px 0 rgb(0 0 0 / 0.05);
   width: 266px;
 }
 .error {
@@ -122,7 +129,6 @@ form {
 #submit-btn {
   margin-top: .5rem;
   outline: none;
-  border: 1px solid #555;
   width: 100%;
 }
 .required {

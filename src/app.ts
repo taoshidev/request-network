@@ -90,7 +90,10 @@ export default class App {
     this.express.set("views", path.join(__dirname, "views"));
     this.express.get("/", (req, res) => {
       res.setHeader("Origin-Agent-Cluster", "?1");
-      res.render("index", { uiAppUrl: process.env.REQUEST_NETWORK_UI_URL });
+      res.render("index", {
+        uiAppUrl: process.env.REQUEST_NETWORK_UI_URL,
+        validatorName: process.env.VALIDATOR_NAME || ''
+      });
     });
     this.express.get("/subscribe", (req, res) => {
       res.setHeader("Origin-Agent-Cluster", "?1");
@@ -98,7 +101,8 @@ export default class App {
       res.render("subscribe", {
         api: btoa(process.env.API_HOST || ''),
         key: btoa(process.env.STRIPE_PUBLIC_KEY || ''),
-        uiAppUrl: process.env.REQUEST_NETWORK_UI_URL || ''
+        uiAppUrl: process.env.REQUEST_NETWORK_UI_URL || '',
+        validatorName: process.env.VALIDATOR_NAME || ''
       });
     });
   }

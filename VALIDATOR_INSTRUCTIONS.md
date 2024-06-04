@@ -29,7 +29,7 @@ The technology stack for ReqNet involves several modern and robust technologies 
 - **Containerization**: Docker for creating, deploying, and running applications in isolated environments.
 - **Cloud Infrastructure**: AWS services including ECS (Elastic Container Service) and Elastic Beanstalk for deployment and scaling.
 - **Version Management Tools**: NVM to manage Node.js versions and PNPM for efficient package management.
-- **Blockchain Integration**: Infura API for interfacing with the Ethereum network and Uphold API for managing crypto transactions.
+- **Blockchain Integration**: Infura API for interfacing with the Ethereum network for managing crypto transactions.
 
 ## Setup Process
 
@@ -135,8 +135,6 @@ ReqNet acts as a proxy between the consumer API and the Validator Output Server 
    - **ReqNet Processing**: Receives and authenticates the consumer request, verifies ownership.
    - **ReqNet to OPS Request**: Sends a request to the OPS with a header key `x-taoshi-validator-request-key`.
    - **Communication Keys**: Uses `x-taoshi-request-key` for communication between ReqNet UI and Validator Node.
-
-This configuration ensures that your Validator Node can securely and efficiently handle requests, performing necessary conversions and transactions via the Uphold API, and managing data flow through designated endpoints.
 
 ### Endpoint Creation
 
