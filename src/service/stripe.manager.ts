@@ -284,6 +284,17 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
         event = stripe.webhooks.constructEvent((req as any).rawBody, sig, process.env.STRIPE_WEBHOOKS_KEY);
 
       if (event) {
+        if (event.type === 'payment_intent.succeeded' && event.data?.object?.metadata?.activate) {
+          if (event.data?.object?.metadata?.activate) {
+            await AuthenticatedRequest.send({
+              method: "PUT",
+              path: "/api/stripe-activate",
+              body: { activate: true },
+              xTaoshiKey: XTaoshiHeaderKeyType.Validator,
+            });
+          }
+        }
+
         const app = event?.data?.object?.lines?.data?.[0]?.metadata?.App || event?.data?.object?.metadata?.App,
           serviceId = event?.data?.object?.lines?.data?.[0]?.metadata?.['Service ID'] || event?.data?.object?.metadata?.['Service ID'],
           { stripeSubscriptionId, currentPeriodEnd } = this.getStripeData(event);

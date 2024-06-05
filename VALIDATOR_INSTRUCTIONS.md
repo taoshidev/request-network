@@ -296,6 +296,13 @@ To enable Stripe payments you will need to create a Stripe account and store the
 
 4. For Stipe subscriptions to be updated properly webhooks need to be set up. A webhook configuration will need to be set up on the Stripe website that points at "https://\<location of your api server\>/webhooks.
 
+<br>
+**Command to test and enable Strip Payments**
+
+```
+    trigger payment_intent.succeeded --add payment_intent:metadata.activate=true
+```
+
 ## Sentry Error Tracking
 
 - Sentry error tracking can optionally be enabled by providing credentials. Got to [https://sentry.io/](https://sentry.io/) to configure.
