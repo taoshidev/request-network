@@ -178,7 +178,7 @@ ReqNet acts as a proxy between the consumer API and the Validator Output Server 
       - **ReqNet to OPS Request**: Sends a request to the OPS with a header key `x-taoshi-validator-request-key`.
       - **Communication Keys**: Uses `x-taoshi-request-key` for communication between ReqNet UI and Validator Node.
 
-This configuration ensures that your Validator Node can securely and efficiently handle requests, performing necessary conversions and transactions via the Uphold API, and managing data flow through designated endpoints.
+This configuration ensures that your Validator Node can securely and efficiently handle requests, and managing data flow through designated endpoints.
  
 
 7.**Start the Application**
