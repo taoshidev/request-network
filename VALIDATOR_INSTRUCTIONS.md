@@ -300,7 +300,7 @@ To enable Stripe payments you will need to create a Stripe account and store the
 **Command to test and enable Strip Payments**
 
 ```
-    trigger payment_intent.succeeded --add payment_intent:metadata.activate=true
+    stripe trigger payment_intent.succeeded --add payment_intent:metadata.activate=true
 ```
 
 ## Sentry Error Tracking
