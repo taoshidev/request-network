@@ -15,7 +15,7 @@ export default class PaymentRequest {
     res: Response,
     next: NextFunction
   ) => {
-    const token = await jwt.verify(req.body.rnToken, process.env.ENROLLMENT_SECRET as string);
+    const token = await jwt.verify(req.body.rnToken, process.env.STRIPE_ENROLLMENT_SECRET as string);
     if (req.body) req.body.tokenData = token;
 
     if (token) {
