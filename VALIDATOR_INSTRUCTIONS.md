@@ -1,4 +1,4 @@
-# Request Network Validator Setup Instructions
+# Request Network Validator Server Setup Instructions
 
 ## Table of Contents
 
@@ -9,19 +9,17 @@
 5. [Output Server Connection](#output-server-connection)
 6. [Deployment Workflow](#deployment-workflow)
 7. [Payment Integration](#payment-integration)
-8. [Bittensor Validator Registration](#bittensor-validator-registration)
-9. [Cron Server and Event Listener](#cron-server)
-10. [Configuring Stripe Payments](#stripe-payments)
-11. [Sentry Error Tracking](#sentry-error-tracking)
-12. [Example License](#example-license)
+8. [Configuring Stripe Payments](#stripe-payments)
+9. [Sentry Error Tracking](#sentry-error-tracking)
+10. [Example License](#example-license)
 
 ## Introduction
 
-This comprehensive guide is designed for technical personnel responsible for setting up, configuring, and maintaining a Validator node on the Request Network infrastructure. It covers the comprehensive lifecycle of a Validator node, from initial setup to advanced operations and troubleshooting.
+This comprehensive guide is designed for technical personnel responsible for setting up, configuring, and maintaining a Validator Server on the Request Network infrastructure. It covers the comprehensive lifecycle of a Validator Server, from initial setup to advanced operations and troubleshooting.
 
 ## Technology Stack Overview
 
-The technology stack for ReqNet involves several modern and robust technologies optimized for high performance and reliability:
+The technology stack for Request Network Marketplace involves several modern and robust technologies optimized for high performance and reliability:
 
 - **Backend Technologies**: Node.js with Express for building fast, scalable network applications.
 - **Frontend Framework**: React with Next.js for improved SEO and optimized page loading by server-side rendering.
@@ -29,17 +27,16 @@ The technology stack for ReqNet involves several modern and robust technologies 
 - **Containerization**: Docker for creating, deploying, and running applications in isolated environments.
 - **Cloud Infrastructure**: AWS services including ECS (Elastic Container Service) and Elastic Beanstalk for deployment and scaling.
 - **Version Management Tools**: NVM to manage Node.js versions and PNPM for efficient package management.
-- **Blockchain Integration**: Infura API for interfacing with the Ethereum network for managing crypto transactions.
 
 ## Setup Process
 
 ### Environment Configuration
 
-Configure your environment to differentiate between development and production settings:
+Configure your environment to differentiate between development, staging and production settings:
 
-- **Development Settings**: Connect to the Ethereum 'Sepolia' test network and configure the API to interact with mock data.
-- **Staging Settings**: Connect to the Ethereum 'Sepolia' test network and configure the API to interact with mock data. Reserved for environments that are deployed to a live server, but not yet production-ready.
-- **Production Settings**: Set up connections to the Ethereum 'mainnet' for handling live data and transactions.
+- **Development Settings**: Test network and configure the API to interact with mock data.
+- **Staging Settings**: Test network and configure the API to interact with mock data. Reserved for environments that are deployed to a live server, but not yet production-ready.
+- **Production Settings**: Set up connections to Stripe Api for handling live data and transactions.
 
 ### Initial Configuration
 
@@ -47,15 +44,7 @@ Configure your environment to differentiate between development and production s
 
    - Fork the repository here: [Request Network on GitHub](https://github.com/taoshidev/request-network)
 
-2. **Set Up Infura Project**
-
-   - Create a project on [Infura](https://app.infura.io)
-   - Set the Infura Project ID:
-     ```
-     INFURA_PROJECT_ID=your_infura_project_id
-     ```
-
-3. **Database and API Configuration**
+2. **Database and API Configuration**
 
    - Configure the database and API settings:
      ```
@@ -63,26 +52,29 @@ Configure your environment to differentiate between development and production s
      NODE_ENV=development
      ```
 
-4. **Docker Compose Configuration**
+3. **Docker Compose Configuration**
 
    - Review and configure services using `docker-compose.yml`.
 
-5. **Additional Configuration**
+4. **Additional Configuration**
 
    - Configure encryption keys (used by CryptoJS to encrypt keys and secrets at rest):
      - `ENCRYPTION_KEY=WANabc234=`
      - `IV_STRING=dxabcdeLAP333123abcLg==`
    - Set API and network configurations:
+     - `VALIDATOR_NAME=Your Validator Name`
      - `API_PORT=8080`
      - `API_HOST=http://localhost:8080`
      - `API_PREFIX=/api/v1`
-     - `REQUEST_NETWORK_UI_URL=http://rn-dev.taoshi.io`
+     - `REQUEST_NETWORK_UI_URL=http://rn-staging.taoshi.io` or
+     - `REQUEST_NETWORK_UI_URL=http://request.taoshi.io` for production
    - Set Unkey verify URL:
      - `UNKEY_VERIFY_URL=https://api.unkey.dev/v1/keys.verifyKey`
 
 ### Configuring Environment Variables
 
 ```
+VALIDATOR_NAME=
 NODE_ENV=
 API_PORT=
 API_HOST=
@@ -95,37 +87,41 @@ TAOSHI_VALIDATOR_API_SECRET=
 ENCRYPTION_KEY=
 IV_STRING=
 UNKEY_VERIFY_URL=
-INFURA_PROJECT_ID=
-ROLE=
+STRIPE_ENROLLMENT_SECRET=
+STRIPE_PUBLIC_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOKS_KEY=
+SENTRY_DSN=
+SENTRY_AUTH_TOKEN=
 ```
 
 ## Registering as a Validator
 
-Complete the registration through the ReqNet UI:
+Complete the registration through the Request Network Marketplace UI:
 
-1. Navigate to the ReqNet Validator Registration page:
-   - [ReqNet Validator Registration](https://rn-dev.taoshi.io)
-2. Authenticate using OAuth, authorize ReqNet to access your information, and set up your Validator Node.
+1. Navigate to the Request Network Marketplace UI Validator Registration page:
+   - [Request Network Marketplace Registration](https://request.taoshi.io)
+2. Authenticate using OAuth, authorize Request Network Marketplace to access your information, and set up your Validator Server.
    - Click on **Dashboard**.
 3. Authenticate using OAuth to ensure secure access.
-4. Authorize ReqNet to access your information.
+4. Authorize Request Network Marketplace to access your information.
 5. Choose the account type as **Validator**.
-6. Enter your Validator Node's base URL, which represents the instance you will spin up:
+6. Enter your Validator Server's base Url, which represents the instance you will spin up:
    - Note: If the hosting details are not finalized, enter a placeholder and update it later.
-   - This URL will be automatically updated when you spin up your Validator Node instance.
+   - This Url will be automatically updated when you spin up your Validator Server instance.
 
 ### API Keys and Endpoint Configuration
 
-Upon completing the registration, you will receive an API key and a secret, which are crucial for operating your Validator Node:
+Upon completing the registration, you will receive an Api key and a secret, which are crucial for operating your Validator Server:
 
 - **API Key**: `TAOSHI_API_KEY=api_abcdef`
 - **Secret**: `TAOSHI_VALIDATOR_API_SECRET=abc123456`
 
-These credentials allow you to authenticate incoming requests and manage interactions between your Validator Node and the ReqNet UI.
+These credentials allow you to authenticate incoming requests and manage interactions between your Validator Server and the Request Network Marketplace UI.
 
 ### Setup and Configuration
 
-ReqNet acts as a proxy between the consumer API and the Validator Output Server (OPS). To establish this connection:
+Request Network Validator Server acts as a proxy between the consumer Api and the Validator Output Server (OPS). To establish this connection:
 
 1. Specify the OPS base URL in your `.env` file:
    - `VALIDATOR_OUTPUT_SERVER_API_URL=https://output-server-1:8080`
@@ -134,7 +130,7 @@ ReqNet acts as a proxy between the consumer API and the Validator Output Server 
    - **Header Key**: `x-taoshi-consumer-request-key`
    - **ReqNet Processing**: Receives and authenticates the consumer request, verifies ownership.
    - **ReqNet to OPS Request**: Sends a request to the OPS with a header key `x-taoshi-validator-request-key`.
-   - **Communication Keys**: Uses `x-taoshi-request-key` for communication between ReqNet UI and Validator Node.
+   - **Communication Keys**: Uses `x-taoshi-request-key` for communication between Request Network Marketplace UI and Validator Server.
 
 ### Endpoint Creation
 
@@ -142,6 +138,7 @@ ReqNet acts as a proxy between the consumer API and the Validator Output Server 
   - Example endpoints:
     - `/api/v1/user/:id`
     - `/api/v1/user/:id?min=1&max=50`
+    - `/validator-checkpoint`
 
 ## Output Server Connection
 
@@ -173,7 +170,7 @@ Set up the Validator Output Server (OPS) connection:
 
 #### General Deployment Information
 
-The Validator Node can be deployed anywhere that supports Node.js, with or without Docker. At Taoshi, we deploy our own Validator Node in AWS ECS and Elastic Beanstalk. The project source code is set up with workflows for deployment to AWS ECS and/or AWS Elastic Beanstalk.
+The Validator Server can be deployed anywhere that supports Node.js, with or without Docker. At Taoshi, we deploy our own Validator Server on AWS ECS and Elastic Beanstalk. The project source code is set up with workflows for deployment to AWS ECS and/or AWS Elastic Beanstalk.
 
 #### Deploying with AWS Elastic Beanstalk CLI (EB CLI)
 
@@ -249,34 +246,7 @@ Which should deploy your application to AWS EB under the account that's tied the
 
 ## Payment Integration
 
-When registering a validator on the ReqNet UI, and when the currency type of "Crypto" is selected, ReqNet will trigger cron service, and transaction event listener through Infura provider. These services ensure payments go through to the specified ERC-20 wallets (setup during registration on the UI). When currency type of "Fiat" is selected during registration, payments are not tracked, stored or managed through ReqNet in any way. Fiat transactions are managed externally, through the validator's external payment system.
-
-## Bittensor Validator Registration
-
-Register as a validator on Bittensor:
-
-- Generate keys and register:
-
-1. **Create Hot and Cold Keys & Subnet Registration**:
-
-   - Navigate to the the Bittensor documentation page at https://docs.bittensor.com/getting-started/installation and install the Bittensor CLI. Once you have access to the cli, run:
-     ```
-     btcli wallet new_coldkey --wallet.name my-validator
-     btcli wallet new_hotkey --wallet.name my-validator --wallet.hotkey default
-     btcli wallet faucet --wallet.name my-validator --subtensor.network test
-     btcli wallet list
-     btcli subnet register --wallet.name my-validator --wallet.hotkey default --subtensor.network test
-     ```
-
-- You'll be prompted to:
-  - Enter password to unlock key.
-  - Enter netUid (the Subnet to register onto).
-
-For detailed instructions, refer to the [Bittensor Documentation](https://docs.bittensor.com/).
-
-## Cron Server
-
-ReqNet uses Infura Provider to listen to crypto transfer event and initiates cron services to track payment activities to enable / disable services. For a single instance of ReqNet, there's nothing to do other than to deploy ReqNet to your preferred infrastructure. However, if deployed using a multi instance / autoscaling infrastructure like AWS EB or AWS ECS, an additional cron_handler server is needed. To spin up the cron server (Cron Handler), set the environment variable ROLE to "cron_handler" and deploy ReqNet as a separate instance.
+When currency type of "Fiat" is selected during registration, payments are are facilitated and managed through Stripe Integration.
 
 ## Stripe Payments
 

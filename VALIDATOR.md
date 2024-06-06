@@ -1,6 +1,6 @@
 # Validator Setup Guide for Request Network
 
-Welcome to the Request Network Validator Setup Guide. This guide is tailored specifically for validators who play a crucial role in ensuring the integrity and availability of data on the Request Network. It includes detailed instructions on setting up and running your Validator Node using various technologies including Docker, Flask, and Polkadot.
+Welcome to the Request Network Validator Setup Guide. This guide is tailored specifically for validators who play a crucial role in ensuring the integrity and availability of data on the Request Network. It includes detailed instructions on setting up and running your Validator Server using various technologies.
 
 ## Table of Contents
 
@@ -10,14 +10,13 @@ Welcome to the Request Network Validator Setup Guide. This guide is tailored spe
 4. [RN Configuration Details](#rn-configuration-details)
 5. [Deployment Options](#deployment-options)
 6. [Maintaining and Monitoring](#maintaining-and-monitoring)
-7. [Integrating Wallets](#integrating-wallets)
-8. [API Key Management](#api-key-management)
-9. [Registration as a Validator](#registration-as-a-validator)
-10. [Troubleshooting](#troubleshooting)
+7. [API Key Management](#api-key-management)
+8. [Registration as a Validator](#registration-as-a-validator)
+9. [Troubleshooting](#troubleshooting)
 
 ## Introduction
 
-As a validator on the Request Network, you contribute to a robust data marketplace. This guide will help you set up a Validator Node, from initial setup and local server operations to deployment and maintenance on various platforms.
+As a validator on the Request Network, you contribute to a robust data marketplace. This guide will help you set up a Validator Server, from initial setup and local server operations to deployment and maintenance on various platforms.
 
 ## Bittensor Validator Registration
 
@@ -76,17 +75,7 @@ This simple Flask server will handle requests on your validator. You may also ch
    cd request-network
    ```
 
-2. **Set Up Infura Project**
-
-   - Create a project on [Infura](https://app.infura.io)
-   - Set the Infura Project ID:
-     ```
-     INFURA_PROJECT_ID=your_infura_project_id
-     ```
-     When registering a validator on the ReqNet UI, and when the currency type of "Crypto" is selected, ReqNet will trigger cron service, and transaction event listener through Infura provider. These services ensure payments go through to the specified ERC-20 wallets (setup during registration on the UI). When currency type of "Fiat" is selected during registration, payments are not tracked, stored or managed through ReqNet in any way. Fiat transactions are managed externally, through the validator's external payment system.
-
-
-3. **Docker Compose Configuration**
+2. **Docker Compose Configuration**
 
    - Review and configure services using `docker-compose.yml`.
    - This project uses Docker to manage its services. To start the containers, run:
@@ -98,7 +87,7 @@ This simple Flask server will handle requests on your validator. You may also ch
    This command will start all the required services in the background.
 
 
-4. **Database and API Configuration**
+3. **Database and API Configuration**
 
    Configure the database and API settings:
      ```
@@ -130,10 +119,11 @@ This simple Flask server will handle requests on your validator. You may also ch
      - `ENCRYPTION_KEY=WANabc234=`
      - `IV_STRING=dxabcdeLAP333123abcLg==`
    - Set API and network configurations:
+     - `VALIDATOR_NAME=Your Validator Name`
      - `API_PORT=8080`
      - `API_HOST=http://localhost:8080`
      - `API_PREFIX=/api/v1`
-     - `REQUEST_NETWORK_UI_URL=http://rn-dev.taoshi.io`
+     - `REQUEST_NETWORK_UI_URL=http://request.taoshi.io`
    - Set Unkey verify URL:
      - `UNKEY_VERIFY_URL=https://api.unkey.dev/v1/keys.verifyKey`
 
@@ -149,23 +139,26 @@ This simple Flask server will handle requests on your validator. You may also ch
    Make sure to replace the placeholders in the `.env` file with your actual data.
 
    ```
-   NODE_ENV=
-   API_PORT=
-   API_HOST=
-   API_PREFIX=
-   DATABASE_URL=
-   REQUEST_NETWORK_UI_URL=
-   VALIDATOR_OUTPUT_SERVER_API_URL=
-   TAOSHI_API_KEY=
-   TAOSHI_VALIDATOR_API_SECRET=
-   ENCRYPTION_KEY=
-   IV_STRING=
-   UNKEY_VERIFY_URL=
-   INFURA_PROJECT_ID=
-   ROLE=
+VALIDATOR_NAME=
+NODE_ENV=
+API_PORT=
+API_HOST=
+API_PREFIX=
+DATABASE_URL=
+REQUEST_NETWORK_UI_URL=
+VALIDATOR_OUTPUT_SERVER_API_URL=
+TAOSHI_API_KEY=
+TAOSHI_VALIDATOR_API_SECRET=
+ENCRYPTION_KEY=
+IV_STRING=
+UNKEY_VERIFY_URL=
+STRIPE_ENROLLMENT_SECRET=
+STRIPE_PUBLIC_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOKS_KEY=
+SENTRY_DSN=
+SENTRY_AUTH_TOKEN=
    ```
-   
-ReqNet uses Infura Provider to listen to crypto transfer event and initiates cron services to track payment activities to enable / disable services. For a single instance of ReqNet, there's nothing to do other than to deploy ReqNet to your preferred infrastructure. However, if deployed using a multi instance / autoscaling infrastructure like AWS EB or AWS ECS, an additional cron_handler server is needed. To spin up the cron server (Cron Handler), set the environment variable ROLE to "cron_handler" and deploy ReqNet as a separate instance.
 
 ReqNet acts as a proxy between the consumer API and the Validator Output Server (OPS). To establish this connection:
 
@@ -312,25 +305,11 @@ Which should deploy your application to AWS EB under the account that's tied the
 
 Regular maintenance and monitoring are vital to ensure the seamless operation of your Validator Node. Monitor logs and performance, and update your system as needed to handle any potential issues.
 
-## Integrating Wallets
-
-1. Create a Polkadot Account:
-   - Install the Polkadot extension for your web browser. We recommend Google Chrome. 
-   - Follow the setup instructions to create your wallet and save your backup phrase.
-
-2. Create ETH Wallet:
-   - Create an Ethereum wallet to handle transactions on the Request Network. 
-   - Choose a reputable wallet provider that supports ERC20 tokens. 
-   - Note the wallet address and keep it secure. 
-   - Store your private keys and backup phrases in a secure location. Never share them with anyone.
-
-With your new wallet addresses, you can add them to your Validator registration (see below)
-
 ## Registration as a Validator
 
 To begin, validators must register through the Taoshi UI:
 
-1. Navigate to [ReqNet Validator Registration](https://rn-dev.taoshi.io).
+1. Navigate to [ReqNet Validator Registration](https://request.taoshi.io).
 2. Authenticate using OAuth and authorize ReqNet to access your information.
 3. Choose the account type as **Validator** and enter your node's base URL. This URL will be used when you spin up your Validator Node.
 4. Any requested information regarding endpoints and wallets can be determined by following the above steps
