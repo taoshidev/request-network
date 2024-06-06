@@ -181,6 +181,7 @@ export default class PaymentCtrl extends BaseController {
           }
         });
     } catch (error: Error | unknown) {
+      console.log(error);
       Logger.error("Error creating token:" + JSON.stringify(error));
       return res
         .status(500)
