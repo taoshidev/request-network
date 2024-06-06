@@ -150,7 +150,7 @@ export default class PaymentCtrl extends BaseController {
           webhookEndpoint = (await stripe.webhookEndpoints.create({
             enabled_events,
             url: `${process.env.API_HOST}/webhooks`,
-          }))?.data;
+          }));
 
           if (webhookEndpoint) newEndpointCreated = true;
         }
@@ -168,7 +168,6 @@ export default class PaymentCtrl extends BaseController {
           enrollmentSecret: !!process.env.ENROLLMENT_SECRET ? true : false,
           stripeWebhooksKey: !!process.env.STRIPE_WEBHOOKS_KEY ? true : false,
           newEndpointCreated,
-          webhookEndpoint,
           webhooks,
           webhookEvents,
           account: {
