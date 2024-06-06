@@ -7,6 +7,9 @@ import { EnrollmentPaymentRequestDTO } from "../db/dto/enrollment-payment-reques
 import { EnrollmentPaymentDTO } from "../db/dto/enrollment-payment.dto";
 import * as jwt from 'jsonwebtoken';
 import ServiceManager from "../service/service.manager";
+import { isEqual as _isEqual } from 'lodash';
+
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 /**
  * Controller for handling payments.
@@ -104,7 +107,7 @@ export default class PaymentCtrl extends BaseController {
           redirect: body.redirect,
           subscriptionId: service.data.subscriptionId,
           endpointId: service.data.endpointId
-        }, secret, { expiresIn: '120m' });
+        }, secret, { expiresIn: '10m' });
 
         return res
           .status(200)
@@ -121,20 +124,64 @@ export default class PaymentCtrl extends BaseController {
   }
 
   checkForStripe = async (req: Request, res: Response) => {
+    const enabled_events = [
+      'invoice.payment_succeeded',
+      'invoice.payment_failed',
+      'customer.subscription.deleted',
+      'customer.subscription.updated'
+    ];
     try {
-      let ok = false;
+      const isHttps = (process.env.API_HOST || '').includes('https://');
+      let webhooks = false,
+        webhookEvents = false,
+        newEndpointCreated = false,
+        webhookEndpoint: any,
+        account: any;
       if
         (process.env.STRIPE_SECRET_KEY &&
         process.env.STRIPE_PUBLIC_KEY &&
-        process.env.ENROLLMENT_SECRET &&
-        process.env.STRIPE_WEBHOOKS_KEY
+        process.env.ENROLLMENT_SECRET
       ) {
-        ok = true;
+        account = await stripe.account.retrieve();
+        const endpoints = await stripe.webhookEndpoints.list();
+        webhookEndpoint = endpoints?.data?.find((endpoint: any) => endpoint.url === `${process.env.API_HOST}/webhooks`);
+
+        if (isHttps && !webhookEndpoint && !process.env.STRIPE_WEBHOOKS_KEY) {
+          webhookEndpoint = (await stripe.webhookEndpoints.create({
+            enabled_events,
+            url: `${process.env.API_HOST}/webhooks`,
+          }))?.data;
+
+          if (webhookEndpoint) newEndpointCreated = true;
+        }
+
+        if (!!webhookEndpoint) webhooks = true;
+        if (_isEqual(webhookEndpoint?.enabled_events, enabled_events)) webhookEvents = true;
       }
+
       return res
         .status(200)
-        .json({ ok });
+        .json({
+          isHttps,
+          stripeKey: !!process.env.STRIPE_SECRET_KEY ? true : false,
+          stripePublicKey: !!process.env.STRIPE_PUBLIC_KEY ? true : false,
+          enrollmentSecret: !!process.env.ENROLLMENT_SECRET ? true : false,
+          stripeWebhooksKey: !!process.env.STRIPE_WEBHOOKS_KEY ? true : false,
+          newEndpointCreated,
+          webhookEndpoint,
+          webhooks,
+          webhookEvents,
+          account: {
+            requirements: {
+              currently_due: account?.requirements?.currently_due || [],
+              eventually_due: account?.requirements?.eventually_due || [],
+              past_due: account?.requirements?.past_due || []
+            },
+            capabilities: account?.capabilities || {}
+          }
+        });
     } catch (error: Error | unknown) {
+      console.log(error);
       Logger.error("Error creating token:" + JSON.stringify(error));
       return res
         .status(500)
