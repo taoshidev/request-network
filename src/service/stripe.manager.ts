@@ -11,6 +11,7 @@ import { ServiceDTO } from "../db/dto/service.dto";
 import { AuthenticatedRequest, XTaoshiHeaderKeyType } from "../core/auth-request";
 import TransactionManager from "./transaction.manager";
 
+const STRIPE_WEBHOOK_IDENTIFIER = 'Request Network';
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
@@ -22,6 +23,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
   }
 
   enroll = async (transaction: EnrollmentPaymentDTO) => {
+    console.log('start enroll', transaction);
     let customer: any;
 
     try {
@@ -30,11 +32,13 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
         return { data: null, error: "Not Authorized" };
       } else {
         // get service user signed up for
+        console.log('subscription id: ', transaction.tokenData.subscriptionId);
         const serviceReq = await this.serviceManager.find(eq(services.subscriptionId, transaction.tokenData.subscriptionId));
+        console.log('service req: ', serviceReq);
         const service = serviceReq?.data?.[0];
         const stripeEnrollment: any = {
           metadata: {
-            'App': 'Request Network',
+            'App': STRIPE_WEBHOOK_IDENTIFIER,
             'User ID': service?.meta?.consumerId,
             Service: service?.name,
             'Service ID': transaction.tokenData?.serviceId,
@@ -116,7 +120,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
             name: service?.name
           },
           metadata: {
-            'App': 'Request Network',
+            'App': STRIPE_WEBHOOK_IDENTIFIER,
             'User ID': service?.meta?.consumerId,
             Service: service.name,
             'Service ID': transaction.tokenData?.serviceId,
@@ -155,7 +159,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
                 quantity: 1
               }],
               metadata: {
-                'App': 'Request Network',
+                'App': STRIPE_WEBHOOK_IDENTIFIER,
                 'User ID': service?.meta?.consumerId,
                 Service: service.name,
                 'Service ID': transaction.tokenData?.serviceId,
@@ -173,7 +177,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
             quantity: 1
           }],
           metadata: {
-            'App': 'Request Network',
+            'App': STRIPE_WEBHOOK_IDENTIFIER,
             'User ID': service?.meta?.consumerId,
             Service: service.name,
             'Service ID': transaction.tokenData?.serviceId,
@@ -196,16 +200,16 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
 
       const enrollment = userEnrollment.id ? await this.update(userEnrollment.id, userEnrollment as EnrollmentDTO) : await this.create(userEnrollment as EnrollmentDTO);
       const data = (enrollment.data as EnrollmentDTO[])?.[0];
-
+      console.log('change status: ', service?.id, data);
       const statusRes = await this.serviceManager.changeStatus(service?.id as string, true);
-
+      console.log('Before send to UI');
       await AuthenticatedRequest.send({
         method: "PUT",
         path: "/api/status",
         body: { subscriptionId: service.subscriptionId, active: true },
         xTaoshiKey: XTaoshiHeaderKeyType.Validator,
       });
-
+      console.log('after send to ui');
       return {
         data: [{
           id: data.id,
@@ -280,9 +284,10 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
 
   stripeWebhook = async (req: Request, res: Response) => {
     try {
+      console.log('webhook');
       const sig = req.headers?.['stripe-signature'],
         event = stripe.webhooks.constructEvent((req as any).rawBody, sig, process.env.STRIPE_WEBHOOKS_KEY);
-
+      console.log('event type: ', event.type);
       if (event) {
         if (event.type === 'payment_intent.succeeded' && event.data?.object?.metadata?.activate) {
           if (event.data?.object?.metadata?.activate) {
@@ -299,7 +304,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
           serviceId = event?.data?.object?.lines?.data?.[0]?.metadata?.['Service ID'] || event?.data?.object?.metadata?.['Service ID'],
           { stripeSubscriptionId, currentPeriodEnd } = this.getStripeData(event);
 
-        if (app === 'Request Network' && stripeSubscriptionId) {
+        if (app === STRIPE_WEBHOOK_IDENTIFIER && stripeSubscriptionId) {
           const enrollmentRes = await this.find(eq(enrollments.stripeSubscriptionId, stripeSubscriptionId));
           const enrollmentId = enrollmentRes.data?.[0]?.id;
 

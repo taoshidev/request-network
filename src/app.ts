@@ -1,4 +1,6 @@
+import "./instrument";
 import express, { Express, Request, Response } from "express";
+import * as  Sentry from '@sentry/node';
 import cors from "cors";
 import helmet from "helmet";
 import path from "path";
@@ -18,29 +20,12 @@ import TransactionManager from "./service/transaction.manager";
 import ConsumerCtrl from "./controller/consumer.controller";
 import PaymentRoute from "./router/payment.router";
 import PaymentCtrl from "./controller/payment.controller";
-import * as  Sentry from '@sentry/node';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
 
 export default class App {
   public express: Express;
   private apiPrefix: string;
 
   constructor() {
-
-    Sentry.init({
-      dsn: process.env.SENTRY_DSN,
-      enabled: ['production', 'staging'].includes(process.env.NODE_ENV as string),
-      integrations: [nodeProfilingIntegration()],
-
-      // Add Performance Monitoring by setting tracesSampleRate
-      // We recommend adjusting this value in production
-      tracesSampleRate: 1.0,
-
-      // Set sampling rate for profiling
-      // This is relative to tracesSampleRate
-      profilesSampleRate: 1.0,
-    });
-
     this.express = express();
     this.apiPrefix = process.env.API_PREFIX || "/api/v1";
   }
@@ -122,12 +107,6 @@ export default class App {
     this.express.use(new ConsumerRoute(new ConsumerCtrl()).routes());
     this.express.use(new PaymentRoute(new PaymentCtrl()).routes());
 
-    // for testing sentry
-    this.express.get("/debug-sentry", function mainHandler(req, res) {
-      throw new Error("My first Sentry error!");
-    });
-
-
     // Loop through all the schema and mount their routes
     // In case there are more than 1 schema, we will loop through them
     [transactions, services].forEach((schema) => {
@@ -174,15 +153,15 @@ export default class App {
       if (middleware.route) {
         // Routes registered directly on the app
         const { path, stack } = middleware.route;
-        stack.forEach((stackItem: any) => {
+        stack?.forEach((stackItem: any) => {
           Logger.info(`${stackItem?.method?.toUpperCase()} ${path}`);
         });
       } else if (middleware.name === "router") {
         // Routes added as router middleware
-        middleware.handle.stack.forEach((handler: any) => {
+        middleware.handle.stack?.forEach((handler: any) => {
           const route = handler.route;
           route &&
-            route.stack.forEach((routeStack: any) => {
+            route.stack?.forEach((routeStack: any) => {
               Logger.info(`${routeStack?.method?.toUpperCase()} ${route.path}`);
             });
         });

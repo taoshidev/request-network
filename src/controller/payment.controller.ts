@@ -94,7 +94,7 @@ export default class PaymentCtrl extends BaseController {
   getPaymentToken = async (req: Request, res: Response) => {
     try {
       const { body } = req;
-      const secret = process.env.ENROLLMENT_SECRET || '';
+      const secret = process.env.STRIPE_ENROLLMENT_SECRET || '';
       const service = await this.serviceService.one(body.serviceId);
 
       if (service.data) {
@@ -140,7 +140,7 @@ export default class PaymentCtrl extends BaseController {
       if
         (process.env.STRIPE_SECRET_KEY &&
         process.env.STRIPE_PUBLIC_KEY &&
-        process.env.ENROLLMENT_SECRET
+        process.env.STRIPE_ENROLLMENT_SECRET
       ) {
         account = await stripe.account.retrieve();
         const endpoints = await stripe.webhookEndpoints.list();
@@ -165,7 +165,7 @@ export default class PaymentCtrl extends BaseController {
           isHttps,
           stripeKey: !!process.env.STRIPE_SECRET_KEY ? true : false,
           stripePublicKey: !!process.env.STRIPE_PUBLIC_KEY ? true : false,
-          enrollmentSecret: !!process.env.ENROLLMENT_SECRET ? true : false,
+          enrollmentSecret: !!process.env.STRIPE_ENROLLMENT_SECRET ? true : false,
           stripeWebhooksKey: !!process.env.STRIPE_WEBHOOKS_KEY ? true : false,
           newEndpointCreated,
           webhooks,
