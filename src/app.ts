@@ -1,6 +1,6 @@
 import "./instrument";
 import express, { Express, Request, Response } from "express";
-import * as  Sentry from '@sentry/node';
+import * as Sentry from "@sentry/node";
 import cors from "cors";
 import helmet from "helmet";
 import path from "path";
@@ -49,14 +49,16 @@ export default class App {
 
   private async initializeMiddlewares(): Promise<void> {
     this.express.use(helmet());
-    this.express.use(express.json({
-      verify: (req, res, buf) => {
-        // set rawBody in request only for stripe webhook requests
-        if ((req as any).originalUrl.startsWith('/webhooks')) {
-          (req as any).rawBody = buf.toString();
-        }
-      }
-    }));
+    this.express.use(
+      express.json({
+        verify: (req, res, buf) => {
+          // set rawBody in request only for stripe webhook requests
+          if ((req as any).originalUrl.startsWith("/webhooks")) {
+            (req as any).rawBody = buf.toString();
+          }
+        },
+      })
+    );
     this.express.use(express.urlencoded({ extended: false }));
   }
 
@@ -68,17 +70,20 @@ export default class App {
       res.setHeader("Origin-Agent-Cluster", "?1");
       res.render("index", {
         uiAppUrl: process.env.REQUEST_NETWORK_UI_URL,
-        validatorName: process.env.VALIDATOR_NAME || ''
+        validatorName: process.env.VALIDATOR_NAME || "",
       });
     });
     this.express.get("/subscribe", (req, res) => {
       res.setHeader("Origin-Agent-Cluster", "?1");
-      res.setHeader("Content-Security-Policy", "default-src 'self' data: ; script-src 'self' https://js.stripe.com; connect-src 'self' https://api.stripe.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com; img-src 'self' https://*.stripe.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;")
+      res.setHeader(
+        "Content-Security-Policy",
+        "default-src 'self' data: ; script-src 'self' https://js.stripe.com; connect-src 'self' https://api.stripe.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com; img-src 'self' https://*.stripe.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
+      );
       res.render("subscribe", {
-        api: btoa(process.env.API_HOST || ''),
-        key: btoa(process.env.STRIPE_PUBLIC_KEY || ''),
-        uiAppUrl: process.env.REQUEST_NETWORK_UI_URL || '',
-        validatorName: process.env.VALIDATOR_NAME || ''
+        api: btoa(process.env.API_HOST || ""),
+        key: btoa(process.env.STRIPE_PUBLIC_KEY || ""),
+        uiAppUrl: process.env.REQUEST_NETWORK_UI_URL || "",
+        validatorName: process.env.VALIDATOR_NAME || "",
       });
     });
   }
@@ -166,7 +171,10 @@ export default class App {
     this.initializeMiddlewares();
     this.initializeHealthCheck();
 
-    if (!process.env.ROLE || process.env.ROLE === "cron_handler") {
+    if (
+      process.env.INFURA_PROJECT_ID &&
+      (!process.env.ROLE || process.env.ROLE === "cron_handler")
+    ) {
       this.monitorBlockchainTransactions();
 
       if (process.env.ROLE === "cron_handler") {
@@ -196,7 +204,8 @@ export default class App {
     const port: number | string = process.env.API_PORT || 8080;
     this.express.listen(port, () => {
       Logger.info(
-        `Server running at ${process.env.API_HOST}... Server Role: ${process.env.ROLE || "validator"
+        `Server running at ${process.env.API_HOST}... Server Role: ${
+          process.env.ROLE || "validator"
         } ${message || ""}`
       );
       cb?.(this);
