@@ -17,7 +17,10 @@ import DatabaseWrapper from "../core/database.wrapper";
 import { eq, sum } from "drizzle-orm";
 import { replacer } from "../utils/bigint-replacer";
 import { ServiceDTO } from "../db/dto/service.dto";
-import { AuthenticatedRequest, XTaoshiHeaderKeyType } from "../core/auth-request";
+import {
+  AuthenticatedRequest,
+  XTaoshiHeaderKeyType,
+} from "../core/auth-request";
 
 interface TokenConfig {
   address: string;
@@ -56,9 +59,10 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
 
     Logger.info("Initializing TransactionManager...");
     try {
-      this.provider = this.initializeWebSocketProvider();
-      this.contracts = this.initializeContracts();
-      // this.startMonitoring()
+      if (!process.env.ROLE || process.env.ROLE === "cron_handler") {
+        this.provider = this.initializeWebSocketProvider();
+        this.contracts = this.initializeContracts();
+      }
     } catch (error: Error | unknown) {
       Logger.error(
         `Failed to initialize Transaction Manager: ${(error as Error)?.message}`
@@ -244,7 +248,8 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
           if (!balance) return;
           const { sufficient, balance: newBalance } = balance;
           Logger.info(
-            `Funds Check for Service ID ${id}: ${sufficient ? "Sufficient" : "Insufficient"
+            `Funds Check for Service ID ${id}: ${
+              sufficient ? "Sufficient" : "Insufficient"
             } Balance: ${newBalance}`
           );
 
@@ -397,7 +402,7 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
         body: {
           subscriptionId: service?.subscriptionId,
           serviceStatusType,
-          eventType: 'balance-checked'
+          eventType: "balance-checked",
         },
         xTaoshiKey: XTaoshiHeaderKeyType.Validator,
       });
@@ -476,7 +481,7 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
         body: {
           subscriptionId: service?.subscriptionId,
           serviceStatusType: service?.serviceStatusType,
-          eventType: 'transaction-checked'
+          eventType: "transaction-checked",
         },
         xTaoshiKey: XTaoshiHeaderKeyType.Validator,
       });
@@ -497,7 +502,9 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
     );
     // Send a request to the UI app to trigger a notification to the consumer saying payment has been received and confirmed.
     // Also, send a notification to the validator saying payment has been made.
-    const currentService = await this.serviceManager.getSubscriberByAddress(transaction?.walletAddress as string);
+    const currentService = await this.serviceManager.getSubscriberByAddress(
+      transaction?.walletAddress as string
+    );
     const { data: service } = currentService;
 
     await AuthenticatedRequest.send({
@@ -506,7 +513,7 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
       body: {
         subscriptionId: service?.subscriptionId,
         serviceStatusType: service?.serviceStatusType,
-        eventType: 'transaction-confirmed'
+        eventType: "transaction-confirmed",
       },
       xTaoshiKey: XTaoshiHeaderKeyType.Validator,
     });

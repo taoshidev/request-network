@@ -35,15 +35,6 @@ export default class App {
     ServiceCron.getInstance().run();
     // Monitor pending transactions on USDC and USDT
     TransactionManager.getInstance().startMonitoring();
-    // transactionManager.monitorValidatorWallets().catch((error) => {
-    //   Logger.error(
-    //     `Failed to initiate validator ERC-20 wallet monitoring:${JSON.stringify(
-    //       error,
-    //       null,
-    //       2
-    //     )}`
-    //   );
-    // });
   }
 
   private async initializeUpholdConnector(): Promise<void> {
