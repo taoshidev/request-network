@@ -279,7 +279,6 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
   }
 
   stripeWebhook = async (req: Request, res: Response) => {
-    console.log('req headers::: ', req.headers)
     try {
       const sig = req.headers?.['stripe-signature'],
         event = stripe.webhooks.constructEvent((req as any).rawBody, sig, process.env.STRIPE_WEBHOOKS_KEY);
