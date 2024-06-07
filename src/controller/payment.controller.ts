@@ -71,7 +71,6 @@ export default class PaymentCtrl extends BaseController {
   * @returns A 201 status code and ok message on success, or a 400 status code with an error message on failure.
   */
   webhooks = async (req: Request, res: Response) => {
-    console.log('from webhooks..... req:::', req.headers)
     try {
       const webhookRes = await this.stripeService.stripeWebhook(req, res);
       return res
