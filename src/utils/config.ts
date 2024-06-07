@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-
+import Logger from "../utils/logger";
 interface TokenConfig {
   address: string;
   abi: ethers.InterfaceAbi;
@@ -8,8 +8,8 @@ interface TokenConfig {
 
 export const getConfig = () => {
   if (!process.env.INFURA_PROJECT_ID) {
-    throw new Error(
-      "INFURA_PROJECT_ID is not set in the environment variables"
+    Logger.warn(
+      "INFURA_PROJECT_ID is not set in the environment variables. Crypto payment will be disabled."
     );
   }
 

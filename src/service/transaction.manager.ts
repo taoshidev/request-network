@@ -59,7 +59,10 @@ export default class TransactionManager extends DatabaseWrapper<TransactionDTO> 
 
     Logger.info("Initializing TransactionManager...");
     try {
-      if (!process.env.ROLE || process.env.ROLE === "cron_handler") {
+      if (
+        process.env.INFURA_PROJECT_ID &&
+        (!process.env.ROLE || process.env.ROLE === "cron_handler")
+      ) {
         this.provider = this.initializeWebSocketProvider();
         this.contracts = this.initializeContracts();
       }
