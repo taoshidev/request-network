@@ -197,6 +197,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
 
       const enrollment = userEnrollment.id ? await this.update(userEnrollment.id, userEnrollment as EnrollmentDTO) : await this.create(userEnrollment as EnrollmentDTO);
       const data = (enrollment.data as EnrollmentDTO[])?.[0];
+
       const statusRes = await this.serviceManager.changeStatus(service?.id as string, true);
 
       await AuthenticatedRequest.send({
@@ -306,6 +307,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
           if (enrollmentId && serviceId) {
             const serviceRes = await this.serviceManager.find(eq(services.id, serviceId));
             const subscriptionId = (serviceRes.data as ServiceDTO[])?.[0]?.subscriptionId;
+            
             switch (event.type) {
               case event?.data.object.paid == true && 'invoice.payment_succeeded':
                 await this.update(enrollmentId as string, { currentPeriodEnd: currentPeriodEnd, active: true });
@@ -329,7 +331,6 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
                   ),
                 };
                 await this.transactionManager.create(transaction);
-
                 await AuthenticatedRequest.send({
                   method: "PUT",
                   path: "/api/status",
