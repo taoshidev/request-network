@@ -15,9 +15,9 @@ import HttpError from "../utils/http-error";
  */
 export default class Auth {
   private static UNKEY_VERIFY_URL = process.env.UNKEY_VERIFY_URL;
-
   private static API_ID = process.env.TAOSHI_API_KEY;
   private static consumerCtrl = new ConsumerCtrl();
+
   /**
    * Verifies the provided token with Unkey or a custom authentication service.
    * @param {string} token - The token to verify.

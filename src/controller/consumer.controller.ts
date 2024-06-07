@@ -33,18 +33,23 @@ export default class ConsumerCtrl extends BaseController {
         return res.status(400).json({ error: error?.message });
       }
 
-      // Get the transaction manager instance
-      const transactionManager = TransactionManager.getInstance();
-      // Update the validator wallets in the transaction manager
-      transactionManager.updateValidatorWallets().catch((error) => {
-        Logger.error(
-          `Failed to update validator wallets after new service creation: ${JSON.stringify(
-            error,
-            null,
-            2
-          )}`
-        );
-      });
+      if (
+        process.env.INFURA_PROJECT_ID &&
+        (!process.env.ROLE || process.env.ROLE === "cron_handler")
+      ) {
+        // Get the transaction manager instance
+        const transactionManager = TransactionManager.getInstance();
+        // Update the validator wallets in the transaction manager
+        transactionManager.updateValidatorWallets().catch((error) => {
+          Logger.error(
+            `Failed to update validator wallets after new service creation: ${JSON.stringify(
+              error,
+              null,
+              2
+            )}`
+          );
+        });
+      }
 
       // Respond with the new serviceId
       return res.status(201).json({ serviceId: data?.[0].id });
@@ -55,5 +60,4 @@ export default class ConsumerCtrl extends BaseController {
         .json({ error: (error as Error)?.message || "Internal server error" });
     }
   };
-
 }

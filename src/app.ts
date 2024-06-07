@@ -1,11 +1,12 @@
+import "./instrument";
 import express, { Express, Request, Response } from "express";
+import * as Sentry from "@sentry/node";
 import cors from "cors";
 import helmet from "helmet";
 import path from "path";
 import { services, transactions } from "./db/schema";
 import BaseController from "./core/base.controller";
 import BaseRouter from "./core/base.router";
-import ConsumerCtrl from "./controller/consumer.controller";
 import ConsumerRoute from "./router/consumer.router";
 import Cors from "./core/cors";
 import Logger from "./utils/logger";
@@ -16,31 +17,15 @@ import ServiceCron from "./core/cron";
 import Registration from "./core/registration";
 import UpholdConnector from "./service/uphold.connector";
 import TransactionManager from "./service/transaction.manager";
+import ConsumerCtrl from "./controller/consumer.controller";
 import PaymentRoute from "./router/payment.router";
 import PaymentCtrl from "./controller/payment.controller";
-import * as  Sentry from '@sentry/node';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
 
 export default class App {
   public express: Express;
   private apiPrefix: string;
 
   constructor() {
-
-    Sentry.init({
-      dsn: process.env.SENTRY_DSN,
-      enabled: ['production', 'staging'].includes(process.env.NODE_ENV as string),
-      integrations: [nodeProfilingIntegration()],
-
-      // Add Performance Monitoring by setting tracesSampleRate
-      // We recommend adjusting this value in production
-      tracesSampleRate: 1.0,
-
-      // Set sampling rate for profiling
-      // This is relative to tracesSampleRate
-      profilesSampleRate: 1.0,
-    });
-
     this.express = express();
     this.apiPrefix = process.env.API_PREFIX || "/api/v1";
   }
@@ -50,15 +35,6 @@ export default class App {
     ServiceCron.getInstance().run();
     // Monitor pending transactions on USDC and USDT
     TransactionManager.getInstance().startMonitoring();
-    // transactionManager.monitorValidatorWallets().catch((error) => {
-    //   Logger.error(
-    //     `Failed to initiate validator ERC-20 wallet monitoring:${JSON.stringify(
-    //       error,
-    //       null,
-    //       2
-    //     )}`
-    //   );
-    // });
   }
 
   private async initializeUpholdConnector(): Promise<void> {
@@ -73,14 +49,17 @@ export default class App {
 
   private async initializeMiddlewares(): Promise<void> {
     this.express.use(helmet());
-    this.express.use(express.json({
-      verify: (req, res, buf) => {
-        // set rawBody in request only for stripe webhook requests
-        if ((req as any).originalUrl.startsWith('/webhooks')) {
-          (req as any).rawBody = buf.toString();
-        }
-      }
-    }));
+    this.express.use(
+      express.json({
+        verify: (req, res, buf) => {
+          // set rawBody in request only for stripe webhook requests
+          if ((req as any).originalUrl.startsWith("/webhooks")) {
+            (req as any).rawBody = buf.toString();
+          }
+        },
+      })
+    );
+
     this.express.use(express.urlencoded({ extended: false }));
   }
 
@@ -90,7 +69,23 @@ export default class App {
     this.express.set("views", path.join(__dirname, "views"));
     this.express.get("/", (req, res) => {
       res.setHeader("Origin-Agent-Cluster", "?1");
-      res.render("index", { uiAppUrl: process.env.REQUEST_NETWORK_UI_URL });
+      res.render("index", {
+        uiAppUrl: process.env.REQUEST_NETWORK_UI_URL,
+        validatorName: process.env.VALIDATOR_NAME || "",
+      });
+    });
+    this.express.get("/subscribe", (req, res) => {
+      res.setHeader("Origin-Agent-Cluster", "?1");
+      res.setHeader(
+        "Content-Security-Policy",
+        "default-src 'self' data: ; script-src 'self' https://js.stripe.com; connect-src 'self' https://api.stripe.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com; img-src 'self' https://*.stripe.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
+      );
+      res.render("subscribe", {
+        api: btoa(process.env.API_HOST || ""),
+        key: btoa(process.env.STRIPE_PUBLIC_KEY || ""),
+        uiAppUrl: process.env.REQUEST_NETWORK_UI_URL || "",
+        validatorName: process.env.VALIDATOR_NAME || "",
+      });
     });
     this.express.get("/subscribe", (req, res) => {
       res.setHeader("Origin-Agent-Cluster", "?1");
@@ -118,12 +113,6 @@ export default class App {
     this.express.use(new ConsumerRoute(new ConsumerCtrl()).routes());
     this.express.use(new PaymentRoute(new PaymentCtrl()).routes());
 
-    // for testing sentry
-    this.express.get("/debug-sentry", function mainHandler(req, res) {
-      throw new Error("My first Sentry error!");
-    });
-
-
     // Loop through all the schema and mount their routes
     // In case there are more than 1 schema, we will loop through them
     [transactions, services].forEach((schema) => {
@@ -147,7 +136,9 @@ export default class App {
 
   private initializeSentry(): void {
     // The error handler must be registered before any other error middleware and after all controllers
-    Sentry.setupExpressErrorHandler(this.express);
+    if (process.env.SENTRY_DSN) {
+      Sentry.setupExpressErrorHandler(this.express);
+    }
   }
 
   private initializeErrorHandling(): void {
@@ -170,15 +161,15 @@ export default class App {
       if (middleware.route) {
         // Routes registered directly on the app
         const { path, stack } = middleware.route;
-        stack.forEach((stackItem: any) => {
+        stack?.forEach((stackItem: any) => {
           Logger.info(`${stackItem?.method?.toUpperCase()} ${path}`);
         });
       } else if (middleware.name === "router") {
         // Routes added as router middleware
-        middleware.handle.stack.forEach((handler: any) => {
+        middleware.handle.stack?.forEach((handler: any) => {
           const route = handler.route;
           route &&
-            route.stack.forEach((routeStack: any) => {
+            route.stack?.forEach((routeStack: any) => {
               Logger.info(`${routeStack?.method?.toUpperCase()} ${route.path}`);
             });
         });
@@ -192,7 +183,10 @@ export default class App {
     this.initializeMiddlewares();
     this.initializeHealthCheck();
 
-    if (!process.env.ROLE || process.env.ROLE === "cron_handler") {
+    if (
+      process.env.INFURA_PROJECT_ID &&
+      (!process.env.ROLE || process.env.ROLE === "cron_handler")
+    ) {
       this.monitorBlockchainTransactions();
 
       if (process.env.ROLE === "cron_handler") {

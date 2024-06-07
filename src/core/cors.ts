@@ -50,7 +50,7 @@ export default class Cors {
       const uniqueWhitelist = new Set([
         process.env.REQUEST_NETWORK_UI_URL as string,
         `${process.env.API_HOST}`,
-        `${process.env.STRIPE_HOST}`,
+        `${process.env.API_HOST?.replace('https://', '').replace('http://', '')}`,
         ...newWhitelist,
       ]);
       this.cachedWhitelist = Array.from(uniqueWhitelist).filter(Boolean);
@@ -95,6 +95,7 @@ export default class Cors {
         "x-taoshi-consumer-request-key",
         "x-taoshi-request-key",
         "x-taoshi-validator-request-key",
+        "stripe-signature"
       ].some((key) => req.headers[key.toLowerCase()] !== undefined);
 
       if ((!origin && keys) || allowed) {

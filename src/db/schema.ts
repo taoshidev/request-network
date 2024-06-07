@@ -28,9 +28,8 @@ export const serviceStatusTypeEnum = pgEnum("serviceStatusType", [
   "on time",
   "in grace period",
   "delinquent",
-  "cancelled"
+  "cancelled",
 ]);
-
 
 export const services = authSchema.table(
   "services",
@@ -40,9 +39,14 @@ export const services = authSchema.table(
       .primaryKey()
       .notNull(),
     type: roleTypeEnum("type").notNull(),
-    serviceStatusType: serviceStatusTypeEnum("service_status_type").notNull().default("new"),
+    serviceStatusType: serviceStatusTypeEnum("service_status_type")
+      .notNull()
+      .default("new"),
     daysPassDue: integer("days_pass_due").notNull().default(0),
-    outstandingBalance: numeric("outstanding_balance", { precision: 18, scale: 6 }),
+    outstandingBalance: numeric("outstanding_balance", {
+      precision: 18,
+      scale: 6,
+    }),
     name: varchar("name"),
     validatorWalletAddress: varchar("validator_wallet_address"),
     consumerWalletAddress: varchar("consumer_wallet_address"),
@@ -83,11 +87,9 @@ export const transactions = authSchema.table(
       .default(sql`gen_random_uuid()`)
       .primaryKey()
       .notNull(),
-    serviceId: uuid("service_id")
-      .references(() => services.id, {
-        onDelete: "set null",
-      })
-      .notNull(),
+    serviceId: uuid("service_id").references(() => services.id, {
+      onDelete: "set null",
+    }),
     transactionType: transactionTypeEnum("transaction_type").notNull(),
     walletAddress: varchar("wallet_address"),
     transactionHash: varchar("transaction_hash").unique().notNull(),
@@ -138,11 +140,9 @@ export const wallets = authSchema.table(
       .default(sql`gen_random_uuid()`)
       .primaryKey()
       .notNull(),
-    serviceId: uuid("service_id")
-      .references(() => services.id, {
-        onDelete: "set null",
-      })
-      .notNull(),
+    serviceId: uuid("service_id").references(() => services.id, {
+      onDelete: "set null",
+    }),
     publicKey: varchar("public_key").unique().notNull(),
     privateKey: bytea("private_key"),
     active: boolean("active").default(true).notNull(),
@@ -171,11 +171,9 @@ export const enrollments = authSchema.table(
       .primaryKey()
       .unique()
       .notNull(),
-    serviceId: uuid("service_id")
-      .references(() => services.id, {
-        onDelete: "set null",
-      })
-      .notNull(),
+    serviceId: uuid("service_id").references(() => services.id, {
+      onDelete: "set null",
+    }),
     stripeCustomerId: varchar("stripe_customer_id").notNull(),
     stripeSubscriptionId: varchar("stripe_subscription_id").notNull(),
     email: varchar("email").notNull(),

@@ -6,9 +6,9 @@ The Request Network project is designed to facilitate the exchange of data betwe
 
 ### Key Components
 
-- **Taoshi UI**: This user interface allows data purchasers to browse and register with validators. Validators use this UI to register their services.
-- **Request Network Server**: This server acts as a mediator that relays requests between data purchasers and validators, ensuring decentralization and avoiding single points of failure.
-- **Validator Node**: Operated by validators, this server setup provides data to purchasers via API endpoints.
+- **Taoshi Request Network Marketplace**: This user interface allows data purchasers to browse and register with validators. Validators use this UI to register their services.
+- **Request Network Validator Server**: This server acts as a mediator that relays requests between data purchasers and validators, ensuring decentralization and avoiding single points of failure.
+- **Validator Output Server**: Operated by validators, this server setup provides data to purchasers via API endpoints.
 
 Data purchasers register through the Taoshi UI and can access data from their chosen validators based on their subscription plan. Validators register their services through the Taoshi UI and set up their Validator Node to serve data to purchasers.
 

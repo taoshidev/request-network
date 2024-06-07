@@ -9,11 +9,14 @@ import { enrollments, services } from "../db/schema";
 import { EnrollmentPaymentDTO } from "../db/dto/enrollment-payment.dto";
 import { ServiceDTO } from "../db/dto/service.dto";
 import { AuthenticatedRequest, XTaoshiHeaderKeyType } from "../core/auth-request";
+import TransactionManager from "./transaction.manager";
 
+const STRIPE_WEBHOOK_IDENTIFIER = 'Request Network';
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
   private serviceManager: ServiceManager = new ServiceManager();
+  private transactionManager: TransactionManager = new TransactionManager();
 
   constructor() {
     super(enrollments);
@@ -32,7 +35,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
         const service = serviceReq?.data?.[0];
         const stripeEnrollment: any = {
           metadata: {
-            'App': 'Request Network',
+            'App': STRIPE_WEBHOOK_IDENTIFIER,
             'User ID': service?.meta?.consumerId,
             Service: service?.name,
             'Service ID': transaction.tokenData?.serviceId,
@@ -114,7 +117,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
             name: service?.name
           },
           metadata: {
-            'App': 'Request Network',
+            'App': STRIPE_WEBHOOK_IDENTIFIER,
             'User ID': service?.meta?.consumerId,
             Service: service.name,
             'Service ID': transaction.tokenData?.serviceId,
@@ -153,7 +156,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
                 quantity: 1
               }],
               metadata: {
-                'App': 'Request Network',
+                'App': STRIPE_WEBHOOK_IDENTIFIER,
                 'User ID': service?.meta?.consumerId,
                 Service: service.name,
                 'Service ID': transaction.tokenData?.serviceId,
@@ -171,7 +174,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
             quantity: 1
           }],
           metadata: {
-            'App': 'Request Network',
+            'App': STRIPE_WEBHOOK_IDENTIFIER,
             'User ID': service?.meta?.consumerId,
             Service: service.name,
             'Service ID': transaction.tokenData?.serviceId,
@@ -282,23 +285,52 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
         event = stripe.webhooks.constructEvent((req as any).rawBody, sig, process.env.STRIPE_WEBHOOKS_KEY);
 
       if (event) {
+        if (event.type === 'payment_intent.succeeded' && event.data?.object?.metadata?.activate) {
+          if (event.data?.object?.metadata?.activate) {
+            await AuthenticatedRequest.send({
+              method: "PUT",
+              path: "/api/stripe-activate",
+              body: { activate: true },
+              xTaoshiKey: XTaoshiHeaderKeyType.Validator,
+            });
+          }
+        }
+
         const app = event?.data?.object?.lines?.data?.[0]?.metadata?.App || event?.data?.object?.metadata?.App,
+          serviceId = event?.data?.object?.lines?.data?.[0]?.metadata?.['Service ID'] || event?.data?.object?.metadata?.['Service ID'],
           { stripeSubscriptionId, currentPeriodEnd } = this.getStripeData(event);
 
-        if (app === 'Request Network') {
+        if (app === STRIPE_WEBHOOK_IDENTIFIER && stripeSubscriptionId) {
           const enrollmentRes = await this.find(eq(enrollments.stripeSubscriptionId, stripeSubscriptionId));
           const enrollmentId = enrollmentRes.data?.[0]?.id;
-          const serviceId = enrollmentRes?.data?.[0]?.serviceId;
 
           if (enrollmentId && serviceId) {
             const serviceRes = await this.serviceManager.find(eq(services.id, serviceId));
             const subscriptionId = (serviceRes.data as ServiceDTO[])?.[0]?.subscriptionId;
-
+            
             switch (event.type) {
               case event?.data.object.paid == true && 'invoice.payment_succeeded':
                 await this.update(enrollmentId as string, { currentPeriodEnd: currentPeriodEnd, active: true });
                 await this.serviceManager.update(serviceId as string, { active: true });
 
+                const transaction = {
+                  serviceId,
+                  walletAddress: '',
+                  transactionHash: event.data?.object?.id || "Unknown Invoice",
+                  confirmed: true,
+                  fromAddress: enrollmentRes?.data?.[0]?.stripeCustomerId,
+                  toAddress: serviceRes?.data?.[0]?.subscriptionId,
+                  amount: (event.data?.object?.amount_paid / 100).toString(),
+                  transactionType: "deposit" as "deposit" | "withdrawal",
+                  blockNumber: -1,
+                  meta: JSON.stringify(
+                    {
+                      hosted_invoice_url: event.data?.object?.hosted_invoice_url,
+                      invoice_pdf: event.data?.object?.invoice_pdf
+                    }
+                  ),
+                };
+                await this.transactionManager.create(transaction);
                 await AuthenticatedRequest.send({
                   method: "PUT",
                   path: "/api/status",
@@ -311,7 +343,6 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
               case 'customer.subscription.deleted':
                 await this.update(enrollmentId as string, { currentPeriodEnd: null, active: false })
                 await this.serviceManager.update(serviceId as string, { active: false });
-
                 await AuthenticatedRequest.send({
                   method: "PUT",
                   path: "/api/status",
@@ -320,7 +351,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
                 });
                 break;
               case 'customer.subscription.updated':
-                await this.update(enrollmentId as string, { currentPeriodEnd: currentPeriodEnd })
+                await this.update(enrollmentId as string, { currentPeriodEnd: currentPeriodEnd });
                 break;
               default:
                 break;
