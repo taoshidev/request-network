@@ -126,7 +126,9 @@ export default class App {
 
   private initializeSentry(): void {
     // The error handler must be registered before any other error middleware and after all controllers
-    Sentry.setupExpressErrorHandler(this.express);
+    if (process.env.SENTRY_DSN) {
+      Sentry.setupExpressErrorHandler(this.express);
+    }
   }
 
   private initializeErrorHandling(): void {
