@@ -7,7 +7,9 @@ services:
       - .:/usr/src/app
       - /usr/src/app/node_modules
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    restart: always
     environment:
       - MIGRATE=true
       - DATABASE_URL=postgres://postgres:postgres@db/postgres
@@ -17,7 +19,7 @@ services:
 
   db:
     container_name: request-network-db
-    image: supabase/postgres
+    image: postgis/postgis:15-3.4
     environment:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_HOST=db
@@ -25,6 +27,11 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./data:/data
+      - ./data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   
