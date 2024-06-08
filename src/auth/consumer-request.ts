@@ -32,19 +32,19 @@ export default class ConsumerRequest {
       return;
     }
 
-    if (req.headers[XTaoshiHeaderKeyType.Consumer])
-      delete req.headers[XTaoshiHeaderKeyType.Consumer];
+    if (req?.headers[XTaoshiHeaderKeyType.Consumer])
+      delete req?.headers[XTaoshiHeaderKeyType.Consumer];
 
     req.headers = Object.assign(
-      req.headers,
-      !req.headers.authorization && {
+      req?.headers,
+      !req?.headers.authorization && {
         authorization: `Bearer ${AuthenticatedRequest.apiKey}`,
       },
       AuthenticatedRequest.setAuthHeaders(
         XTaoshiHeaderKeyType.Validator,
         req?.method,
-        req.path,
-        JSON.stringify(req.body),
+        req?.path,
+        JSON.stringify(req?.body),
         Date.now().toString()
       )
     );
