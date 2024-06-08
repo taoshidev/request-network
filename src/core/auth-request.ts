@@ -1,4 +1,9 @@
-import axios, { AxiosError, AxiosRequestConfig, Method } from "axios";
+import axios, {
+  AxiosError,
+  AxiosRequestConfig,
+  AxiosResponse,
+  Method,
+} from "axios";
 import Auth from "../auth/auth";
 import Logger from "../utils/logger";
 
@@ -21,17 +26,13 @@ export class AuthenticatedRequest {
   static apiKey = process.env.TAOSHI_API_KEY || "";
   static apiSecret = process.env.TAOSHI_VALIDATOR_API_SECRET || "";
 
-  /**
-   * Sends an authenticated request to the specified path with the given body.
-   * The appropriate x-header key is dynamically included in the request headers.
-   * @param options - The request options including method, path, body, and x-header key.
-   */
-  static async send(options: RequestOptions): Promise<void> {
-    const { method, path, body, xTaoshiKey } = options;
-    const url = `${AuthenticatedRequest.uiUrl}${path}`;
-    const nonce = Date.now().toString();
-    const jsonBody = JSON.stringify(body);
-
+  static setAuthHeaders(
+    xTaoshiKey: string,
+    method: string,
+    path: string,
+    jsonBody: string,
+    nonce: string
+  ) {
     const signature = Auth.createSignature({
       method,
       path,
@@ -41,12 +42,33 @@ export class AuthenticatedRequest {
       nonce,
     });
 
-    const headers = {
+    return {
       "Content-Type": "application/json",
       [xTaoshiKey]: AuthenticatedRequest.apiKey,
       Authorization: `Bearer ${signature}`,
       "x-taoshi-nonce": nonce,
     };
+  }
+  /**
+   * Sends an authenticated request to the specified path with the given body.
+   * The appropriate x-header key is dynamically included in the request headers.
+   * @param options - The request options including method, path, body, and x-header key.
+   */
+  static async send(
+    options: RequestOptions
+  ): Promise<AxiosResponse | undefined> {
+    const { method, path, body, xTaoshiKey } = options;
+    const url = `${AuthenticatedRequest.uiUrl}${path}`;
+    const nonce = Date.now().toString();
+    const jsonBody = JSON.stringify(body);
+
+    const headers = AuthenticatedRequest.setAuthHeaders(
+      xTaoshiKey,
+      method,
+      path,
+      jsonBody,
+      nonce
+    );
 
     const config: AxiosRequestConfig = {
       method,
@@ -58,7 +80,8 @@ export class AuthenticatedRequest {
     try {
       const response = await axios(config);
       if (response.status === 200) {
-        Logger.info("Authenticated request successful...");
+        Logger.info("Authenticated request successful");
+        return response;
       }
     } catch (error) {
       Logger.error(
