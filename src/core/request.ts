@@ -1,7 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosError, Method } from "axios";
 import { Request, Response } from "express";
 import Logger from "../utils/logger";
-import { XTaoshiHeaderKeyType } from "./auth-request";
 
 export enum StatusCode {
   NotFound = 404,
@@ -26,8 +25,6 @@ export enum Message {
 export default class HTTPRequest {
   private static outputServerApiUri: string =
     process.env.VALIDATOR_OUTPUT_SERVER_API_URL || "";
-
-  private static taoshiRequestKey: string = process.env.TAOSHI_API_KEY || "";
 
   constructor(private headers?: { [key: string]: string }) {
     this.fetch = this.fetch.bind(this);
@@ -62,22 +59,23 @@ export default class HTTPRequest {
       const { method, path, body, headers } = req;
       const endpoint = `${HTTPRequest.outputServerApiUri}${path}`;
       const query = HTTPRequest.parseQuery(req.query);
-
       const options: AxiosRequestConfig = {
         method: method as Method,
         url: endpoint,
+        // 200 MB
+        maxContentLength: 200 * 1024 * 1024,
+        maxBodyLength: 200 * 1024 * 1024,
         headers: {
           ...(this.headers && this.headers),
           ...this.filterHeaders(headers),
-          [XTaoshiHeaderKeyType.Validator]: HTTPRequest.taoshiRequestKey || "",
         },
         ...(Object.keys(query).length && { params: query }),
-        ...(["POST", "PUT", "PATCH"].includes(method) && { data: body }),
+        ...(["GET", "POST", "PUT", "PATCH"].includes(method) && { data: body }),
       };
       const response = await axios.request(options);
       HTTPRequest.send(res, response.data);
     } catch (error: AxiosError | Error | unknown) {
-      Logger.error(JSON.stringify(error));
+      Logger.error(JSON.stringify(error, null, 2));
       HTTPRequest.send(
         res,
         null,

@@ -2,7 +2,10 @@ import { Response, NextFunction } from "express";
 import Auth from "./auth";
 import Logger from "../utils/logger";
 import { CustomRequestDTO } from "../db/dto/custom-request.dto";
-
+import {
+  AuthenticatedRequest,
+  XTaoshiHeaderKeyType,
+} from "../core/auth-request";
 /**
  * Interceptor for handling consumer request authentication.
  * Ensures that incoming requests have a valid token for authentication.
@@ -28,6 +31,23 @@ export default class ConsumerRequest {
     if (!consumer) {
       return;
     }
+
+    if (req?.headers[XTaoshiHeaderKeyType.Consumer])
+      delete req?.headers[XTaoshiHeaderKeyType.Consumer];
+
+    req.headers = Object.assign(
+      req?.headers,
+      !req?.headers.authorization && {
+        authorization: `Bearer ${AuthenticatedRequest.apiKey}`,
+      },
+      AuthenticatedRequest.setAuthHeaders(
+        XTaoshiHeaderKeyType.Validator,
+        req?.method,
+        req?.path,
+        JSON.stringify(req?.body),
+        Date.now().toString()
+      )
+    );
 
     req.consumer = consumer as CustomRequestDTO["consumer"];
 

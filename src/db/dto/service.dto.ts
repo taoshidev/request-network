@@ -23,6 +23,7 @@ export class ServiceDTO extends BaseDTO {
     subnetId: string;
     endpoint: string;
     validatorId: string;
+    endpointId: string;
     shortId: string;
     subscriptionId: string;
   };

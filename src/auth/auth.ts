@@ -32,7 +32,8 @@ export default class Auth {
     const token = Auth.extractToken(req, { type });
 
     if (!token) {
-      Logger.error("No token provided");
+      Logger.error("Unauthorized: No token provided");
+      res.status(401).json({ error: "Unauthorized: No token provided" });
       return false;
     }
 
@@ -54,6 +55,7 @@ export default class Auth {
       const { keyId, meta: data } = response?.data as ConsumerDTO;
 
       if (!keyId) {
+        res.status(401).json({ error: "Unauthorized: Invalid request key" });
         throw new Error("Unauthorized: Invalid request key");
       }
 
@@ -62,21 +64,36 @@ export default class Auth {
       );
 
       if (!resp?.data?.[0]) {
-        throw new HttpError(403, "No services found");
+        res.status(401).json({ error: "Unauthorized: No services found" });
+        throw new HttpError(403, "Unauthorized: No services found");
       }
 
-      const { active, enabled, meta } = resp?.data?.[0] as ServiceDTO;
+      const { active, enabled, meta, endpointId } = resp
+        ?.data?.[0] as ServiceDTO;
 
       if (!active) {
+        res
+          .status(401)
+          .json({ error: "Unauthorized: Subscription is not active" });
         throw new HttpError(403, "Unauthorized: Subscription is not active");
       }
 
       if (!enabled) {
+        res.status(401).json({ error: "Unauthorized: Service is not enabled" });
         throw new HttpError(403, "Unauthorized: Service is not enabled");
       }
 
       if (!data?.shortId || data?.shortId !== meta?.shortId) {
-        throw new HttpError(403, "Unauthorized: Invalid short id");
+        res.status(401).json({ error: "Unauthorized: Service is not enabled" });
+        throw new HttpError(403, "Unauthorized: Service is not enabled");
+      }
+
+      if (!(data?.endpointId === endpointId)) {
+        res.status(401).json({ error: "Unauthorized: Endpoint unauthorized" });
+        throw new HttpError(
+          403,
+          "Unauthorized: Endpoint unauthorized for this service"
+        );
       }
 
       return response?.data;
