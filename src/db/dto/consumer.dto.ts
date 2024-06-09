@@ -9,6 +9,7 @@ export interface ConsumerDTO {
     validatorId: string;
     subnetId: string;
     endpoint: string;
+    endpointId: string;
     subscriptionId: string;
     consumerServiceId: string;
     consumerApiUrl?: string;

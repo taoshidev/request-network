@@ -32,7 +32,8 @@ export default class Auth {
     const token = Auth.extractToken(req, { type });
 
     if (!token) {
-      Logger.error("No token provided");
+      Logger.error("Unauthorized: No token provided");
+      res.status(401).json({ error: "Unauthorized: No token provided" });
       return false;
     }
 
@@ -62,10 +63,11 @@ export default class Auth {
       );
 
       if (!resp?.data?.[0]) {
-        throw new HttpError(403, "No services found");
+        throw new HttpError(403, "Unauthorized: No services found");
       }
 
-      const { active, enabled, meta } = resp?.data?.[0] as ServiceDTO;
+      const { active, enabled, meta, endpointId } = resp
+        ?.data?.[0] as ServiceDTO;
 
       if (!active) {
         throw new HttpError(403, "Unauthorized: Subscription is not active");
@@ -76,7 +78,14 @@ export default class Auth {
       }
 
       if (!data?.shortId || data?.shortId !== meta?.shortId) {
-        throw new HttpError(403, "Unauthorized: Invalid short id");
+        throw new HttpError(403, "Unauthorized: Service is not enabled");
+      }
+
+      if (!(data?.endpointId === endpointId)) {
+        throw new HttpError(
+          403,
+          "Unauthorized: Endpoint unauthorized for this service"
+        );
       }
 
       return response?.data;

@@ -25,12 +25,12 @@ winston.addColors(logLevels.colors);
 
 const level = () => {
   const env = process.env.NODE_ENV || "development";
-  const isDevelopment = env !== "production";
-  return isDevelopment ? "debug" : "warn";
+  return env === "production" ? "info" : "debug";
 };
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const logger = winston.createLogger({
-  level: level(),
   levels: logLevels.levels,
   format: winston.format.combine(
     winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
@@ -41,7 +41,9 @@ const logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.Console({
+      level: isProduction ? "info" : "debug",
       stderrLevels: ["error"],
+      silent: isProduction ? false : true
     }),
   ],
 });
@@ -69,11 +71,15 @@ const logger = winston.createLogger({
  */
 export default class Logger {
   static error(msg: string) {
-    logger.error(msg);
+    if (!isProduction) {
+      logger.error(msg);
+    }
   }
 
   static warn(msg: string) {
-    logger.warn(msg);
+    if (!isProduction) {
+      logger.warn(msg);
+    }
   }
 
   static info(msg: string) {
@@ -81,20 +87,26 @@ export default class Logger {
   }
 
   static http(msg: string) {
-    logger.http(msg);
+    if (!isProduction) {
+      logger.http(msg);
+    }
   }
 
   static verbose(msg: string) {
-    logger.verbose(msg);
+    if (!isProduction) {
+      logger.verbose(msg);
+    }
   }
 
   static debug(msg: string) {
-    if (process.env.NODE_ENV !== "production") {
+    if (!isProduction) {
       logger.debug(msg);
     }
   }
 
   static silly(msg: string) {
-    logger.silly(msg);
+    if (!isProduction) {
+      logger.silly(msg);
+    }
   }
 }
