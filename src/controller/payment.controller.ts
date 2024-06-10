@@ -170,6 +170,7 @@ export default class PaymentCtrl extends BaseController {
           newEndpointCreated,
           webhooks,
           webhookEvents,
+          rnUrl: process.env.REQUEST_NETWORK_UI_URL,
           account: {
             requirements: {
               currently_due: account?.requirements?.currently_due || [],
