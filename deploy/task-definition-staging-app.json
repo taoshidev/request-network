@@ -21,16 +21,6 @@
           "type": "s3"
         }
       ],
-      "environment": [
-        {
-          "name": "NODE_ENV",
-          "value": "staging"
-        },
-        {
-          "name": "ROLE",
-          "value": "validator"
-        }
-      ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
