@@ -9,14 +9,7 @@ export class StripeCheckDTO {
   webhooks!: boolean;
   webhookEvents!: boolean;
   rnUrl!: string;
-  account?: {
-    requirements: {
-      currently_due: any[];
-      eventually_due: any[],
-      past_due: any[]
-    },
-    capabilities: any;
-  }
+  stripeLiveMode!: boolean;
 
   constructor(data: Partial<StripeCheckDTO>) {
     Object.assign(this, data);
