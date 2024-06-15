@@ -3,7 +3,7 @@ import Logger from "../utils/logger";
 import { AuthenticatedRequest, XTaoshiHeaderKeyType } from "./auth-request";
 import ServiceManager from "../service/service.manager";
 import { ServiceDTO } from "../db/dto/service.dto";
-import StripeManager from "src/service/stripe.manager";
+import StripeManager from "../service/stripe.manager";
 
 /**
  * Handles registration of the API instance with the UI application.
