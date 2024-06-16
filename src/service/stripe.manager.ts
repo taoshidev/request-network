@@ -10,6 +10,7 @@ import { EnrollmentPaymentDTO } from "../db/dto/enrollment-payment.dto";
 import { ServiceDTO } from "../db/dto/service.dto";
 import { AuthenticatedRequest, XTaoshiHeaderKeyType } from "../core/auth-request";
 import TransactionManager from "./transaction.manager";
+import { isEqual as _isEqual } from 'lodash';
 
 const STRIPE_WEBHOOK_IDENTIFIER = 'Request Network';
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
@@ -307,7 +308,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
           if (enrollmentId && serviceId) {
             const serviceRes = await this.serviceManager.find(eq(services.id, serviceId));
             const subscriptionId = (serviceRes.data as ServiceDTO[])?.[0]?.subscriptionId;
-            
+
             switch (event.type) {
               case event?.data.object.paid == true && 'invoice.payment_succeeded':
                 await this.update(enrollmentId as string, { currentPeriodEnd: currentPeriodEnd, active: true });
@@ -366,6 +367,79 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
     } catch (error: any) {
       Logger.error("Stripe webhook error: " + JSON.stringify(error));
       return { data: null, error: error.message || "Internal server error" };
+    }
+  }
+
+  async checkForStripe(req?: Request, res?: Response) {
+    const enabled_events = [
+      'invoice.payment_succeeded',
+      'invoice.payment_failed',
+      'customer.subscription.deleted',
+      'customer.subscription.updated'
+    ];
+    try {
+      const isHttps = (process.env.API_HOST || '').includes('https://');
+      let webhooks = false,
+        webhookEvents = false,
+        newEndpointCreated = false,
+        webhookEndpoint: any,
+        account: any;
+      if
+        (process.env.STRIPE_SECRET_KEY &&
+        process.env.STRIPE_PUBLIC_KEY &&
+        process.env.STRIPE_ENROLLMENT_SECRET
+      ) {
+        account = await stripe.account.retrieve();
+        const endpoints = await stripe.webhookEndpoints.list();
+        webhookEndpoint = endpoints?.data?.find((endpoint: any) => endpoint.url === `${process.env.API_HOST}/webhooks`);
+
+        if (isHttps && !webhookEndpoint && !process.env.STRIPE_WEBHOOKS_KEY) {
+          webhookEndpoint = (await stripe.webhookEndpoints.create({
+            enabled_events,
+            url: `${process.env.API_HOST}/webhooks`,
+          }));
+
+          if (webhookEndpoint) newEndpointCreated = true;
+        }
+
+        if (!!webhookEndpoint) webhooks = true;
+        if (_isEqual(webhookEndpoint?.enabled_events, enabled_events)) webhookEvents = true;
+      }
+      const stripeKey = !!process.env.STRIPE_SECRET_KEY ? true : false;
+      const stripePublicKey = !!process.env.STRIPE_PUBLIC_KEY ? true : false;
+
+      const stripeLiveMode = (stripeKey && !process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')) &&
+        (stripePublicKey && !process.env.STRIPE_PUBLIC_KEY?.startsWith('pk_test_'));
+
+      const stripeResponse = {
+        isHttps,
+        stripeKey,
+        stripePublicKey,
+        enrollmentSecret: !!process.env.STRIPE_ENROLLMENT_SECRET ? true : false,
+        stripeWebhooksKey: !!process.env.STRIPE_WEBHOOKS_KEY ? true : false,
+        newEndpointCreated,
+        webhooks,
+        webhookEvents,
+        rnUrl: process.env.REQUEST_NETWORK_UI_URL,
+        stripeLiveMode
+      }
+      if (res) {
+        return res
+          .status(200)
+          .json(stripeResponse);
+      }
+
+      return stripeResponse;
+    } catch (error: Error | unknown) {
+      Logger.error("Error creating token:" + JSON.stringify(error));
+      const errorResponse = { ok: false, error: (error as Error)?.message || "Internal server error" };
+      if (res) {
+        return res
+          .status(500)
+          .json(errorResponse);
+      }
+
+      return errorResponse;
     }
   }
 }
