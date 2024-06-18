@@ -54,7 +54,9 @@ export default class Auth {
       const { keyId, meta: data } = response?.data as ConsumerDTO;
 
       if (!keyId) {
-        return res.status(403).send("Unauthorized: Invalid request key");
+        return res
+          .status(403)
+          .send({ error: "Unauthorized: Invalid request key" });
       }
 
       const resp = await this.consumerCtrl.find(
@@ -62,28 +64,36 @@ export default class Auth {
       );
 
       if (!resp?.data?.[0]) {
-        return res.status(403).send("Unauthorized: No services found");
+        return res
+          .status(403)
+          .send({ error: "Unauthorized: No services found" });
       }
 
       const { active, enabled, meta, endpointId } = resp
         ?.data?.[0] as ServiceDTO;
 
       if (!active) {
-        return res.status(403).send("Unauthorized: Subscription is not active");
+        return res
+          .status(403)
+          .send({ error: "Unauthorized: Subscription is not active" });
       }
 
       if (!enabled) {
-        return res.status(403).send("Unauthorized: Service is not enabled");
+        return res
+          .status(403)
+          .send({ error: "Unauthorized: Service is not enabled" });
       }
 
       if (!data?.shortId || data?.shortId !== meta?.shortId) {
-        return res.status(403).send("Unauthorized: Id mismatch");
+        return res.status(403).send({ error: "Unauthorized: Id mismatch" });
       }
 
       if (!(data?.endpointId === endpointId)) {
         return res
           .status(403)
-          .send("Unauthorized: Endpoint unauthorized for this service");
+          .send({
+            error: "Unauthorized: Endpoint unauthorized for this service",
+          });
       }
 
       return response?.data;
