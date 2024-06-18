@@ -28,7 +28,7 @@ export default class ConsumerRequest {
     });
 
     if (!consumer) {
-      return;
+      return res.status(401).json({ error: "Invalid consumer token." });
     }
 
     if (req?.headers[XTaoshiHeaderKeyType.Consumer])
