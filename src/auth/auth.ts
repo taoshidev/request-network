@@ -33,8 +33,7 @@ export default class Auth {
 
     if (!token) {
       Logger.error("Unauthorized: No token provided");
-      res.status(401).json({ error: "Unauthorized: No token provided" });
-      return false;
+      return res.status(401).json({ error: "Unauthorized: No token provided" });
     }
 
     try {
@@ -55,7 +54,7 @@ export default class Auth {
       const { keyId, meta: data } = response?.data as ConsumerDTO;
 
       if (!keyId) {
-        throw new Error("Unauthorized: Invalid request key");
+        return res.status(403).send("Unauthorized: Invalid request key");
       }
 
       const resp = await this.consumerCtrl.find(
@@ -63,29 +62,28 @@ export default class Auth {
       );
 
       if (!resp?.data?.[0]) {
-        throw new HttpError(403, "Unauthorized: No services found");
+        return res.status(403).send("Unauthorized: No services found");
       }
 
       const { active, enabled, meta, endpointId } = resp
         ?.data?.[0] as ServiceDTO;
 
       if (!active) {
-        throw new HttpError(403, "Unauthorized: Subscription is not active");
+        return res.status(403).send("Unauthorized: Subscription is not active");
       }
 
       if (!enabled) {
-        throw new HttpError(403, "Unauthorized: Service is not enabled");
+        return res.status(403).send("Unauthorized: Service is not enabled");
       }
 
       if (!data?.shortId || data?.shortId !== meta?.shortId) {
-        throw new HttpError(403, "Unauthorized: Service is not enabled");
+        return res.status(403).send("Unauthorized: Id mismatch");
       }
 
       if (!(data?.endpointId === endpointId)) {
-        throw new HttpError(
-          403,
-          "Unauthorized: Endpoint unauthorized for this service"
-        );
+        return res
+          .status(403)
+          .send("Unauthorized: Endpoint unauthorized for this service");
       }
 
       return response?.data;

@@ -114,9 +114,9 @@ export default class HTTPRequest {
     statusCode: StatusCode = StatusCode.Success
   ) {
     if (data) {
-      res.status(statusCode).json(data);
+      return res.status(statusCode).json(data);
     } else {
-      res.status(statusCode).json({ error });
+      return res.status(statusCode).json({ error });
     }
   }
 }
