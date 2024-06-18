@@ -75,13 +75,9 @@ export default class HTTPRequest {
       const response = await axios.request(options);
       HTTPRequest.send(res, response.data);
     } catch (error: AxiosError | Error | unknown) {
-      Logger.error(JSON.stringify(error, null, 2));
-      HTTPRequest.send(
-        res,
-        null,
-        (error as AxiosError)?.message || Message.APIError,
-        StatusCode.InternalServerError
-      );
+      const msg = (error as AxiosError)?.message || Message.APIError;
+      Logger.error(msg);
+      HTTPRequest.send(res, null, msg, StatusCode.InternalServerError);
     }
   }
 
@@ -109,14 +105,12 @@ export default class HTTPRequest {
 
   private static send(
     res: Response,
-    data: any,
-    error?: string,
+    data: any = null,
+    error: string = "",
     statusCode: StatusCode = StatusCode.Success
   ) {
-    if (data) {
-      res.status(statusCode).json(data);
-    } else {
-      res.status(statusCode).json({ error });
-    }
+    if (res.headersSent) return;
+    if (data) return res.status(statusCode).json(data);
+    return res.status(statusCode).json({ error });
   }
 }

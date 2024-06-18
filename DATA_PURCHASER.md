@@ -20,7 +20,7 @@ As a data purchaser on the Request Network, you play a crucial role in our ecosy
 
 To start purchasing data, you must first register through the Request Network User Interface (UI). Follow these steps:
 
-1. Navigate to the registration page: [Request Network Data Purchaser Registration](https://ui.taoshi.io/register)
+1. Navigate to the registration page: [Request Network Data Purchaser Registration](https://request.taoshi.io/login)
 2. Fill in the required fields, including your name, email, and contact information.
 3. Create a password and set up two-factor authentication for enhanced security.
 4. Submit your registration form and await verification email confirmation.
