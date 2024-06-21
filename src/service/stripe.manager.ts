@@ -332,10 +332,16 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
                   ),
                 };
                 await this.transactionManager.create(transaction);
+
+                (transaction as any).meta = {
+                  hosted_invoice_url: event.data?.object?.hosted_invoice_url,
+                  invoice_pdf: event.data?.object?.invoice_pdf
+                }
+                
                 await AuthenticatedRequest.send({
                   method: "PUT",
                   path: "/api/status",
-                  body: { subscriptionId: subscriptionId, active: true },
+                  body: { subscriptionId: subscriptionId, active: true, type: event.type, transaction },
                   xTaoshiKey: XTaoshiHeaderKeyType.Validator,
                 });
 
@@ -347,7 +353,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
                 await AuthenticatedRequest.send({
                   method: "PUT",
                   path: "/api/status",
-                  body: { subscriptionId: subscriptionId, active: false },
+                  body: { subscriptionId: subscriptionId, active: false, type: event.type },
                   xTaoshiKey: XTaoshiHeaderKeyType.Validator,
                 });
                 break;
