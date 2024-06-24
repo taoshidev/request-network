@@ -56,24 +56,15 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
 
         // get or create stripe record for service
         if (transaction.tokenData?.serviceId) {
-          // get customer id with matching email if it exists.
-          const enrollmentForEmail = await this.find(eq(enrollments.email, transaction.email));
-          const stripeCustomerId = enrollmentForEmail?.data?.[0]?.stripeCustomerId;
+          const enrollmentRes = await this.find(eq(enrollments.serviceId, transaction.tokenData.serviceId));
+          if (enrollmentRes.data?.[0]?.serviceId) {
+            userEnrollment = enrollmentRes.data?.[0]
+          }
 
-          // matches service to be updated
-          if (transaction.tokenData.serviceId === enrollmentForEmail?.data?.[0]?.serviceId) {
-            userEnrollment = enrollmentForEmail?.data?.[0];
-            // is another service
-          } else {
-            const enrollmentRes = await this.find(eq(enrollments.serviceId, transaction.tokenData.serviceId));
-            if (enrollmentRes.data?.[0]?.serviceId) {
-              userEnrollment = enrollmentRes.data?.[0]
-            }
-          }
           let customer;
-          if (stripeCustomerId) {
-            customer = await stripe.customers.retrieve(stripeCustomerId);
-          }
+          // get customer id with matching email if it exists.
+          const customers = await stripe.customers.list({ email: transaction.email });
+          if (customers?.data?.length > 0) customer = customers.data[0];
 
           if (customer && !customer.deleted) {
             customer = await stripe.customers.update(customer.id, stripeEnrollment);
@@ -332,10 +323,16 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
                   ),
                 };
                 await this.transactionManager.create(transaction);
+
+                (transaction as any).meta = {
+                  hosted_invoice_url: event.data?.object?.hosted_invoice_url,
+                  invoice_pdf: event.data?.object?.invoice_pdf
+                }
+
                 await AuthenticatedRequest.send({
                   method: "PUT",
                   path: "/api/status",
-                  body: { subscriptionId: subscriptionId, active: true },
+                  body: { subscriptionId: subscriptionId, active: true, type: event.type, transaction },
                   xTaoshiKey: XTaoshiHeaderKeyType.Validator,
                 });
 
@@ -347,7 +344,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
                 await AuthenticatedRequest.send({
                   method: "PUT",
                   path: "/api/status",
-                  body: { subscriptionId: subscriptionId, active: false },
+                  body: { subscriptionId: subscriptionId, active: false, type: event.type },
                   xTaoshiKey: XTaoshiHeaderKeyType.Validator,
                 });
                 break;
