@@ -9,6 +9,7 @@ export interface EnrollmentPaymentDTO {
     endpointId: string;
   };
   email: string;
+  name: string;
   token: string;
   lastFour: string;
   expMonth: number;

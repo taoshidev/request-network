@@ -3,6 +3,7 @@
   var cardElement = document.getElementById("card");
   var serviceNameInput = document.getElementById("service-name-input");
   var serviceRouteInput = document.getElementById("service-route-input");
+  var nameInput = document.getElementById("name-input");
   var emailInput = document.getElementById("email-input");
   var priceInput = document.getElementById("price-input");
   var submitBtn = document.getElementById("submit-btn");
@@ -10,13 +11,22 @@
   var subscribe = document.getElementById("subscribe");
   var complete = document.getElementById("complete");
   var apiError = document.getElementById("api-error");
+  var nameError = document.getElementById("name-error");
 
   var stripeKey = atob(keyElement.getAttribute("data-key"));
   var apiUrl = atob(keyElement.getAttribute("data-api"));
   var uiApiUrl = keyElement.getAttribute("data-ui-api");
   var redirect = "";
 
+
+  nameInput.addEventListener("keyup", setNameError);
+  nameInput.addEventListener("blur", setNameError);
   document.getElementById("payment-form").addEventListener("submit", enroll);
+
+  function setNameError() {
+    if (nameInput.value) nameError.innerText = "";
+    else nameError.innerText = "Name on credit card required.";
+  }
 
   var data;
   var params;
@@ -53,9 +63,11 @@
   function enroll(e) {
     if (e) e.preventDefault();
 
-    var { email, serviceRoute } = Object.fromEntries(new FormData(e.target));
+    var { email, serviceRoute, name } = Object.fromEntries(
+      new FormData(e.target)
+    );
 
-    if (card._complete && email && serviceRoute) {
+    if (card._complete && email && serviceRoute && name) {
       submitBtn.disabled = true;
       stripeObj.createToken(card, email).then(async ({ token, error }) => {
         if (error) {
@@ -63,6 +75,7 @@
         } else {
           var enrollment = {
             rnToken: params.token,
+            name,
             email,
             token: token.id,
             lastFour: token.card.last4,
@@ -76,6 +89,7 @@
     } else {
       if (!card._complete)
         cardError.innerText = "Credit card information not correct.";
+      if (!name) nameError.innerText = "Name on credit card required.";
     }
   }
 

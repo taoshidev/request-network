@@ -35,6 +35,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
         const serviceReq = await this.serviceManager.find(eq(services.subscriptionId, transaction.tokenData.subscriptionId));
         const service = serviceReq?.data?.[0];
         const stripeEnrollment: any = {
+          name: transaction.name,
           metadata: {
             'App': STRIPE_WEBHOOK_IDENTIFIER,
             'User ID': service?.meta?.consumerId,
