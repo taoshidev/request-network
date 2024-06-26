@@ -22,7 +22,7 @@ export default class PayPalRoute extends BaseRouter {
       interceptor: PaymentRequest.interceptor
     }).register({
       method: "post",
-      path: '/has-stripe',
+      path: '/has-paypal',
       handler: this.payPalCtrl.checkForPayPal,
       interceptor: UiRequest.interceptor
     });

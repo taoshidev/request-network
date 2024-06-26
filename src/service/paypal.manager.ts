@@ -195,32 +195,28 @@ export default class PayPalManager extends DatabaseWrapper<EnrollmentDTO> {
         // if (!!webhookEndpoint) webhooks = true;
         // if (_isEqual(webhookEndpoint?.enabled_events, enabled_events)) webhookEvents = true;
       }
-      const paypalSecretKey = !!process.env.PAYPAL_CLIENT_SECRET ? true : false;
-      const paypalClientId = !!process.env.PAYPAL_CLIENT_ID ? true : false;
+      const payPalSecretKey = !!process.env.PAYPAL_CLIENT_SECRET ? true : false;
+      const payPalClientId = !!process.env.PAYPAL_CLIENT_ID ? true : false;
 
-      const stripeLiveMode = (paypalSecretKey && !process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')) &&
-        (paypalClientId && !process.env.STRIPE_PUBLIC_KEY?.startsWith('pk_test_'));
-
-      const stripeResponse = {
+      const payPalResponse = {
         isHttps,
-        paypalSecretKey,
-        paypalClientId,
+        payPalSecretKey,
+        payPalClientId,
         enrollmentSecret: !!process.env.PAYMENT_ENROLLMENT_SECRET ? true : false,
-        paypalWebhooksKey: !!process.env.PAYPAL_WEBHOOKS_KEY ? true : false,
+        payPalWebhooksKey: !!process.env.PAYPAL_WEBHOOKS_KEY ? true : false,
         newEndpointCreated,
         webhooks,
         webhookEvents,
         rnUrl: process.env.REQUEST_NETWORK_UI_URL,
-        stripeLiveMode
       }
 
       if (res) {
         return res
           .status(200)
-          .json(stripeResponse);
+          .json(payPalResponse);
       }
 
-      return stripeResponse;
+      return payPalResponse;
     } catch (error: Error | unknown) {
       Logger.error("Error creating token:" + JSON.stringify(error));
       const errorResponse = { ok: false, error: (error as Error)?.message || "Internal server error" };
