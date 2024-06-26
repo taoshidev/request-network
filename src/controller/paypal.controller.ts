@@ -18,8 +18,12 @@ export default class PayPalCtrl extends BaseController {
   }
 
   createOrder = async (req: Request, res: Response) => {
-    const { cart } = req.body;
-    const order = await this.payPalService.createOrder(cart);
+    
+    const { body } = req;
+    if (!body?.rnToken)
+      return res.status(400).json({ error: "Request missing payload" });
+
+    const order = await this.payPalService.createOrder(body);
 
     return res
       .status(order.httpStatusCode)
@@ -33,5 +37,9 @@ export default class PayPalCtrl extends BaseController {
     return res
       .status(order.httpStatusCode)
       .json(order.jsonResponse);
+  }
+
+  checkForPayPal = async (req?: Request, res?: Response) => {
+    return this.payPalService.checkForPaypal(req, res);
   }
 }

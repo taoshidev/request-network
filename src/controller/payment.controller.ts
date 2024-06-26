@@ -97,7 +97,7 @@ export default class PaymentCtrl extends BaseController {
   getPaymentToken = async (req: Request, res: Response) => {
     try {
       const { body } = req;
-      const secret = process.env.STRIPE_ENROLLMENT_SECRET || '';
+      const secret = process.env.PAYMENT_ENROLLMENT_SECRET || '';
       const service = await this.serviceService.one(body.serviceId);
 
       if (service.data) {
@@ -108,6 +108,7 @@ export default class PaymentCtrl extends BaseController {
           email: body.email,
           price: service.data.price,
           redirect: body.redirect,
+          consumerServiceId: service.data.consumerServiceId,
           subscriptionId: service.data.subscriptionId,
           endpointId: service.data.endpointId
         }, secret, { expiresIn: '10m' });

@@ -385,7 +385,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
       if
         (process.env.STRIPE_SECRET_KEY &&
         process.env.STRIPE_PUBLIC_KEY &&
-        process.env.STRIPE_ENROLLMENT_SECRET
+        process.env.PAYMENT_ENROLLMENT_SECRET
       ) {
         account = await stripe.account.retrieve();
         const endpoints = await stripe.webhookEndpoints.list();
@@ -413,7 +413,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
         isHttps,
         stripeKey,
         stripePublicKey,
-        enrollmentSecret: !!process.env.STRIPE_ENROLLMENT_SECRET ? true : false,
+        enrollmentSecret: !!process.env.PAYMENT_ENROLLMENT_SECRET ? true : false,
         stripeWebhooksKey: !!process.env.STRIPE_WEBHOOKS_KEY ? true : false,
         newEndpointCreated,
         webhooks,
