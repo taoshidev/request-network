@@ -5,7 +5,7 @@ import ServiceManager from "./service.manager";
 import { EnrollmentDTO } from "../db/dto/enrollment.dto";
 import { DateTime } from "luxon";
 import { eq } from "drizzle-orm";
-import { enrollments, services } from "../db/schema";
+import { stripe_enrollments, services } from "../db/schema";
 import { EnrollmentPaymentDTO } from "../db/dto/enrollment-payment.dto";
 import { ServiceDTO } from "../db/dto/service.dto";
 import { AuthenticatedRequest, XTaoshiHeaderKeyType } from "../core/auth-request";
@@ -20,7 +20,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
   private transactionManager: TransactionManager = new TransactionManager();
 
   constructor() {
-    super(enrollments);
+    super(stripe_enrollments);
   }
 
   enroll = async (transaction: EnrollmentPaymentDTO) => {
@@ -57,7 +57,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
 
         // get or create stripe record for service
         if (transaction.tokenData?.serviceId) {
-          const enrollmentRes = await this.find(eq(enrollments.serviceId, transaction.tokenData.serviceId));
+          const enrollmentRes = await this.find(eq(stripe_enrollments.serviceId, transaction.tokenData.serviceId));
           if (enrollmentRes.data?.[0]?.serviceId) {
             userEnrollment = enrollmentRes.data?.[0]
           }
@@ -215,7 +215,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
 
   async cancelSubscription(serviceId: string) {
     try {
-      const enrollmentRes = await this.find(eq(enrollments.serviceId, serviceId));
+      const enrollmentRes = await this.find(eq(stripe_enrollments.serviceId, serviceId));
       const enrollment = enrollmentRes?.data?.[0];
 
       if (!enrollment) throw new Error('Enrollment not found.');
@@ -294,7 +294,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
           { stripeSubscriptionId, currentPeriodEnd } = this.getStripeData(event);
 
         if (app === STRIPE_WEBHOOK_IDENTIFIER && stripeSubscriptionId) {
-          const enrollmentRes = await this.find(eq(enrollments.stripeSubscriptionId, stripeSubscriptionId));
+          const enrollmentRes = await this.find(eq(stripe_enrollments.stripeSubscriptionId, stripeSubscriptionId));
           const enrollmentId = enrollmentRes.data?.[0]?.id;
 
           if (enrollmentId && serviceId) {

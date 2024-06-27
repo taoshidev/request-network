@@ -7,8 +7,9 @@ import ServiceManager from './service.manager';
 import { AuthenticatedRequest, XTaoshiHeaderKeyType } from 'src/core/auth-request';
 import DatabaseWrapper from 'src/core/database.wrapper';
 import { EnrollmentDTO } from 'src/db/dto/enrollment.dto';
-import { enrollments } from 'src/db/schema';
+import { paypal_enrollments, services } from 'src/db/schema';
 import { eq } from 'drizzle-orm';
+import { ServiceDTO } from 'src/db/dto/service.dto';
 
 const { PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PORT = 8888 } = process.env;
 const PAYPAL_BASE_URL = process.env.NODE_ENV === "production" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
@@ -18,7 +19,7 @@ export default class PayPalManager extends DatabaseWrapper<EnrollmentDTO> {
   private serviceManager: ServiceManager = new ServiceManager();
 
   constructor() {
-    super(enrollments);
+    super(paypal_enrollments);
   }
 
   /**
@@ -134,7 +135,7 @@ export default class PayPalManager extends DatabaseWrapper<EnrollmentDTO> {
     });
     const transaction = transactionRes?.data?.[0];
 
-    const enrollmentRes = await this.find(eq(enrollments.serviceId, transaction.serviceId as string));
+    const enrollmentRes = await this.find(eq(paypal_enrollments.serviceId, transaction.serviceId as string));
     const dbEnrollment = enrollmentRes?.data?.[0] || {} as Partial<EnrollmentDTO>;
 
     // Object.assign(dbEnrollment, {
@@ -160,6 +161,119 @@ export default class PayPalManager extends DatabaseWrapper<EnrollmentDTO> {
       httpStatusCode: response.status,
     };
   };
+
+  payPalWebhook = async (req: Request, res: Response) => {
+    try {
+      const event = req.body;
+      const accessToken = await this.generateAccessToken();
+      let verifyBody = JSON.stringify({
+        transmission_id: req.headers?.['paypal-transmission-id'],
+        transmission_time: req.headers?.['paypal-transmission-time'],
+        cert_url: req.headers?.['paypal-cert-url'],
+        auth_algo: req.headers?.['paypal-auth-algo'],
+        transmission_sig: req.headers?.['paypal-transmission-sig'],
+        webhook_id: process.env.PAYPAL_WEBHOOK_ID,
+        webhook_event: ":webhookEvent:"
+      });
+      verifyBody = verifyBody.replace('\":webhookEvent:\"', (req as any).rawBody);
+
+      const verify = await fetch(`${PAYPAL_BASE_URL}/v1/notifications/verify-webhook-signature`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: verifyBody
+      });
+      const { verification_status } = await verify.json();
+
+      if (verification_status !== 'SUCCESS') {
+        Logger.error("PayPal webhook error: Verify failed");
+        return { data: null, error: "Internal server error" };
+      }
+
+      console.log('verified request: ', JSON.stringify(req.body));
+
+      if (event.event_type) {
+        const dbServices: any = await this.serviceManager.find(eq(services.subscriptionId, event.custom_id as string)),
+          dbService = dbServices?.[0],
+          app = event?.data?.object?.lines?.data?.[0]?.metadata?.App || event?.data?.object?.metadata?.App,
+          serviceId = dbService.id;
+
+        if (event.id) {
+          const enrollmentRes = await this.find(eq(paypal_enrollments.payPalSubscriptionId, event.id));
+          const enrollmentId = enrollmentRes.data?.[0]?.id;
+
+          if (enrollmentId && serviceId) {
+            const serviceRes = await this.serviceManager.find(eq(services.id, serviceId));
+            const subscriptionId = (serviceRes.data as ServiceDTO[])?.[0]?.subscriptionId;
+
+            switch (event.type) {
+              case event?.data.object.paid == true && 'CHECKOUT.ORDER.APPROVED':
+                await this.update(enrollmentId as string, { currentPeriodEnd: null, active: true });
+                await this.serviceManager.update(serviceId as string, { active: true });
+
+                const transaction = {
+                  serviceId,
+                  walletAddress: '',
+                  transactionHash: event.data?.object?.id || "Unknown Invoice",
+                  confirmed: true,
+                  fromAddress: enrollmentRes?.data?.[0]?.stripeCustomerId,
+                  toAddress: serviceRes?.data?.[0]?.subscriptionId,
+                  amount: (event.data?.object?.amount_paid / 100).toString(),
+                  transactionType: "deposit" as "deposit" | "withdrawal",
+                  blockNumber: -1,
+                  meta: JSON.stringify(
+                    {
+                      hosted_invoice_url: event.data?.object?.hosted_invoice_url,
+                      invoice_pdf: event.data?.object?.invoice_pdf
+                    }
+                  ),
+                };
+                await this.transactionManager.create(transaction);
+
+                (transaction as any).meta = {
+                  hosted_invoice_url: event.data?.object?.hosted_invoice_url,
+                  invoice_pdf: event.data?.object?.invoice_pdf
+                }
+
+                await AuthenticatedRequest.send({
+                  method: "PUT",
+                  path: "/api/status",
+                  body: { subscriptionId: subscriptionId, active: true, type: event.type, transaction },
+                  xTaoshiKey: XTaoshiHeaderKeyType.Validator,
+                });
+
+                break;
+              case 'invoice.payment_failed':
+              case 'customer.subscription.deleted':
+                await this.update(enrollmentId as string, { currentPeriodEnd: null, active: false })
+                await this.serviceManager.update(serviceId as string, { active: false });
+                await AuthenticatedRequest.send({
+                  method: "PUT",
+                  path: "/api/status",
+                  body: { subscriptionId: subscriptionId, active: false, type: event.type },
+                  xTaoshiKey: XTaoshiHeaderKeyType.Validator,
+                });
+                break;
+              case 'customer.subscription.updated':
+                // await this.update(enrollmentId as string, { currentPeriodEnd: currentPeriodEnd });
+                break;
+              default:
+                break;
+            }
+          }
+          return { data: 'ok' };
+        } else return { data: 'ok' };
+      } else {
+        Logger.error("Stripe webhook validation error: ");
+        return { data: null, error: "Stripe webhook validation error: " };
+      }
+    } catch (error: any) {
+      Logger.error("PayPal webhook error: " + JSON.stringify(error));
+      return { data: null, error: error.message || "Internal server error" };
+    }
+  }
 
   async checkForPaypal(req?: Request, res?: Response) {
     // const enabled_events = [
@@ -218,6 +332,7 @@ export default class PayPalManager extends DatabaseWrapper<EnrollmentDTO> {
 
       return payPalResponse;
     } catch (error: Error | unknown) {
+      console.log(error);
       Logger.error("Error creating token:" + JSON.stringify(error));
       const errorResponse = { ok: false, error: (error as Error)?.message || "Internal server error" };
       if (res) {

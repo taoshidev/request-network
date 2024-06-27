@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { enrollments } from "../db/schema";
+import { stripe_enrollments } from "../db/schema";
 import BaseController from "../core/base.controller";
 import Logger from "../utils/logger";
 import StripeManager from "../service/stripe.manager";
@@ -8,20 +8,21 @@ import { EnrollmentPaymentDTO } from "../db/dto/enrollment-payment.dto";
 import * as jwt from 'jsonwebtoken';
 import ServiceManager from "../service/service.manager";
 import { isEqual as _isEqual } from 'lodash';
-
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+import PayPalManager from "src/service/paypal.manager";
 
 /**
  * Controller for handling payments.
  */
 export default class PaymentCtrl extends BaseController {
   stripeService: StripeManager;
+  payPalService: PayPalManager;
   serviceService: ServiceManager;
 
   constructor() {
-    super(enrollments);
+    super(stripe_enrollments);
 
     this.stripeService = new StripeManager();
+    this.payPalService = new PayPalManager();
     this.serviceService = new ServiceManager();
   }
 
@@ -75,7 +76,24 @@ export default class PaymentCtrl extends BaseController {
   */
   webhooks = async (req: Request, res: Response) => {
     try {
-      const webhookRes = await this.stripeService.stripeWebhook(req, res);
+      let webhookRes;
+      const isStripe = !!req.headers?.['stripe-signature'];
+      const isPayPal = !!req.headers?.['paypal-transmission-id'];
+
+      switch (true) {
+        case !!isStripe:
+          webhookRes = await this.stripeService.stripeWebhook(req, res);
+          break;
+        case !!isPayPal:
+          webhookRes = await this.payPalService.payPalWebhook(req, res);
+          break;
+        default:
+          Logger.error("Webhook not valid:");
+          return res
+            .status(500)
+            .json({ error: "Internal server error" });
+          }
+
       return res
         .status(201)
         .json(webhookRes);

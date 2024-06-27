@@ -1,12 +1,12 @@
 import UiRequest from "src/auth/ui-request";
 import PaymentRequest from "../auth/payment-request";
 import BaseRouter from "../core/base.router";
-import { enrollments } from "../db/schema";
+import { paypal_enrollments } from "../db/schema";
 import PayPalCtrl from "src/controller/paypal.controller";
 
 export default class PayPalRoute extends BaseRouter {
   constructor(private payPalCtrl: PayPalCtrl) {
-    super(enrollments, payPalCtrl);
+    super(paypal_enrollments, payPalCtrl);
   }
 
   public routes() {
