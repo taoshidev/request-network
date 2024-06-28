@@ -15,7 +15,20 @@ export default class PayPalRoute extends BaseRouter {
       path: "/paypal-orders",
       handler: this.payPalCtrl.createOrder,
       interceptor: PaymentRequest.interceptor
-    }).register({
+    })
+    this.register({
+      method: "post",
+      path: "/paypal-subscriptions",
+      handler: this.payPalCtrl.createSubscription,
+      interceptor: PaymentRequest.interceptor
+    })
+    this.register({
+      method: "post",
+      path: "/paypal-subscriptions/activate",
+      handler: this.payPalCtrl.activate,
+      interceptor: PaymentRequest.interceptor
+    })
+    .register({
       method: "post",
       path: '/paypal-orders/:orderId/capture',
       handler: this.payPalCtrl.captureOrder,

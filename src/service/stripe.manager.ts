@@ -2,7 +2,7 @@ import DatabaseWrapper from "../core/database.wrapper";
 import { Request, Response } from "express";
 import Logger from "../utils/logger";
 import ServiceManager from "./service.manager";
-import { EnrollmentDTO } from "../db/dto/enrollment.dto";
+import { StripeEnrollmentDTO } from "../db/dto/stripe-enrollment.dto";
 import { DateTime } from "luxon";
 import { eq } from "drizzle-orm";
 import { stripe_enrollments, services } from "../db/schema";
@@ -11,11 +11,12 @@ import { ServiceDTO } from "../db/dto/service.dto";
 import { AuthenticatedRequest, XTaoshiHeaderKeyType } from "../core/auth-request";
 import TransactionManager from "./transaction.manager";
 import { isEqual as _isEqual } from 'lodash';
+import { randomBytes } from "crypto";
 
 const STRIPE_WEBHOOK_IDENTIFIER = 'Request Network';
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
-export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
+export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> {
   private serviceManager: ServiceManager = new ServiceManager();
   private transactionManager: TransactionManager = new TransactionManager();
 
@@ -51,7 +52,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
           stripeEnrollment.email = transaction.email;
         }
 
-        let userEnrollment: Partial<EnrollmentDTO> = {
+        let userEnrollment: Partial<StripeEnrollmentDTO> = {
           serviceId: service?.id
         };
 
@@ -92,7 +93,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
 
   stripeProcess = async (
     { transaction, service, userEnrollment }:
-      { transaction: EnrollmentPaymentDTO, service: ServiceDTO, userEnrollment: Partial<EnrollmentDTO> }
+      { transaction: EnrollmentPaymentDTO, service: ServiceDTO, userEnrollment: Partial<StripeEnrollmentDTO> }
   ) => {
     try {
       const stripePlanId = userEnrollment.stripePlanId;
@@ -188,8 +189,8 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
       userEnrollment.currentPeriodEnd = DateTime.fromSeconds(+subscription.current_period_end).toJSDate();
       userEnrollment.active = true;
 
-      const enrollment = userEnrollment.id ? await this.update(userEnrollment.id, userEnrollment as EnrollmentDTO) : await this.create(userEnrollment as EnrollmentDTO);
-      const data = (enrollment.data as EnrollmentDTO[])?.[0];
+      const enrollment = userEnrollment.id ? await this.update(userEnrollment.id, userEnrollment as StripeEnrollmentDTO) : await this.create(userEnrollment as StripeEnrollmentDTO);
+      const data = (enrollment.data as StripeEnrollmentDTO[])?.[0];
 
       const statusRes = await this.serviceManager.changeStatus(service?.id as string, true);
 
@@ -309,7 +310,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
                 const transaction = {
                   serviceId,
                   walletAddress: '',
-                  transactionHash: event.data?.object?.id || "Unknown Invoice",
+                  transactionHash: event.data?.object?.id ||`Unknown Invoice ${randomBytes(32).toString("hex")}`,
                   confirmed: true,
                   fromAddress: enrollmentRes?.data?.[0]?.stripeCustomerId,
                   toAddress: serviceRes?.data?.[0]?.subscriptionId,

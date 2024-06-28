@@ -1,6 +1,5 @@
 import { ServiceDTO } from "../db/dto/service.dto";
 import { services } from "../db/schema";
-import BaseController from "../core/base.controller";
 import Logger from "../utils/logger";
 import DatabaseWrapper from "../core/database.wrapper";
 import { DrizzleResult } from "../core/database.wrapper";
@@ -28,6 +27,7 @@ export default class ServiceManager extends DatabaseWrapper<ServiceDTO> {
       if (error) {
         throw new Error(error.message);
       }
+
       return { data, error: null };
     } catch (error: any) {
       Logger.error("Error updating service: " + JSON.stringify(error));

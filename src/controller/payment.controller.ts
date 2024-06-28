@@ -129,7 +129,7 @@ export default class PaymentCtrl extends BaseController {
           consumerServiceId: service.data.consumerServiceId,
           subscriptionId: service.data.subscriptionId,
           endpointId: service.data.endpointId
-        }, secret, { expiresIn: '10m' });
+        }, secret, { expiresIn: '20m' });
 
         return res
           .status(200)
