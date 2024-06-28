@@ -95,7 +95,8 @@ export default class Cors {
         "x-taoshi-consumer-request-key",
         "x-taoshi-request-key",
         "x-taoshi-validator-request-key",
-        "stripe-signature"
+        "stripe-signature",
+        "paypal-transmission-id"
       ].some((key) => req.headers[key.toLowerCase()] !== undefined);
 
       if ((!origin && keys) || allowed) {

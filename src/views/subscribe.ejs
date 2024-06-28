@@ -16,6 +16,7 @@
     <div id="subscribe" class="subscribe-container open">
       <h1><%= validatorName %></h1>
       <h2>Subscribe to Service</h2>
+      <img src="./img/stripe.svg" alt="Stripe Logo" class="logo" />
       <div class="form-container">
         <form id="payment-form" action="">
           <label>Service Name: </label>
@@ -35,12 +36,10 @@
           <label>Email: </label>
           <input name="email" id="email-input" readonly type="text" /><br />
           <label>Price: </label>
-          <input
-            name="price"
-            id="price-input"
-            readonly
-            type="text"
-          /><br /><br />
+          <input name="price" id="price-input" readonly type="text" /><br />
+          <label>Name on Card: </label>
+          <input id="name-input" name="name" type="text" />
+          <div id="name-error" class="error"></div>
           <label>Credit Card<span class="required">*</span></label>
           <div id="card" class="form-control"></div>
           <div id="card-error" class="error"></div>
@@ -63,6 +62,6 @@
       data-ui-api="<%= uiAppUrl %>"
     ></div>
     <script src="https://js.stripe.com/v3" type="text/javascript"></script>
-    <script src="./subscribe-scripts.js" type="text/javascript"></script>
+    <script src="./stripe.js" type="text/javascript"></script>
   </body>
 </html>

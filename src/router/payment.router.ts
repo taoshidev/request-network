@@ -1,12 +1,12 @@
 import BaseRouter from "../core/base.router";
 import PaymentCtrl from "../controller/payment.controller";
-import { enrollments } from "../db/schema";
+import { stripe_enrollments } from "../db/schema";
 import PaymentRequest from "../auth/payment-request";
 import UiRequest from "../auth/ui-request";
 
 export default class PaymentRoute extends BaseRouter {
   constructor(private paymentCtrl: PaymentCtrl) {
-    super(enrollments, paymentCtrl);
+    super(stripe_enrollments, paymentCtrl);
   }
 
   public routes() {

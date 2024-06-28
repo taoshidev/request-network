@@ -87,7 +87,7 @@ TAOSHI_VALIDATOR_API_SECRET=
 ENCRYPTION_KEY=
 IV_STRING=
 UNKEY_VERIFY_URL=
-STRIPE_ENROLLMENT_SECRET=
+PAYMENT_ENROLLMENT_SECRET=
 STRIPE_PUBLIC_KEY=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOKS_KEY=
@@ -258,7 +258,7 @@ To enable Stripe payments you will need to create a Stripe account and store the
 
 ```
     STRIPE_HOST=https://stripe.com <-- Needed to whitelist stripe website for webhooks.
-    STRIPE_ENROLLMENT_SECRET=<random string to be used for jwt token verification>
+    PAYMENT_ENROLLMENT_SECRET=<random string to be used for jwt token verification>
     STRIPE_PUBLIC_KEY=pk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     STRIPE_SECRET_KEY=sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     STRIPE_WEBHOOKS_KEY=<Webhooks key required for payment status updates>

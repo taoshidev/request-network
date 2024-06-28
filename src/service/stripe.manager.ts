@@ -2,25 +2,26 @@ import DatabaseWrapper from "../core/database.wrapper";
 import { Request, Response } from "express";
 import Logger from "../utils/logger";
 import ServiceManager from "./service.manager";
-import { EnrollmentDTO } from "../db/dto/enrollment.dto";
+import { StripeEnrollmentDTO } from "../db/dto/stripe-enrollment.dto";
 import { DateTime } from "luxon";
 import { eq } from "drizzle-orm";
-import { enrollments, services } from "../db/schema";
+import { stripe_enrollments, services } from "../db/schema";
 import { EnrollmentPaymentDTO } from "../db/dto/enrollment-payment.dto";
 import { ServiceDTO } from "../db/dto/service.dto";
 import { AuthenticatedRequest, XTaoshiHeaderKeyType } from "../core/auth-request";
 import TransactionManager from "./transaction.manager";
 import { isEqual as _isEqual } from 'lodash';
+import { randomBytes } from "crypto";
 
 const STRIPE_WEBHOOK_IDENTIFIER = 'Request Network';
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
-export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
+export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> {
   private serviceManager: ServiceManager = new ServiceManager();
   private transactionManager: TransactionManager = new TransactionManager();
 
   constructor() {
-    super(enrollments);
+    super(stripe_enrollments);
   }
 
   enroll = async (transaction: EnrollmentPaymentDTO) => {
@@ -35,6 +36,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
         const serviceReq = await this.serviceManager.find(eq(services.subscriptionId, transaction.tokenData.subscriptionId));
         const service = serviceReq?.data?.[0];
         const stripeEnrollment: any = {
+          name: transaction.name,
           metadata: {
             'App': STRIPE_WEBHOOK_IDENTIFIER,
             'User ID': service?.meta?.consumerId,
@@ -50,13 +52,13 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
           stripeEnrollment.email = transaction.email;
         }
 
-        let userEnrollment: Partial<EnrollmentDTO> = {
+        let userEnrollment: Partial<StripeEnrollmentDTO> = {
           serviceId: service?.id
         };
 
         // get or create stripe record for service
         if (transaction.tokenData?.serviceId) {
-          const enrollmentRes = await this.find(eq(enrollments.serviceId, transaction.tokenData.serviceId));
+          const enrollmentRes = await this.find(eq(stripe_enrollments.serviceId, transaction.tokenData.serviceId));
           if (enrollmentRes.data?.[0]?.serviceId) {
             userEnrollment = enrollmentRes.data?.[0]
           }
@@ -91,7 +93,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
 
   stripeProcess = async (
     { transaction, service, userEnrollment }:
-      { transaction: EnrollmentPaymentDTO, service: ServiceDTO, userEnrollment: Partial<EnrollmentDTO> }
+      { transaction: EnrollmentPaymentDTO, service: ServiceDTO, userEnrollment: Partial<StripeEnrollmentDTO> }
   ) => {
     try {
       const stripePlanId = userEnrollment.stripePlanId;
@@ -187,8 +189,8 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
       userEnrollment.currentPeriodEnd = DateTime.fromSeconds(+subscription.current_period_end).toJSDate();
       userEnrollment.active = true;
 
-      const enrollment = userEnrollment.id ? await this.update(userEnrollment.id, userEnrollment as EnrollmentDTO) : await this.create(userEnrollment as EnrollmentDTO);
-      const data = (enrollment.data as EnrollmentDTO[])?.[0];
+      const enrollment = userEnrollment.id ? await this.update(userEnrollment.id, userEnrollment as StripeEnrollmentDTO) : await this.create(userEnrollment as StripeEnrollmentDTO);
+      const data = (enrollment.data as StripeEnrollmentDTO[])?.[0];
 
       const statusRes = await this.serviceManager.changeStatus(service?.id as string, true);
 
@@ -214,7 +216,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
 
   async cancelSubscription(serviceId: string) {
     try {
-      const enrollmentRes = await this.find(eq(enrollments.serviceId, serviceId));
+      const enrollmentRes = await this.find(eq(stripe_enrollments.serviceId, serviceId));
       const enrollment = enrollmentRes?.data?.[0];
 
       if (!enrollment) throw new Error('Enrollment not found.');
@@ -293,7 +295,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
           { stripeSubscriptionId, currentPeriodEnd } = this.getStripeData(event);
 
         if (app === STRIPE_WEBHOOK_IDENTIFIER && stripeSubscriptionId) {
-          const enrollmentRes = await this.find(eq(enrollments.stripeSubscriptionId, stripeSubscriptionId));
+          const enrollmentRes = await this.find(eq(stripe_enrollments.stripeSubscriptionId, stripeSubscriptionId));
           const enrollmentId = enrollmentRes.data?.[0]?.id;
 
           if (enrollmentId && serviceId) {
@@ -308,7 +310,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
                 const transaction = {
                   serviceId,
                   walletAddress: '',
-                  transactionHash: event.data?.object?.id || "Unknown Invoice",
+                  transactionHash: event.data?.object?.id ||`Unknown Invoice ${randomBytes(32).toString("hex")}`,
                   confirmed: true,
                   fromAddress: enrollmentRes?.data?.[0]?.stripeCustomerId,
                   toAddress: serviceRes?.data?.[0]?.subscriptionId,
@@ -384,7 +386,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
       if
         (process.env.STRIPE_SECRET_KEY &&
         process.env.STRIPE_PUBLIC_KEY &&
-        process.env.STRIPE_ENROLLMENT_SECRET
+        process.env.PAYMENT_ENROLLMENT_SECRET
       ) {
         account = await stripe.account.retrieve();
         const endpoints = await stripe.webhookEndpoints.list();
@@ -412,7 +414,7 @@ export default class StripeManager extends DatabaseWrapper<EnrollmentDTO> {
         isHttps,
         stripeKey,
         stripePublicKey,
-        enrollmentSecret: !!process.env.STRIPE_ENROLLMENT_SECRET ? true : false,
+        enrollmentSecret: !!process.env.PAYMENT_ENROLLMENT_SECRET ? true : false,
         stripeWebhooksKey: !!process.env.STRIPE_WEBHOOKS_KEY ? true : false,
         newEndpointCreated,
         webhooks,
