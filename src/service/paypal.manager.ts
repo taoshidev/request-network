@@ -4,12 +4,12 @@ import Logger from "../utils/logger";
 import TransactionManager from './transaction.manager';
 import { randomBytes } from "crypto";
 import ServiceManager from './service.manager';
-import { AuthenticatedRequest, XTaoshiHeaderKeyType } from 'src/core/auth-request';
-import DatabaseWrapper from 'src/core/database.wrapper';
-import { PayPalEnrollmentDTO } from 'src/db/dto/paypal-enrollment.dto';
-import { paypal_enrollments, services } from 'src/db/schema';
+import { AuthenticatedRequest, XTaoshiHeaderKeyType } from '../core/auth-request';
+import DatabaseWrapper from '../core/database.wrapper';
+import { PayPalEnrollmentDTO } from '../db/dto/paypal-enrollment.dto';
+import { paypal_enrollments, services } from '../db/schema';
 import { eq } from 'drizzle-orm';
-import { ServiceDTO } from 'src/db/dto/service.dto';
+import { ServiceDTO } from '../db/dto/service.dto';
 
 const { PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PORT = 8888 } = process.env;
 const PAYPAL_BASE_URL = process.env.NODE_ENV === "production" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";

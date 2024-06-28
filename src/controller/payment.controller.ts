@@ -8,7 +8,7 @@ import { EnrollmentPaymentDTO } from "../db/dto/enrollment-payment.dto";
 import * as jwt from 'jsonwebtoken';
 import ServiceManager from "../service/service.manager";
 import { isEqual as _isEqual } from 'lodash';
-import PayPalManager from "src/service/paypal.manager";
+import PayPalManager from "../service/paypal.manager";
 
 /**
  * Controller for handling payments.

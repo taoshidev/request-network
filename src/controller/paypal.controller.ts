@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { paypal_enrollments } from "../db/schema";
 import BaseController from "../core/base.controller";
 import { isEqual as _isEqual } from 'lodash';
-import PayPalManager from "src/service/paypal.manager";
+import PayPalManager from "../service/paypal.manager";
 import Logger from "../utils/logger";
 
 /**
