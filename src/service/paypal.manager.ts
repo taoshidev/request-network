@@ -355,8 +355,8 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
     // ];
     try {
       const isHttps = (process.env.API_HOST || '').includes('https://');
-      let webhooks = false,
-        webhookEvents = false,
+      let webhooks = true,
+        webhookEvents = true,
         newEndpointCreated = false,
         webhookEndpoint: any;
 
@@ -388,7 +388,7 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
         payPalSecretKey,
         payPalClientId,
         enrollmentSecret: !!process.env.PAYMENT_ENROLLMENT_SECRET ? true : false,
-        payPalWebhooksKey: !!process.env.PAYPAL_WEBHOOKS_KEY ? true : false,
+        payPalWebhookId: !!process.env.PAYPAL_WEBHOOK_ID ? true : false,
         newEndpointCreated,
         webhooks,
         webhookEvents,
