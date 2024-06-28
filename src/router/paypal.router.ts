@@ -16,13 +16,13 @@ export default class PayPalRoute extends BaseRouter {
       handler: this.payPalCtrl.createOrder,
       interceptor: PaymentRequest.interceptor
     })
-    this.register({
+    .register({
       method: "post",
       path: "/paypal-subscriptions",
       handler: this.payPalCtrl.createSubscription,
       interceptor: PaymentRequest.interceptor
     })
-    this.register({
+    .register({
       method: "post",
       path: "/paypal-subscriptions/activate",
       handler: this.payPalCtrl.activate,

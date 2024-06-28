@@ -88,11 +88,11 @@ export default class PaymentCtrl extends BaseController {
           webhookRes = await this.payPalService.payPalWebhook(req, res);
           break;
         default:
-          Logger.error("Webhook not valid:");
+          Logger.error("Webhook not valid.");
           return res
             .status(500)
             .json({ error: "Internal server error" });
-          }
+      }
 
       return res
         .status(201)
