@@ -30,6 +30,15 @@ export default class PayPalCtrl extends BaseController {
       .json(order.jsonResponse);
   }
 
+  captureOrder = async (req: Request, res: Response) => {
+    const { orderId } = req.params;
+    const order = await this.payPalService.captureOrder(orderId);
+
+    return res
+      .status(order.httpStatusCode)
+      .json(order.jsonResponse);
+  }
+
   createSubscription = async (req: Request, res: Response) => {
     const { body } = req;
 
@@ -39,8 +48,8 @@ export default class PayPalCtrl extends BaseController {
     const order = await this.payPalService.createSubscription(body);
 
     return res
-      .status(order.httpStatusCode)
-      .json(order.jsonResponse);
+      .status(200)
+      .json(order);
   }
 
   activate = async (req: Request, res: Response) => {
@@ -62,15 +71,6 @@ export default class PayPalCtrl extends BaseController {
         .status(500)
         .json({ error: (error as Error)?.message || "Internal server error" });
     }
-  }
-
-  captureOrder = async (req: Request, res: Response) => {
-    const { orderId } = req.params;
-    const order = await this.payPalService.captureOrder(orderId);
-
-    return res
-      .status(order.httpStatusCode)
-      .json(order.jsonResponse);
   }
 
   checkForPayPal = async (req?: Request, res?: Response) => {

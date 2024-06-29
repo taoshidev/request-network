@@ -1,6 +1,8 @@
 (() => {
+  let params;
+  let data;
   let enrollment = {};
-  let paymentType = "subscription";
+
   try {
     params = new Proxy(new URLSearchParams(window.location.search), {
       get: (searchParams, prop) => searchParams.get(prop),
@@ -12,7 +14,7 @@
     apiError.innerText = "Error: Invalid token.";
   }
 
-  if (paymentType === "subscription") {
+  if (data.paymentType === "SUBSCRIPTION") {
     paypal
       .Buttons({
         style: {
@@ -30,11 +32,11 @@
               body: JSON.stringify({ rnToken: enrollment?.rnToken }),
             });
 
-            const orderData = await response.json();
+            const order = await response.json();
 
-            if (orderData.id) {
+            if (order?.data?.payPalPlanId) {
               return actions.subscription.create({
-                plan_id: orderData.id, // Creates the subscription
+                plan_id: order?.data?.payPalPlanId, // Creates the subscription
               });
             }
 
@@ -54,6 +56,7 @@
           try {
             // (3) Successful transaction -> Show confirmation or thank you message
             // Or go to another URL:  actions.redirect('thank_you.html');
+
             resultMessage(
               "You have successfully subscribed to " + data.subscriptionID
             );
@@ -62,7 +65,9 @@
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({ rnToken: enrollment?.rnToken }),
+              body: JSON.stringify(
+                Object.assign({}, data, { rnToken: enrollment?.rnToken })
+              ),
             });
 
             const activateData = await response.json();

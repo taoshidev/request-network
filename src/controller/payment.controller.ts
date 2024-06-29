@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { stripe_enrollments } from "../db/schema";
+import { services, stripe_enrollments } from "../db/schema";
 import BaseController from "../core/base.controller";
 import Logger from "../utils/logger";
 import StripeManager from "../service/stripe.manager";
@@ -9,6 +9,8 @@ import * as jwt from 'jsonwebtoken';
 import ServiceManager from "../service/service.manager";
 import { isEqual as _isEqual } from 'lodash';
 import PayPalManager from "../service/paypal.manager";
+import { eq } from "drizzle-orm";
+import { PAYMENT_SERVICE } from "src/db/dto/service.dto";
 
 /**
  * Controller for handling payments.
@@ -55,7 +57,15 @@ export default class PaymentCtrl extends BaseController {
   handleUnsubscribe = async (req: Request, res: Response) => {
     try {
       const { serviceId } = req.body;
-      const unsubscribedService = await this.stripeService.cancelSubscription(serviceId);
+      const serviceReq = await this.serviceService.find(eq(services.id, serviceId));
+      const service = serviceReq?.data?.[0];
+      let unsubscribedService;
+
+      if (service?.paymentService === PAYMENT_SERVICE.STRIPE) {
+        unsubscribedService = await this.stripeService.cancelSubscription(serviceId);
+      } else {
+        unsubscribedService = await this.payPalService.cancelSubscription(serviceId);
+      }
 
       return res
         .status(201)
@@ -124,7 +134,8 @@ export default class PaymentCtrl extends BaseController {
           name: service.data.name,
           url: body.url,
           email: body.email,
-          price: service.data.price,
+          price: body.price,
+          paymentType: body.paymentType,
           redirect: body.redirect,
           consumerServiceId: service.data.consumerServiceId,
           subscriptionId: service.data.subscriptionId,
