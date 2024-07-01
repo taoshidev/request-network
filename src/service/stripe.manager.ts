@@ -7,7 +7,7 @@ import { DateTime } from "luxon";
 import { eq } from "drizzle-orm";
 import { stripe_enrollments, services } from "../db/schema";
 import { EnrollmentPaymentDTO } from "../db/dto/enrollment-payment.dto";
-import { ServiceDTO } from "../db/dto/service.dto";
+import { PAYMENT_SERVICE, ServiceDTO } from "../db/dto/service.dto";
 import { AuthenticatedRequest, XTaoshiHeaderKeyType } from "../core/auth-request";
 import TransactionManager from "./transaction.manager";
 import { isEqual as _isEqual } from 'lodash';
@@ -192,7 +192,7 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
       const enrollment = userEnrollment.id ? await this.update(userEnrollment.id, userEnrollment as StripeEnrollmentDTO) : await this.create(userEnrollment as StripeEnrollmentDTO);
       const data = (enrollment.data as StripeEnrollmentDTO[])?.[0];
 
-      const statusRes = await this.serviceManager.changeStatus(service?.id as string, true);
+      const statusRes = await this.serviceManager.update(service.id as string, { paymentService: PAYMENT_SERVICE.STRIPE, active: true })
 
       await AuthenticatedRequest.send({
         method: "PUT",
@@ -244,7 +244,7 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
 
       return statusRes;
     } catch (error: any) {
-      Logger.error("Error stripe process: " + JSON.stringify(error));
+      Logger.error("Error stripe cancel subscription: " + JSON.stringify(error));
       return { data: null, error: error.message || "Internal server error" };
     }
   }
@@ -310,7 +310,7 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
                 const transaction = {
                   serviceId,
                   walletAddress: '',
-                  transactionHash: event.data?.object?.id ||`Unknown Invoice ${randomBytes(32).toString("hex")}`,
+                  transactionHash: event.data?.object?.id || `Unknown Invoice ${randomBytes(32).toString("hex")}`,
                   confirmed: true,
                   fromAddress: enrollmentRes?.data?.[0]?.stripeCustomerId,
                   toAddress: serviceRes?.data?.[0]?.subscriptionId,

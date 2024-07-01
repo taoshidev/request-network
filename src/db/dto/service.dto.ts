@@ -1,4 +1,9 @@
-import { BaseDTO } from "./base.dto.js";
+import { BaseDTO } from "./base.dto";
+
+export enum PAYMENT_SERVICE {
+  STRIPE = 'stripe',
+  PAYPAL = 'paypal'
+}
 
 export class ServiceDTO extends BaseDTO {
   type?: "consumer" | "validator";
@@ -17,6 +22,8 @@ export class ServiceDTO extends BaseDTO {
   validatorWalletAddress?: string;
   currencyType?: string;
   hotkey?: string;
+  payPalPlanId?: string;
+  paymentService?: PAYMENT_SERVICE;
   enabled?: boolean;
   meta?: {
     consumerId?: string;

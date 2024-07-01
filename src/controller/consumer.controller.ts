@@ -5,11 +5,14 @@ import BaseController from "../core/base.controller";
 import Logger from "../utils/logger";
 import { CustomRequestDTO } from "../db/dto/custom-request.dto";
 import TransactionManager from "../service/transaction.manager";
+import PayPalManager from "src/service/paypal.manager";
 /**
  * Controller for handling consumer-specific actions.
  * This includes registering new consumers and forwarding consumer requests to validators.
  */
 export default class ConsumerCtrl extends BaseController {
+  private payPalManager: PayPalManager = new PayPalManager();
+
   constructor() {
     super(services);
   }
@@ -27,6 +30,11 @@ export default class ConsumerCtrl extends BaseController {
       return res.status(400).json({ error: "Request missing payload" });
 
     try {
+      if (body.meta?.service?.paymentType === 'SUBSCRIPTION' && body.currencyType === 'FIAT') {
+        const newPlan = await this.payPalManager.createProductAndPlan(body);
+        body.payPalPlanId = newPlan?.data?.id;
+      }
+
       const { data, error } = await this.create(body as ServiceDTO);
 
       if (error) {
