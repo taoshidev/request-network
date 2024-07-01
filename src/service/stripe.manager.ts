@@ -6,7 +6,7 @@ import { StripeEnrollmentDTO } from "../db/dto/stripe-enrollment.dto";
 import { DateTime } from "luxon";
 import { eq } from "drizzle-orm";
 import { stripe_enrollments, services } from "../db/schema";
-import { EnrollmentPaymentDTO } from "../db/dto/enrollment-payment.dto";
+import { EnrollmentPaymentDTO, TokenData } from "../db/dto/enrollment-payment.dto";
 import { PAYMENT_SERVICE, ServiceDTO } from "../db/dto/service.dto";
 import { AuthenticatedRequest, XTaoshiHeaderKeyType } from "../core/auth-request";
 import TransactionManager from "./transaction.manager";
@@ -24,6 +24,141 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
     super(stripe_enrollments);
   }
 
+  createPaymentIntent = async (transaction: EnrollmentPaymentDTO) => {
+    try {
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: transaction?.tokenData?.price ? +transaction.tokenData.price * 100 : undefined,
+        currency: 'usd',
+        payment_method_types: ["card"]
+      });
+
+      return { data: paymentIntent, error: null };
+    } catch (e: any) {
+      return { data: null, error: e.message }
+    }
+  }
+
+  pay = async (transaction: EnrollmentPaymentDTO) => {
+    let customer: any;
+
+    try {
+      if (!transaction) {
+        Logger.error("Not Authorized: ");
+        return { data: null, error: "Not Authorized" };
+      }
+
+      // get service user signed up for
+      const serviceReq = await this.serviceManager.find(eq(services.subscriptionId, transaction.tokenData.subscriptionId));
+      const service = serviceReq?.data?.[0];
+      const stripeEnrollment: any = {
+        name: transaction.name,
+        metadata: {
+          'App': STRIPE_WEBHOOK_IDENTIFIER,
+          'User ID': service?.meta?.consumerId,
+          Service: service?.name,
+          'Service ID': transaction.tokenData?.serviceId,
+          Email: transaction.email,
+          'Endpoint Url': transaction.tokenData?.url
+        }
+      };
+
+      if (transaction.token) {
+        stripeEnrollment.source = transaction.token;
+        stripeEnrollment.email = transaction.email;
+      }
+
+      let userEnrollment: Partial<StripeEnrollmentDTO> = {
+        serviceId: service?.id
+      };
+
+      // get or create stripe record for service
+      if (transaction.tokenData?.serviceId) {
+        const enrollmentRes = await this.find(eq(stripe_enrollments.serviceId, transaction.tokenData.serviceId));
+        if (enrollmentRes.data?.[0]?.serviceId) {
+          userEnrollment = enrollmentRes.data?.[0]
+        }
+
+        let customer;
+        // get customer id with matching email if it exists.
+        const customers = await stripe.customers.list({ email: transaction.email });
+        if (customers?.data?.length > 0) customer = customers.data[0];
+
+        if (customer && !customer.deleted) {
+          customer = await stripe.customers.update(customer.id, stripeEnrollment);
+          userEnrollment.stripeCustomerId = customer.id;
+        } else {
+          customer = await stripe.customers.create(stripeEnrollment);
+          userEnrollment.stripeCustomerId = customer.id;
+        }
+      } else {
+        customer = await stripe.customers.create(stripeEnrollment);
+        userEnrollment.stripeCustomerId = customer.id;
+      }
+
+      if (service) {
+        return await this.stripePaymentProcess({ transaction, service, userEnrollment, tokenData: transaction.tokenData });
+      }
+      else throw Error('Service not found.')
+    } catch (error: any) {
+      Logger.error("Enrollment error: " + JSON.stringify(error));
+      return { data: null, error: error.message || "Internal server error" };
+    }
+  }
+
+  stripePaymentProcess = async (
+    {
+      transaction,
+      service,
+      userEnrollment,
+      tokenData
+    }:
+      {
+        transaction: EnrollmentPaymentDTO,
+        service: ServiceDTO,
+        userEnrollment: Partial<StripeEnrollmentDTO>
+        tokenData: TokenData
+      }
+  ) => {
+    // try {
+    //   const paymentIntent = await stripe.paymentIntents.create({
+    //     amount: service?.price ? +service?.price * 100 : undefined,
+    //     currency: 'usd',
+    //     automatic_payment_methods: {
+    //       enabled: true,
+    //     },
+    //   });
+
+
+    //   if (transaction.token) {
+    //     userEnrollment.email = transaction.email;
+    //     userEnrollment.expMonth = transaction.expMonth;
+    //     userEnrollment.expYear = transaction.expYear;
+    //     userEnrollment.lastFour = +transaction.lastFour;
+    //   }
+
+
+    //   const statusRes = await this.serviceManager.update(service.id as string, { paymentService: PAYMENT_SERVICE.STRIPE, active: true })
+
+    //   await AuthenticatedRequest.send({
+    //     method: "PUT",
+    //     path: "/api/status",
+    //     body: { subscriptionId: service.subscriptionId, active: true },
+    //     xTaoshiKey: XTaoshiHeaderKeyType.Validator,
+    //   });
+
+    //   return {
+    //     data: [{
+    //       id: data.id,
+    //       email: data.email,
+    //       active: statusRes?.data?.active
+    //     }], error: enrollment.error && 'Error processing payment.'
+    //   }
+    // } catch (error: any) {
+    //   Logger.error("Error stripe process: " + JSON.stringify(error));
+    //   return { data: null, error: error.message || "Internal server error" };
+    // }
+  }
+
   enroll = async (transaction: EnrollmentPaymentDTO) => {
     let customer: any;
 
@@ -31,67 +166,66 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
       if (!transaction) {
         Logger.error("Not Authorized: ");
         return { data: null, error: "Not Authorized" };
-      } else {
-        // get service user signed up for
-        const serviceReq = await this.serviceManager.find(eq(services.subscriptionId, transaction.tokenData.subscriptionId));
-        const service = serviceReq?.data?.[0];
-        const stripeEnrollment: any = {
-          name: transaction.name,
-          metadata: {
-            'App': STRIPE_WEBHOOK_IDENTIFIER,
-            'User ID': service?.meta?.consumerId,
-            Service: service?.name,
-            'Service ID': transaction.tokenData?.serviceId,
-            Email: transaction.email,
-            'Endpoint Url': transaction.tokenData?.url
-          }
-        };
+      }
+      // get service user signed up for
+      const serviceReq = await this.serviceManager.find(eq(services.subscriptionId, transaction.tokenData.subscriptionId));
+      const service = serviceReq?.data?.[0];
+      const stripeEnrollment: any = {
+        name: transaction.name,
+        metadata: {
+          'App': STRIPE_WEBHOOK_IDENTIFIER,
+          'User ID': service?.meta?.consumerId,
+          Service: service?.name,
+          'Service ID': transaction.tokenData?.serviceId,
+          Email: transaction.email,
+          'Endpoint Url': transaction.tokenData?.url
+        }
+      };
 
-        if (transaction.token) {
-          stripeEnrollment.source = transaction.token;
-          stripeEnrollment.email = transaction.email;
+      if (transaction.token) {
+        stripeEnrollment.source = transaction.token;
+        stripeEnrollment.email = transaction.email;
+      }
+
+      let userEnrollment: Partial<StripeEnrollmentDTO> = {
+        serviceId: service?.id
+      };
+
+      // get or create stripe record for service
+      if (transaction.tokenData?.serviceId) {
+        const enrollmentRes = await this.find(eq(stripe_enrollments.serviceId, transaction.tokenData.serviceId));
+        if (enrollmentRes.data?.[0]?.serviceId) {
+          userEnrollment = enrollmentRes.data?.[0]
         }
 
-        let userEnrollment: Partial<StripeEnrollmentDTO> = {
-          serviceId: service?.id
-        };
+        let customer;
+        // get customer id with matching email if it exists.
+        const customers = await stripe.customers.list({ email: transaction.email });
+        if (customers?.data?.length > 0) customer = customers.data[0];
 
-        // get or create stripe record for service
-        if (transaction.tokenData?.serviceId) {
-          const enrollmentRes = await this.find(eq(stripe_enrollments.serviceId, transaction.tokenData.serviceId));
-          if (enrollmentRes.data?.[0]?.serviceId) {
-            userEnrollment = enrollmentRes.data?.[0]
-          }
-
-          let customer;
-          // get customer id with matching email if it exists.
-          const customers = await stripe.customers.list({ email: transaction.email });
-          if (customers?.data?.length > 0) customer = customers.data[0];
-
-          if (customer && !customer.deleted) {
-            customer = await stripe.customers.update(customer.id, stripeEnrollment);
-            userEnrollment.stripeCustomerId = customer.id;
-          } else {
-            customer = await stripe.customers.create(stripeEnrollment);
-            userEnrollment.stripeCustomerId = customer.id;
-          }
+        if (customer && !customer.deleted) {
+          customer = await stripe.customers.update(customer.id, stripeEnrollment);
+          userEnrollment.stripeCustomerId = customer.id;
         } else {
           customer = await stripe.customers.create(stripeEnrollment);
           userEnrollment.stripeCustomerId = customer.id;
         }
-
-        if (service) {
-          return await this.stripeProcess({ transaction, service, userEnrollment });
-        }
-        else throw Error('Service not found.')
+      } else {
+        customer = await stripe.customers.create(stripeEnrollment);
+        userEnrollment.stripeCustomerId = customer.id;
       }
+
+      if (service) {
+        return await this.stripeEnrollmentProcess({ transaction, service, userEnrollment });
+      }
+      else throw Error('Service not found.')
     } catch (error: any) {
       Logger.error("Enrollment error: " + JSON.stringify(error));
       return { data: null, error: error.message || "Internal server error" };
     }
   }
 
-  stripeProcess = async (
+  stripeEnrollmentProcess = async (
     { transaction, service, userEnrollment }:
       { transaction: EnrollmentPaymentDTO, service: ServiceDTO, userEnrollment: Partial<StripeEnrollmentDTO> }
   ) => {

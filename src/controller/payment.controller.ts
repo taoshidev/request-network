@@ -11,6 +11,7 @@ import { isEqual as _isEqual } from 'lodash';
 import PayPalManager from "../service/paypal.manager";
 import { eq } from "drizzle-orm";
 import { PAYMENT_SERVICE } from "src/db/dto/service.dto";
+import { PAYMENT_TYPE } from "src/db/enum/payment-type";
 
 /**
  * Controller for handling payments.
@@ -28,12 +29,20 @@ export default class PaymentCtrl extends BaseController {
     this.serviceService = new ServiceManager();
   }
 
+  createPaymentIntent = async (req: Request, res: Response) => {
+    const { body } = req as EnrollmentPaymentRequestDTO;
+    const paymentIntent = await this.stripeService.createPaymentIntent(body as EnrollmentPaymentDTO);
+    return res
+      .status(201)
+      .json(paymentIntent);
+  }
+
   /**
-   * @param {Request} req - Express.js request object containing the enrollment information in the body.
-   * @param {Response} res - Express.js response object.
-   * @param {NextFunction} next - Express.js next middleware function.
-   * @returns A 201 status code and the enrollment id and enrollment email on success, or a 400 status code with an error message on failure.
-   */
+ * @param {Request} req - Express.js request object containing the enrollment information in the body.
+ * @param {Response} res - Express.js response object.
+ * @param {NextFunction} next - Express.js next middleware function.
+ * @returns A 201 status code and the enrollment id and enrollment email on success, or a 400 status code with an error message on failure.
+ */
   handleConsumerPayment = async (req: Request, res: Response) => {
     const { body } = req as EnrollmentPaymentRequestDTO;
 
@@ -42,10 +51,17 @@ export default class PaymentCtrl extends BaseController {
 
 
     try {
-      const enrollment = await this.stripeService.enroll(body as EnrollmentPaymentDTO);
+      if (body?.tokenData?.paymentType === PAYMENT_TYPE.SUBSCRIPTION) {
+        const enrollment = await this.stripeService.enroll(body as EnrollmentPaymentDTO);
+        return res
+          .status(201)
+          .json(enrollment);
+      }
+
+      const payment = await this.stripeService.pay(body as EnrollmentPaymentDTO);
       return res
         .status(201)
-        .json(enrollment);
+        .json(payment);
     } catch (error: Error | unknown) {
       Logger.error("Error processing payment:" + JSON.stringify(error));
       return res

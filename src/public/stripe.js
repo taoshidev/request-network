@@ -1,4 +1,4 @@
-(() => {
+(async () => {
   var keyElement = document.getElementById("key");
   var cardElement = document.getElementById("card");
   var serviceNameInput = document.getElementById("service-name-input");
@@ -12,30 +12,27 @@
   var complete = document.getElementById("complete");
   var apiError = document.getElementById("api-error");
   var nameError = document.getElementById("name-error");
+  var cardInput = document.getElementById("card-input");
 
   var stripeKey = atob(keyElement.getAttribute("data-key"));
   var apiUrl = atob(keyElement.getAttribute("data-api"));
   var uiApiUrl = keyElement.getAttribute("data-ui-api");
   var redirect = "";
 
-
   nameInput.addEventListener("keyup", setNameError);
   nameInput.addEventListener("blur", setNameError);
   document.getElementById("payment-form").addEventListener("submit", enroll);
 
-  function setNameError() {
-    if (nameInput.value) nameError.innerText = "";
-    else nameError.innerText = "Name on credit card required.";
-  }
+  let data;
+  let params;
+  let stripeElements;
 
-  var data;
-  var params;
   try {
     params = new Proxy(new URLSearchParams(window.location.search), {
       get: (searchParams, prop) => searchParams.get(prop),
     });
-
     data = JSON.parse(atob(params.token.split(".")[1]));
+
     serviceNameInput.value = data.name;
     emailInput.value = data.email;
     priceInput.value = `$${data.price}`;
@@ -45,11 +42,39 @@
     apiError.innerText = "Error: Invalid token.";
   }
 
+  if (data.paymentType !== "PAY_PER_REQUEST")
+    cardInput.classList.remove("hidden");
+
+  function setNameError() {
+    if (nameInput.value) nameError.innerText = "";
+    else nameError.innerText = "Name on credit card required.";
+  }
+
   if (Stripe) {
     var stripeObj = Stripe(stripeKey);
-    var stripeElements = stripeObj.elements();
-    var card = stripeElements.create("card");
+    stripeElements = stripeObj.elements();
 
+    if (data.paymentType === "PAY_PER_REQUEST") {
+      const paymentIntentRes = await fetch(`${apiUrl}/stripe-payment-intent`, {
+        method: "POST",
+        body: JSON.stringify({ rnToken: params.token }),
+        headers: {
+          "Content-type": "application/json; charset=UTF-8",
+        },
+      });
+      const paymentIntent = await paymentIntentRes.json();
+
+      stripeElements = stripeObj.elements({
+        clientSecret: paymentIntent?.data?.client_secret,
+        loader: "auto",
+      });
+      const payment = stripeElements.create("payment", {});
+
+      payment.mount("#payment");
+      return;
+    }
+
+    var card = stripeElements.create("card");
     if (card && cardElement) {
       card.mount("#card");
       card.addEventListener("change", cardHandler);
@@ -60,35 +85,57 @@
     cardError.innerText = "";
   }
 
-  function enroll(e) {
+  async function enroll(e) {
     if (e) e.preventDefault();
 
     var { email, serviceRoute, name } = Object.fromEntries(
       new FormData(e.target)
     );
 
-    if (card._complete && email && serviceRoute && name) {
+    if (email && serviceRoute && name) {
       submitBtn.disabled = true;
-      stripeObj.createToken(card, email).then(async ({ token, error }) => {
-        if (error) {
-          this.submittedChange.emit(false);
-        } else {
-          var enrollment = {
-            rnToken: params.token,
-            name,
-            email,
-            token: token.id,
-            lastFour: token.card.last4,
-            expMonth: token.card.exp_month,
-            expYear: token.card.exp_year,
-          };
 
-          sendEnrollment(enrollment, e.target);
+      if (data.paymentType === "PAY_PER_REQUEST") {
+        const sResult = await stripeObj.confirmPayment({
+          elements: stripeElements,
+          redirect: "if_required",
+          confirmParams: {
+            return_url: `${apiUrl}/subscribe`,
+          },
+        });
+
+        if (!!sResult?.error) {
+          return (apiError.innerText =
+            "Payment error: " + sResult.error?.message);
         }
-      });
+
+        subscribe.classList.remove("open");
+        complete.classList.add("open");
+        setTimeout(() => {
+          window.close();
+        }, 3000);
+      } else {
+        if (card._complete) {
+          stripeObj.createToken(card, email).then(async ({ token, error }) => {
+            if (error) {
+              this.submittedChange.emit(false);
+            } else {
+              var enrollment = {
+                rnToken: params.token,
+                name,
+                email,
+                token: token.id,
+                lastFour: token.card.last4,
+                expMonth: token.card.exp_month,
+                expYear: token.card.exp_year,
+              };
+
+              sendEnrollment(enrollment, e.target);
+            }
+          });
+        } else cardError.innerText = "Credit card information not correct.";
+      }
     } else {
-      if (!card._complete)
-        cardError.innerText = "Credit card information not correct.";
       if (!name) nameError.innerText = "Name on credit card required.";
     }
   }
@@ -106,7 +153,7 @@
         if (!res.error) {
           subscribe.classList.remove("open");
           complete.classList.add("open");
-          form.reset();
+          if (form) form.reset();
           setTimeout(() => {
             window.close();
             // window.open(`${uiApiUrl}${redirect}`, "_blank");

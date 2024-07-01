@@ -13,7 +13,7 @@ import { PAYMENT_SERVICE, ServiceDTO } from '../db/dto/service.dto';
 import PaypalProductManager from './paypal-product.manager';
 import { PayPalProductDTO } from 'src/db/dto/paypal-product.dto';
 
-const { PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET, PORT = 8888 } = process.env;
+const { PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET } = process.env;
 const PAYPAL_BASE_URL = process.env.NODE_ENV === "production" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
 
 export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> {

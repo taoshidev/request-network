@@ -40,9 +40,13 @@
           <label>Name on Card: </label>
           <input id="name-input" name="name" type="text" />
           <div id="name-error" class="error"></div>
-          <label>Credit Card<span class="required">*</span></label>
-          <div id="card" class="form-control"></div>
-          <div id="card-error" class="error"></div>
+          <div id="card-input" class="hidden">
+            <label>Credit Card<span class="required">*</span></label>
+            <div id="card" class="form-control"></div>
+            <div id="card-error" class="error"></div>
+          </div>
+          <div id="payment" class="form-control"></div>
+          <br />
           <button id="submit-btn" class="button" type="submit">
             Pay For Subscription
           </button>
