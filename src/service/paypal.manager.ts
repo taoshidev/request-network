@@ -376,12 +376,12 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
         return { data: null, error: "Internal server error" };
       }
 
+      const payPalEnrollmentReq = await this.find(eq(paypal_enrollments.payPalSubscriptionId, event?.resource?.id));
+      const enrollment: PayPalEnrollmentDTO = payPalEnrollmentReq?.data?.[0] as PayPalEnrollmentDTO;
+
       if (event.event_type) {
         switch (event.event_type) {
           case "BILLING.SUBSCRIPTION.ACTIVATED":
-            const payPalEnrollmentReq = await this.find(eq(paypal_enrollments.payPalSubscriptionId, event?.resource?.id));
-            const enrollment: PayPalEnrollmentDTO = payPalEnrollmentReq?.data?.[0] as PayPalEnrollmentDTO;
-
             await this.update(enrollment.id as string, {
               payPalCustomerId: event?.resource?.subscriber?.payer_id,
               email: event?.resource?.subscriber?.email_address,
@@ -416,6 +416,19 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
               xTaoshiKey: XTaoshiHeaderKeyType.Validator,
             });
 
+            break;
+          case "BILLING.SUBSCRIPTION.EXPIRED":
+          case "BILLING.SUBSCRIPTION.CANCELLED":
+            await this.update(enrollment?.id as string, { active: false })
+            const deactivatedServiceReq: any = await this.serviceManager.update(enrollment?.serviceId as string, { active: false });
+            const deActivatedService = deactivatedServiceReq?.data?.[0] as ServiceDTO;
+
+            await AuthenticatedRequest.send({
+              method: "PUT",
+              path: "/api/status",
+              body: { subscriptionId: deActivatedService?.subscriptionId, active: false, type: event.type },
+              xTaoshiKey: XTaoshiHeaderKeyType.Validator,
+            });
             break;
           default:
             break;
