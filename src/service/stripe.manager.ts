@@ -350,7 +350,7 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
                   confirmed: true,
                   fromAddress: event.data?.object?.customer,
                   toAddress: serviceRes?.data?.[0]?.subscriptionId,
-                  amount: (+event.data?.object?.amount_paid / 100).toString(),
+                  amount: (+event.data?.object?.amount / 100).toString(),
                   transactionType: "deposit" as "deposit" | "withdrawal",
                   blockNumber: -1,
                   meta: JSON.stringify(
@@ -362,8 +362,7 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
                 await this.transactionManager.create(paymentTransaction);
 
                 (paymentTransaction as any).meta = {
-                  hosted_invoice_url: event.data?.object?.hosted_invoice_url,
-                  invoice_pdf: event.data?.object?.invoice_pdf
+                  receipt_url: event.data?.object?.receipt_url
                 }
 
                 await AuthenticatedRequest.send({
@@ -385,7 +384,7 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
                   confirmed: true,
                   fromAddress: event.data?.object?.customer,
                   toAddress: serviceRes?.data?.[0]?.subscriptionId,
-                  amount: (+event.data?.object?.amount / 100).toString(),
+                  amount: (+event.data?.object?.amount_paid / 100).toString(),
                   transactionType: "deposit" as "deposit" | "withdrawal",
                   blockNumber: -1,
                   meta: JSON.stringify(
