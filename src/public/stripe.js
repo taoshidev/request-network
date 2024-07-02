@@ -26,12 +26,14 @@
   let data;
   let params;
   let stripeElements;
+  let payPerRequest;
 
   try {
     params = new Proxy(new URLSearchParams(window.location.search), {
       get: (searchParams, prop) => searchParams.get(prop),
     });
     data = JSON.parse(atob(params.token.split(".")[1]));
+    payPerRequest = data.paymentType === "PAY_PER_REQUEST";
 
     serviceNameInput.value = data.name;
     emailInput.value = data.email;
@@ -42,8 +44,7 @@
     apiError.innerText = "Error: Invalid token.";
   }
 
-  if (data.paymentType !== "PAY_PER_REQUEST")
-    cardInput.classList.remove("hidden");
+  if (!payPerRequest) cardInput.classList.remove("hidden");
 
   function setNameError() {
     if (nameInput.value) nameError.innerText = "";
@@ -54,7 +55,7 @@
     var stripeObj = Stripe(stripeKey);
     stripeElements = stripeObj.elements();
 
-    if (data.paymentType === "PAY_PER_REQUEST") {
+    if (payPerRequest) {
       const paymentIntentRes = await fetch(`${apiUrl}/stripe-payment-intent`, {
         method: "POST",
         body: JSON.stringify({ rnToken: params.token }),
@@ -92,10 +93,10 @@
       new FormData(e.target)
     );
 
-    if (email && serviceRoute && name) {
+    if (email && serviceRoute && (name || payPerRequest)) {
       submitBtn.disabled = true;
 
-      if (data.paymentType === "PAY_PER_REQUEST") {
+      if (payPerRequest) {
         const sResult = await stripeObj.confirmPayment({
           elements: stripeElements,
           redirect: "if_required",

@@ -58,10 +58,9 @@ export default class PaymentCtrl extends BaseController {
           .json(enrollment);
       }
 
-      const payment = await this.stripeService.pay(body as EnrollmentPaymentDTO);
       return res
-        .status(201)
-        .json(payment);
+        .status(500)
+        .json({ error: "Payment type match error." });
     } catch (error: Error | unknown) {
       Logger.error("Error processing payment:" + JSON.stringify(error));
       return res
