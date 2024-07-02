@@ -6,7 +6,7 @@ import { StripeEnrollmentDTO } from "../db/dto/stripe-enrollment.dto";
 import { DateTime } from "luxon";
 import { eq } from "drizzle-orm";
 import { stripe_enrollments, services } from "../db/schema";
-import { EnrollmentPaymentDTO, TokenData } from "../db/dto/enrollment-payment.dto";
+import { EnrollmentPaymentDTO } from "../db/dto/enrollment-payment.dto";
 import { PAYMENT_SERVICE, ServiceDTO } from "../db/dto/service.dto";
 import { AuthenticatedRequest, XTaoshiHeaderKeyType } from "../core/auth-request";
 import TransactionManager from "./transaction.manager";
@@ -58,7 +58,15 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
         amount: transaction?.tokenData?.price ? +transaction.tokenData.price * 100 : undefined,
         currency: 'usd',
         payment_method_types: ["card"],
-        customer: customer.id
+        customer: customer.id,
+        metadata: {
+          'App': STRIPE_WEBHOOK_IDENTIFIER,
+          'User ID': service?.meta?.consumerId,
+          Service: service?.name,
+          'Service ID': transaction.tokenData?.serviceId,
+          Email: transaction.email,
+          'Endpoint Url': transaction.tokenData?.url
+        }
       });
 
       return { data: paymentIntent, error: null };
@@ -318,31 +326,43 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
         event = stripe.webhooks.constructEvent((req as any).rawBody, sig, process.env.STRIPE_WEBHOOKS_KEY);
 
       if (event) {
-        if (event.type === 'payment_intent.succeeded' && event.data?.object?.metadata?.activate) {
-          if (event.data?.object?.metadata?.activate) {
-            await AuthenticatedRequest.send({
-              method: "PUT",
-              path: "/api/stripe-activate",
-              body: { activate: true },
-              xTaoshiKey: XTaoshiHeaderKeyType.Validator,
-            });
-          }
-        }
-
         const app = event?.data?.object?.lines?.data?.[0]?.metadata?.App || event?.data?.object?.metadata?.App,
           serviceId = event?.data?.object?.lines?.data?.[0]?.metadata?.['Service ID'] || event?.data?.object?.metadata?.['Service ID'],
           { stripeSubscriptionId, currentPeriodEnd } = this.getStripeData(event);
 
-        if (app === STRIPE_WEBHOOK_IDENTIFIER && stripeSubscriptionId) {
-          const enrollmentRes = await this.find(eq(stripe_enrollments.stripeSubscriptionId, stripeSubscriptionId));
-          const enrollmentId = enrollmentRes.data?.[0]?.id;
+        if (app === STRIPE_WEBHOOK_IDENTIFIER) {
+          let enrollmentRes;
 
-          if (enrollmentId && serviceId) {
+          if (stripeSubscriptionId)
+            enrollmentRes = await this.find(eq(stripe_enrollments.stripeSubscriptionId, stripeSubscriptionId));
+
+          const enrollmentId = enrollmentRes?.data?.[0]?.id;
+
+          if (serviceId) {
             const serviceRes = await this.serviceManager.find(eq(services.id, serviceId));
             const subscriptionId = (serviceRes.data as ServiceDTO[])?.[0]?.subscriptionId;
-
             switch (event.type) {
-              case event?.data.object.paid == true && 'invoice.payment_succeeded':
+              case 'charge.succeeded':
+                const paymentTransaction = {
+                  serviceId,
+                  walletAddress: '',
+                  transactionHash: event.data?.object?.id || `Unknown Invoice ${randomBytes(32).toString("hex")}`,
+                  confirmed: true,
+                  fromAddress: event.data?.object?.customer,
+                  toAddress: serviceRes?.data?.[0]?.subscriptionId,
+                  amount: (event.data?.object?.amount_paid / 100).toString(),
+                  transactionType: "deposit" as "deposit" | "withdrawal",
+                  blockNumber: -1,
+                  meta: JSON.stringify(
+                    {
+                      hosted_invoice_url: event.data?.object?.hosted_invoice_url,
+                      invoice_pdf: event.data?.object?.invoice_pdf
+                    }
+                  ),
+                };
+                await this.transactionManager.create(paymentTransaction);
+                break;
+              case enrollmentId && event?.data.object.paid == true && 'invoice.payment_succeeded':
                 await this.update(enrollmentId as string, { currentPeriodEnd: currentPeriodEnd, active: true });
                 await this.serviceManager.update(serviceId as string, { active: true });
 
@@ -351,7 +371,7 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
                   walletAddress: '',
                   transactionHash: event.data?.object?.id || `Unknown Invoice ${randomBytes(32).toString("hex")}`,
                   confirmed: true,
-                  fromAddress: enrollmentRes?.data?.[0]?.stripeCustomerId,
+                  fromAddress: event.data?.object?.customer,
                   toAddress: serviceRes?.data?.[0]?.subscriptionId,
                   amount: (event.data?.object?.amount_paid / 100).toString(),
                   transactionType: "deposit" as "deposit" | "withdrawal",
@@ -376,7 +396,6 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
                   body: { subscriptionId: subscriptionId, active: true, type: event.type, transaction },
                   xTaoshiKey: XTaoshiHeaderKeyType.Validator,
                 });
-
                 break;
               case 'invoice.payment_failed':
               case 'customer.subscription.deleted':
@@ -410,6 +429,7 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
 
   async checkForStripe(req?: Request, res?: Response) {
     const enabled_events = [
+      'charge.succeeded',
       'invoice.payment_succeeded',
       'invoice.payment_failed',
       'customer.subscription.deleted',

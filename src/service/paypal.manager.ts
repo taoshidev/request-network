@@ -446,12 +446,6 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
   }
 
   async checkForPaypal(req?: Request, res?: Response) {
-    // const enabled_events = [
-    //   'invoice.payment_succeeded',
-    //   'invoice.payment_failed',
-    //   'customer.subscription.deleted',
-    //   'customer.subscription.updated'
-    // ];
     try {
       const isHttps = (process.env.API_HOST || '').includes('https://');
       let webhooks = true,

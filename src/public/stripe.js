@@ -106,6 +106,7 @@
         });
 
         if (!!sResult?.error) {
+          submitBtn.disabled = false;
           return (apiError.innerText =
             "Payment error: " + sResult.error?.message);
         }
