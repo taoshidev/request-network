@@ -41,6 +41,7 @@
     serviceRouteInput.value = data.url;
     redirect = data.redirect;
   } catch (e) {
+    submitBtn.disabled = true;
     apiError.innerText = "Error: Invalid token.";
   }
 
@@ -52,18 +53,43 @@
   }
 
   if (Stripe) {
-    var stripeObj = Stripe(stripeKey);
+    let stripeObj = Stripe(stripeKey);
+    let paymentIntent;
     stripeElements = stripeObj.elements();
 
+    try {
+      const pi = localStorage.getItem("pi");
+      if (pi) {
+        paymentIntent = JSON.parse(atob(pi));
+      }
+    } catch (e) {}
+
     if (payPerRequest) {
-      const paymentIntentRes = await fetch(`${apiUrl}/stripe-payment-intent`, {
-        method: "POST",
-        body: JSON.stringify({ rnToken: params.token }),
-        headers: {
-          "Content-type": "application/json; charset=UTF-8",
-        },
-      });
-      const paymentIntent = await paymentIntentRes.json();
+      if (paymentIntent?.data?.amount !== data?.price * 100) {
+        const paymentIntentRes = await fetch(
+          `${apiUrl}/stripe-payment-intent`,
+          {
+            method: "POST",
+            body: JSON.stringify({ rnToken: params.token }),
+            headers: {
+              "Content-type": "application/json; charset=UTF-8",
+            },
+          }
+        );
+        paymentIntent = await paymentIntentRes.json();
+
+        localStorage.setItem(
+          "pi",
+          btoa(
+            JSON.stringify({
+              data: {
+                client_secret: paymentIntent?.data?.client_secret,
+                amount: paymentIntent?.data?.amount,
+              },
+            })
+          )
+        );
+      }
 
       stripeElements = stripeObj.elements({
         clientSecret: paymentIntent?.data?.client_secret,
@@ -114,6 +140,7 @@
         subscribe.classList.remove("open");
         complete.classList.add("open");
         setTimeout(() => {
+          localStorage.removeItem("pi");
           window.close();
         }, 3000);
       } else {
