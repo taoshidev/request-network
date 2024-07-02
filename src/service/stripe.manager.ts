@@ -350,42 +350,18 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
                   confirmed: true,
                   fromAddress: event.data?.object?.customer,
                   toAddress: serviceRes?.data?.[0]?.subscriptionId,
-                  amount: (event.data?.object?.amount_paid / 100).toString(),
+                  amount: (+event.data?.object?.amount_paid / 100).toString(),
                   transactionType: "deposit" as "deposit" | "withdrawal",
                   blockNumber: -1,
                   meta: JSON.stringify(
                     {
-                      hosted_invoice_url: event.data?.object?.hosted_invoice_url,
-                      invoice_pdf: event.data?.object?.invoice_pdf
+                      receipt_url: event.data?.object?.receipt_url,
                     }
                   ),
                 };
                 await this.transactionManager.create(paymentTransaction);
-                break;
-              case enrollmentId && event?.data.object.paid == true && 'invoice.payment_succeeded':
-                await this.update(enrollmentId as string, { currentPeriodEnd: currentPeriodEnd, active: true });
-                await this.serviceManager.update(serviceId as string, { active: true });
 
-                const transaction = {
-                  serviceId,
-                  walletAddress: '',
-                  transactionHash: event.data?.object?.id || `Unknown Invoice ${randomBytes(32).toString("hex")}`,
-                  confirmed: true,
-                  fromAddress: event.data?.object?.customer,
-                  toAddress: serviceRes?.data?.[0]?.subscriptionId,
-                  amount: (event.data?.object?.amount_paid / 100).toString(),
-                  transactionType: "deposit" as "deposit" | "withdrawal",
-                  blockNumber: -1,
-                  meta: JSON.stringify(
-                    {
-                      hosted_invoice_url: event.data?.object?.hosted_invoice_url,
-                      invoice_pdf: event.data?.object?.invoice_pdf
-                    }
-                  ),
-                };
-                await this.transactionManager.create(transaction);
-
-                (transaction as any).meta = {
+                (paymentTransaction as any).meta = {
                   hosted_invoice_url: event.data?.object?.hosted_invoice_url,
                   invoice_pdf: event.data?.object?.invoice_pdf
                 }
@@ -393,7 +369,43 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
                 await AuthenticatedRequest.send({
                   method: "PUT",
                   path: "/api/status",
-                  body: { subscriptionId: subscriptionId, active: true, type: event.type, transaction },
+                  body: { subscriptionId: subscriptionId, active: true, type: event.type, transaction: paymentTransaction },
+                  xTaoshiKey: XTaoshiHeaderKeyType.Validator,
+                });
+
+                break;
+              case enrollmentId && event?.data.object.paid == true && 'invoice.payment_succeeded':
+                await this.update(enrollmentId as string, { currentPeriodEnd: currentPeriodEnd, active: true });
+                await this.serviceManager.update(serviceId as string, { active: true });
+
+                const subscriptionTransaction = {
+                  serviceId,
+                  walletAddress: '',
+                  transactionHash: event.data?.object?.id || `Unknown Invoice ${randomBytes(32).toString("hex")}`,
+                  confirmed: true,
+                  fromAddress: event.data?.object?.customer,
+                  toAddress: serviceRes?.data?.[0]?.subscriptionId,
+                  amount: (+event.data?.object?.amount / 100).toString(),
+                  transactionType: "deposit" as "deposit" | "withdrawal",
+                  blockNumber: -1,
+                  meta: JSON.stringify(
+                    {
+                      hosted_invoice_url: event.data?.object?.hosted_invoice_url,
+                      invoice_pdf: event.data?.object?.invoice_pdf
+                    }
+                  ),
+                };
+                await this.transactionManager.create(subscriptionTransaction);
+
+                (subscriptionTransaction as any).meta = {
+                  hosted_invoice_url: event.data?.object?.hosted_invoice_url,
+                  invoice_pdf: event.data?.object?.invoice_pdf
+                }
+
+                await AuthenticatedRequest.send({
+                  method: "PUT",
+                  path: "/api/status",
+                  body: { subscriptionId: subscriptionId, active: true, type: event.type, transaction: subscriptionTransaction },
                   xTaoshiKey: XTaoshiHeaderKeyType.Validator,
                 });
                 break;
