@@ -58,7 +58,7 @@
     stripeElements = stripeObj.elements();
 
     try {
-      const pi = localStorage.getItem("pi");
+      const pi = sessionStorage.getItem("pi");
       if (pi) {
         paymentIntent = JSON.parse(atob(pi));
       }
@@ -78,7 +78,7 @@
         );
         paymentIntent = await paymentIntentRes.json();
 
-        localStorage.setItem(
+        sessionStorage.setItem(
           "pi",
           btoa(
             JSON.stringify({
@@ -140,7 +140,7 @@
         subscribe.classList.remove("open");
         complete.classList.add("open");
         setTimeout(() => {
-          localStorage.removeItem("pi");
+          sessionStorage.removeItem("pi");
           window.close();
         }, 3000);
       } else {
