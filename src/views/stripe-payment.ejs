@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Welcome to the Taoshi Request Network</title>
+    <title>Welcome to the Taoshi Request Network Marketplace</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -15,7 +15,7 @@
   <body>
     <div id="subscribe" class="subscribe-container open">
       <h1><%= validatorName %></h1>
-      <h2>Subscribe to Service</h2>
+      <h2 id="sub-title">Subscribe to Service</h2>
       <img src="./img/stripe.svg" alt="Stripe Logo" class="logo" />
       <div class="form-container">
         <form id="payment-form" action="">
@@ -48,7 +48,7 @@
           <div id="payment" class="form-control"></div>
           <br />
           <button id="submit-btn" class="button" type="submit">
-            Pay For Subscription
+            Submit Payment
           </button>
         </form>
       </div>
@@ -56,8 +56,8 @@
       <div id="api-error" class="error server-error"></div>
     </div>
     <div id="complete" class="subscribe-container">
-      <h1>Subscription Complete</h1>
-      <p>Return to Request Network...</p>
+      <h1>Payment Complete</h1>
+      <p>Return to Request Network Marketplace...</p>
     </div>
     <div
       id="key"

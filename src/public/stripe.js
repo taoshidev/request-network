@@ -13,6 +13,7 @@
   var apiError = document.getElementById("api-error");
   var nameError = document.getElementById("name-error");
   var cardInput = document.getElementById("card-input");
+  var subTitle = document.getElementById("sub-title");
 
   var stripeKey = atob(keyElement.getAttribute("data-key"));
   var apiUrl = atob(keyElement.getAttribute("data-api"));
@@ -25,6 +26,7 @@
 
   let data;
   let params;
+  let stripeObj;
   let stripeElements;
   let payPerRequest;
 
@@ -45,7 +47,9 @@
     apiError.innerText = "Error: Invalid token.";
   }
 
-  if (!payPerRequest) cardInput.classList.remove("hidden");
+  if (!payPerRequest) {
+    cardInput.classList.remove("hidden");
+  }
 
   function setNameError() {
     if (nameInput.value) nameError.innerText = "";
@@ -53,7 +57,7 @@
   }
 
   if (Stripe) {
-    let stripeObj = Stripe(stripeKey);
+    stripeObj = Stripe(stripeKey);
     let paymentIntent;
     stripeElements = stripeObj.elements();
 
@@ -65,6 +69,7 @@
     } catch (e) {}
 
     if (payPerRequest) {
+      subTitle.innerText = "Pay for Service";
       if (paymentIntent?.data?.amount !== data?.price * 100) {
         const paymentIntentRes = await fetch(
           `${apiUrl}/stripe-payment-intent`,
