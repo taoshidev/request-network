@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import * as jwt from 'jsonwebtoken';
-import ServiceManager from "src/service/service.manager";
+import ServiceManager from "../service/service.manager";
 
 /**
  * Interceptor for handling stripe payments authentication.
