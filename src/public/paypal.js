@@ -2,6 +2,7 @@
   let params;
   let data;
   let enrollment = {};
+  let subTitle = document.getElementById("sub-title");
 
   try {
     params = new Proxy(new URLSearchParams(window.location.search), {
@@ -92,6 +93,7 @@
       })
       .render("#paypal-button-container");
   } else {
+    subTitle.innerText = "Pay for Service"
     paypal
       .Buttons({
         style: {

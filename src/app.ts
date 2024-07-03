@@ -78,26 +78,26 @@ export default class App {
         validatorName: process.env.VALIDATOR_NAME || "",
       });
     });
-    this.express.get("/subscribe", (req, res) => {
+    this.express.get("/stripe-pay", (req, res) => {
       res.setHeader("Origin-Agent-Cluster", "?1");
       res.setHeader(
         "Content-Security-Policy",
         "default-src 'self' data: ; script-src 'self' https://js.stripe.com; connect-src 'self' https://api.stripe.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com; img-src 'self' https://*.stripe.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
       );
-      res.render("subscribe", {
+      res.render("stripe-payment", {
         api: btoa(process.env.API_HOST || ""),
         key: btoa(process.env.STRIPE_PUBLIC_KEY || ""),
         uiAppUrl: process.env.REQUEST_NETWORK_UI_URL || "",
         validatorName: process.env.VALIDATOR_NAME || "",
       });
     });
-    this.express.get("/paypal-subscribe", (req, res) => {
+    this.express.get("/paypal-pay", (req, res) => {
       res.setHeader("Origin-Agent-Cluster", "?1");
       res.setHeader(
         "Content-Security-Policy",
         "default-src 'self' data: ; script-src 'self' 'unsafe-inline' https://www.paypal.com; connect-src 'self' https://www.paypal.com https://www.sandbox.paypal.com; frame-src 'self' https://www.paypal.com https://www.sandbox.paypal.com; img-src 'self' data:  https://www.paypalobjects.com; style-src 'unsafe-inline' 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
       );
-      res.render("paypal-subscribe", {
+      res.render("paypal-payment", {
         clientId: process.env.PAYPAL_CLIENT_ID || '',
         uiAppUrl: process.env.REQUEST_NETWORK_UI_URL || "",
         validatorName: process.env.VALIDATOR_NAME || "",

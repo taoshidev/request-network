@@ -32,7 +32,8 @@ export default class PayPalCtrl extends BaseController {
 
   captureOrder = async (req: Request, res: Response) => {
     const { orderId } = req.params;
-    const order = await this.payPalService.captureOrder(orderId);
+    const quantity = req.body?.tokenData?.quantity;
+    const order = await this.payPalService.captureOrder(orderId, quantity);
 
     return res
       .status(order.httpStatusCode)
@@ -55,7 +56,6 @@ export default class PayPalCtrl extends BaseController {
   activate = async (req: Request, res: Response) => {
     try {
       const { body } = req;
-      const secret = process.env.PAYMENT_ENROLLMENT_SECRET || '';
 
       if (!body?.rnToken)
         return res.status(400).json({ error: "Request missing payload" });

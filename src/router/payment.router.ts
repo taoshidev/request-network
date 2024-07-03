@@ -12,6 +12,16 @@ export default class PaymentRoute extends BaseRouter {
   public routes() {
     this.register({
       method: "post",
+      path: "/stripe-payment-intent",
+      handler: this.paymentCtrl.createPaymentIntent,
+      interceptor: PaymentRequest.interceptor
+    }).register({
+      method: "post",
+      path: "/stripe-payment/activate",
+      handler: this.paymentCtrl.activate,
+      interceptor: PaymentRequest.interceptor
+    }).register({
+      method: "post",
       path: "/payment",
       handler: this.paymentCtrl.handleConsumerPayment,
       interceptor: PaymentRequest.interceptor

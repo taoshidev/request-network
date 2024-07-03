@@ -197,6 +197,13 @@
       "when": 1719633093127,
       "tag": "0027_salty_tana_nile",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "5",
+      "when": 1720026216379,
+      "tag": "0028_faithful_firelord",
+      "breakpoints": true
     }
   ]
 }
