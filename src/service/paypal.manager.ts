@@ -11,7 +11,7 @@ import { paypalProducts, paypal_enrollments, services } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { PAYMENT_SERVICE, ServiceDTO } from '../db/dto/service.dto';
 import PaypalProductManager from './paypal-product.manager';
-import { PayPalProductDTO } from 'src/db/dto/paypal-product.dto';
+import { PayPalProductDTO } from '../db/dto/paypal-product.dto';
 
 const { PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET } = process.env;
 const PAYPAL_BASE_URL = process.env.NODE_ENV === "production" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
@@ -414,7 +414,7 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
             const deactivatedServiceReq: any = await this.serviceManager.update(enrollment?.serviceId as string, { active: false });
             const deActivatedService = deactivatedServiceReq?.data?.[0] as ServiceDTO;
             delete deActivatedService?.hash;
-            
+
             await AuthenticatedRequest.send({
               method: "PUT",
               path: "/api/status",
