@@ -25,6 +25,7 @@ export class ServiceDTO extends BaseDTO {
   payPalPlanId?: string;
   paymentService?: PAYMENT_SERVICE;
   enabled?: boolean;
+  hash?: string | null;
   meta?: {
     consumerId?: string;
     subnetId: string;

@@ -12,6 +12,7 @@ import PayPalManager from "../service/paypal.manager";
 import { eq } from "drizzle-orm";
 import { PAYMENT_SERVICE } from "src/db/dto/service.dto";
 import { PAYMENT_TYPE } from "src/db/enum/payment-type";
+import { randomBytes } from "crypto";
 
 /**
  * Controller for handling payments.
@@ -35,6 +36,26 @@ export default class PaymentCtrl extends BaseController {
     return res
       .status(201)
       .json(paymentIntent);
+  }
+
+  activate = async (req: Request, res: Response) => {
+    try {
+      const { body } = req;
+
+      if (!body?.rnToken)
+        return res.status(400).json({ error: "Request missing payload" });
+
+      const activate = await this.stripeService.activate(body);
+
+      return res
+        .status(200)
+        .json(activate);
+    } catch (error: Error | unknown) {
+      Logger.error("Error processing payment:" + JSON.stringify(error));
+      return res
+        .status(500)
+        .json({ error: (error as Error)?.message || "Internal server error" });
+    }
   }
 
   /**
@@ -74,6 +95,8 @@ export default class PaymentCtrl extends BaseController {
       const { serviceId } = req.body;
       const serviceReq = await this.serviceService.find(eq(services.id, serviceId));
       const service = serviceReq?.data?.[0];
+      delete service?.hash;
+      
       let unsubscribedService;
 
       if (service?.paymentService === PAYMENT_SERVICE.STRIPE) {
@@ -142,28 +165,29 @@ export default class PaymentCtrl extends BaseController {
       const { body } = req;
       const secret = process.env.PAYMENT_ENROLLMENT_SECRET || '';
       const service = await this.serviceService.one(body.serviceId);
+      const hash = randomBytes(16).toString("hex");
 
-      if (service.data) {
-        const token = jwt.sign({
-          serviceId: service.data.id,
-          name: service.data.name,
-          url: body.url,
-          email: body.email,
-          price: body.price,
-          quantity: body.quantity,
-          paymentType: body.paymentType,
-          redirect: body.redirect,
-          consumerServiceId: service.data.consumerServiceId,
-          subscriptionId: service.data.subscriptionId,
-          endpointId: service.data.endpointId
-        }, secret, { expiresIn: '20m' });
+      if (!service.data?.id) throw Error('Error finding service.');
 
-        return res
-          .status(200)
-          .json({ token });
-      } else {
-        throw Error('Error finding service.');
-      }
+      await this.serviceService.update(service.data?.id, { hash });
+
+      const token = jwt.sign({
+        serviceId: service.data.id,
+        name: service.data.name,
+        url: body.url,
+        email: body.email,
+        price: body.price,
+        quantity: body.quantity,
+        paymentType: body.paymentType,
+        redirect: body.redirect,
+        consumerServiceId: service.data.consumerServiceId,
+        subscriptionId: service.data.subscriptionId,
+        endpointId: service.data.endpointId
+      }, secret + hash, { expiresIn: '1d' });
+
+      return res
+        .status(200)
+        .json({ token });
     } catch (error: Error | unknown) {
       Logger.error("Error creating token:" + JSON.stringify(error));
       return res

@@ -56,7 +56,6 @@ export default class PayPalCtrl extends BaseController {
   activate = async (req: Request, res: Response) => {
     try {
       const { body } = req;
-      const secret = process.env.PAYMENT_ENROLLMENT_SECRET || '';
 
       if (!body?.rnToken)
         return res.status(400).json({ error: "Request missing payload" });

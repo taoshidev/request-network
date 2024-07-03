@@ -74,7 +74,10 @@
     if (payPerRequest) {
       subTitle.innerText = "Pay for Service";
       quantityInput.classList.remove("hidden");
-      if (paymentIntent?.data?.amount !== data?.price * 100) {
+      if (
+        paymentIntent?.data?.amount !== data?.price * 100 &&
+        data.quantity !== paymentIntent?.data?.quantity
+      ) {
         const paymentIntentRes = await fetch(
           `${apiUrl}/stripe-payment-intent`,
           {
@@ -94,6 +97,7 @@
               data: {
                 client_secret: paymentIntent?.data?.client_secret,
                 amount: paymentIntent?.data?.amount,
+                quantity: data.quantity,
               },
             })
           )
@@ -146,8 +150,26 @@
             "Payment error: " + sResult.error?.message);
         }
 
+        const response = await fetch(`/stripe-payment/activate`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(
+            Object.assign({}, data, { rnToken: params?.token })
+          ),
+        });
+
+        const activateData = await response.json();
+
+        if (activateData?.error) {
+          cardError.innerText = "Error processing payment.";
+          return;
+        }
+
         subscribe.classList.remove("open");
         complete.classList.add("open");
+
         setTimeout(() => {
           sessionStorage.removeItem("pi");
           window.close();

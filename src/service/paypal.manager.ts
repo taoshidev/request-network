@@ -155,8 +155,7 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
    */
   async createSubscription(enrollment: any) {
     try {
-      const serviceRes = await this.serviceManager.find(eq(services.subscriptionId, enrollment?.tokenData?.subscriptionId));
-      const data = serviceRes?.data?.[0];
+      const data = enrollment.service;
 
       return { data, error: null };
     } catch (e) {
@@ -166,7 +165,8 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
 
   async activate(enrollment: any) {
     const { serviceId, subscriptionId, price } = enrollment.tokenData;
-    const statusRes = await this.serviceManager.update(serviceId as string, { paymentService: PAYMENT_SERVICE.PAYPAL, active: true })
+    const statusRes: any = await this.serviceManager.update(serviceId as string, { paymentService: PAYMENT_SERVICE.PAYPAL, active: true, hash: null })
+    delete statusRes?.data?.[0]?.hash;
 
     const payPalEnrollment = await this.create({
       serviceId: enrollment.tokenData.serviceId,
@@ -217,8 +217,9 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
         if (response.status !== 204) throw new Error('Unsubscribe failed.');
       }
 
-      const statusRes = await this.serviceManager.changeStatus(enrollment.serviceId as string, false);
+      const statusRes: any = await this.serviceManager.changeStatus(enrollment.serviceId as string, false);
       await this.update(enrollment.id as string, { active: false });
+      delete statusRes?.data?.[0]?.hash;
 
       await AuthenticatedRequest.send({
         method: "PUT",
@@ -318,7 +319,8 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
       confirmed: true
     });
     const transaction = transactionRes?.data?.[0];
-    const service: any = await this.serviceManager.changeStatus(transaction?.serviceId as string, true);
+    const service: any = await this.serviceManager.update(transaction?.serviceId as string, { paymentService: PAYMENT_SERVICE.PAYPAL, active: true, hash: null })
+    delete service?.data?.[0]?.hash;
 
     await AuthenticatedRequest.send({
       method: "PUT",
@@ -378,6 +380,8 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
 
             const serviceReq: any = await this.serviceManager.update(enrollment.serviceId as string, { active: true });
             const activatedService = serviceReq?.data?.[0] as ServiceDTO;
+            delete activatedService?.hash;
+
             const transaction = {
               serviceId: enrollment?.serviceId,
               walletAddress: '',
@@ -409,7 +413,8 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
             await this.update(enrollment?.id as string, { active: false })
             const deactivatedServiceReq: any = await this.serviceManager.update(enrollment?.serviceId as string, { active: false });
             const deActivatedService = deactivatedServiceReq?.data?.[0] as ServiceDTO;
-
+            delete deActivatedService?.hash;
+            
             await AuthenticatedRequest.send({
               method: "PUT",
               path: "/api/status",

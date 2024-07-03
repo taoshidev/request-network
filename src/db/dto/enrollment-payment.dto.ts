@@ -1,4 +1,5 @@
 import { PAYMENT_TYPE } from "../enum/payment-type";
+import { ServiceDTO } from "./service.dto";
 
 export interface TokenData {
   serviceId: string;
@@ -21,4 +22,5 @@ export interface EnrollmentPaymentDTO {
   lastFour: string;
   expMonth: number;
   expYear: number;
+  service?: ServiceDTO
 }

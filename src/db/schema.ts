@@ -66,6 +66,7 @@ export const services = authSchema.table(
     active: boolean("active").default(false).notNull(),
     payPalPlanId: varchar("paypal_plan_id"),
     paymentService: paymentServiceEnum("paymentService"),
+    hash: varchar('hash'),
     createdAt: timestamp("created_at", {
       precision: 6,
       withTimezone: true,
