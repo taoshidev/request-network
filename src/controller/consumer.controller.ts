@@ -5,7 +5,7 @@ import BaseController from "../core/base.controller";
 import Logger from "../utils/logger";
 import { CustomRequestDTO } from "../db/dto/custom-request.dto";
 import TransactionManager from "../service/transaction.manager";
-import PayPalManager from "src/service/paypal.manager";
+import PayPalManager from "../service/paypal.manager";
 /**
  * Controller for handling consumer-specific actions.
  * This includes registering new consumers and forwarding consumer requests to validators.

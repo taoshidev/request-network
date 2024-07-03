@@ -10,8 +10,8 @@ import ServiceManager from "../service/service.manager";
 import { isEqual as _isEqual } from 'lodash';
 import PayPalManager from "../service/paypal.manager";
 import { eq } from "drizzle-orm";
-import { PAYMENT_SERVICE } from "src/db/dto/service.dto";
-import { PAYMENT_TYPE } from "src/db/enum/payment-type";
+import { PAYMENT_SERVICE } from "../db/dto/service.dto";
+import { PAYMENT_TYPE } from "../db/enum/payment-type";
 import { randomBytes } from "crypto";
 
 /**
