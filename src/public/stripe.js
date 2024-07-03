@@ -5,6 +5,7 @@
   var serviceRouteInput = document.getElementById("service-route-input");
   var nameInput = document.getElementById("name-input");
   var emailInput = document.getElementById("email-input");
+  var quantity = document.getElementById("quantity");
   var priceInput = document.getElementById("price-input");
   var submitBtn = document.getElementById("submit-btn");
   var cardError = document.getElementById("card-error");
@@ -13,6 +14,7 @@
   var apiError = document.getElementById("api-error");
   var nameError = document.getElementById("name-error");
   var cardInput = document.getElementById("card-input");
+  var quantityInput = document.getElementById("quantity-input");
   var subTitle = document.getElementById("sub-title");
 
   var stripeKey = atob(keyElement.getAttribute("data-key"));
@@ -40,6 +42,7 @@
     serviceNameInput.value = data.name;
     emailInput.value = data.email;
     priceInput.value = `$${data.price}`;
+    quantity.value = data.quantity;
     serviceRouteInput.value = data.url;
     redirect = data.redirect;
   } catch (e) {
@@ -70,6 +73,7 @@
 
     if (payPerRequest) {
       subTitle.innerText = "Pay for Service";
+      quantityInput.classList.remove("hidden");
       if (paymentIntent?.data?.amount !== data?.price * 100) {
         const paymentIntentRes = await fetch(
           `${apiUrl}/stripe-payment-intent`,

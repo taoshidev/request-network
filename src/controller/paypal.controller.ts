@@ -32,7 +32,8 @@ export default class PayPalCtrl extends BaseController {
 
   captureOrder = async (req: Request, res: Response) => {
     const { orderId } = req.params;
-    const order = await this.payPalService.captureOrder(orderId);
+    const quantity = req.body?.tokenData?.quantity;
+    const order = await this.payPalService.captureOrder(orderId, quantity);
 
     return res
       .status(order.httpStatusCode)

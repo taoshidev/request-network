@@ -150,6 +150,7 @@ export default class PaymentCtrl extends BaseController {
           url: body.url,
           email: body.email,
           price: body.price,
+          quantity: body.quantity,
           paymentType: body.paymentType,
           redirect: body.redirect,
           consumerServiceId: service.data.consumerServiceId,

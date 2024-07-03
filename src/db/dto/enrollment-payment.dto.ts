@@ -9,6 +9,7 @@ export interface TokenData {
   endpointId: string;
   paymentType: PAYMENT_TYPE;
   price: number;
+  quantity?: number;
 }
 
 export interface EnrollmentPaymentDTO {

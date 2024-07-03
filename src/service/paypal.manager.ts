@@ -293,7 +293,7 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
    * Capture payment for the created order to complete the transaction.
    * @see https://developer.paypal.com/docs/api/orders/v2/#orders_capture
    */
-  async captureOrder(orderID: string) {
+  async captureOrder(orderID: string, quantity: number) {
     const accessToken = await this.generateAccessToken();
     const url = `${PAYPAL_BASE_URL}/v2/checkout/orders/${orderID}/capture`;
 
@@ -318,25 +318,12 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
       confirmed: true
     });
     const transaction = transactionRes?.data?.[0];
-
-    const enrollmentRes = await this.find(eq(paypal_enrollments.serviceId, transaction.serviceId as string));
-    const dbEnrollment = enrollmentRes?.data?.[0] || {} as Partial<PayPalEnrollmentDTO>;
-
-    // Object.assign(dbEnrollment, {
-    //   email: jsonResponse?.payer?.email_address,
-    //   serviceId: transaction?.serviceId,
-    //   paid: true,
-    //   active: true
-    // });
-
-    // const enrollment = dbEnrollment.id ? await this.update(dbEnrollment.id, dbEnrollment as PayPalEnrollmentDTO) : await this.create(dbEnrollment as PayPalEnrollmentDTO);
-
     const service: any = await this.serviceManager.changeStatus(transaction?.serviceId as string, true);
 
     await AuthenticatedRequest.send({
       method: "PUT",
       path: "/api/status",
-      body: { subscriptionId: service?.data?.[0]?.subscriptionId, active: true },
+      body: { subscriptionId: service?.data?.[0]?.subscriptionId, transaction, quantity, active: true, type: "CHARGE.SUCCEEDED" },
       xTaoshiKey: XTaoshiHeaderKeyType.Validator,
     });
 
@@ -412,7 +399,7 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
             await AuthenticatedRequest.send({
               method: "PUT",
               path: "/api/status",
-              body: { subscriptionId: activatedService.subscriptionId, type: event.type, transaction },
+              body: { subscriptionId: activatedService.subscriptionId, type: event.event_type, transaction },
               xTaoshiKey: XTaoshiHeaderKeyType.Validator,
             });
 
@@ -426,7 +413,7 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
             await AuthenticatedRequest.send({
               method: "PUT",
               path: "/api/status",
-              body: { subscriptionId: deActivatedService?.subscriptionId, active: false, type: event.type },
+              body: { subscriptionId: deActivatedService?.subscriptionId, active: false, type: event.event_type },
               xTaoshiKey: XTaoshiHeaderKeyType.Validator,
             });
             break;

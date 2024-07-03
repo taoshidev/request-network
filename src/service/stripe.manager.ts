@@ -65,6 +65,7 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
           Service: service?.name,
           'Service ID': transaction.tokenData?.serviceId,
           Email: transaction.email,
+          'Quantity': transaction.tokenData?.quantity,
           'Endpoint Url': transaction.tokenData?.url
         }
       });
@@ -328,6 +329,7 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
       if (event) {
         const app = event?.data?.object?.lines?.data?.[0]?.metadata?.App || event?.data?.object?.metadata?.App,
           serviceId = event?.data?.object?.lines?.data?.[0]?.metadata?.['Service ID'] || event?.data?.object?.metadata?.['Service ID'],
+          quantity = event?.data?.object?.lines?.data?.[0]?.metadata?.['Quantity'] || event?.data?.object?.metadata?.['Quantity'],
           { stripeSubscriptionId, currentPeriodEnd } = this.getStripeData(event);
 
         if (app === STRIPE_WEBHOOK_IDENTIFIER) {
@@ -368,7 +370,7 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
                 await AuthenticatedRequest.send({
                   method: "PUT",
                   path: "/api/status",
-                  body: { subscriptionId: subscriptionId, active: true, type: event.type, transaction: paymentTransaction },
+                  body: { subscriptionId: subscriptionId, active: true, type: event.type, quantity, transaction: paymentTransaction },
                   xTaoshiKey: XTaoshiHeaderKeyType.Validator,
                 });
 
