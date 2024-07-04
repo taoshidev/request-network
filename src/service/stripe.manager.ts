@@ -165,6 +165,7 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
       }
 
       if (!plan) {
+        console.log('service name: ', service?.name);
         plan = await stripe.plans.create({
           amount: service?.price ? +service?.price * 100 : undefined,
           interval: 'month',

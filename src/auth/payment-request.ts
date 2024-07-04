@@ -25,7 +25,7 @@ export default class PaymentRequest {
       
       if (req.body) {
         req.body.tokenData = token;
-        req.body.service = service;
+        req.body.service = service?.data;
       }
 
       if (!token) {
