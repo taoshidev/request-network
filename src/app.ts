@@ -20,6 +20,8 @@ import TransactionManager from "./service/transaction.manager";
 import ConsumerCtrl from "./controller/consumer.controller";
 import PaymentRoute from "./router/payment.router";
 import PaymentCtrl from "./controller/payment.controller";
+import PayPalRoute from "./router/paypal.router";
+import PayPalCtrl from "./controller/paypal.controller";
 
 export default class App {
   public express: Express;
@@ -48,7 +50,9 @@ export default class App {
   }
 
   private async initializeMiddlewares(): Promise<void> {
-    this.express.use(helmet());
+    this.express.use(helmet({
+      crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    }));
     this.express.use(
       express.json({
         verify: (req, res, buf) => {
@@ -74,26 +78,29 @@ export default class App {
         validatorName: process.env.VALIDATOR_NAME || "",
       });
     });
-    this.express.get("/subscribe", (req, res) => {
+    this.express.get("/stripe-pay", (req, res) => {
       res.setHeader("Origin-Agent-Cluster", "?1");
       res.setHeader(
         "Content-Security-Policy",
         "default-src 'self' data: ; script-src 'self' https://js.stripe.com; connect-src 'self' https://api.stripe.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com; img-src 'self' https://*.stripe.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
       );
-      res.render("subscribe", {
+      res.render("stripe-payment", {
         api: btoa(process.env.API_HOST || ""),
         key: btoa(process.env.STRIPE_PUBLIC_KEY || ""),
         uiAppUrl: process.env.REQUEST_NETWORK_UI_URL || "",
         validatorName: process.env.VALIDATOR_NAME || "",
       });
     });
-    this.express.get("/subscribe", (req, res) => {
+    this.express.get("/paypal-pay", (req, res) => {
       res.setHeader("Origin-Agent-Cluster", "?1");
-      res.setHeader("Content-Security-Policy", "default-src 'self' data: ; script-src 'self' https://js.stripe.com; connect-src 'self' https://api.stripe.com; frame-src 'self' https://js.stripe.com https://hooks.stripe.com; img-src 'self' https://*.stripe.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;")
-      res.render("subscribe", {
-        api: btoa(process.env.API_HOST || ''),
-        key: btoa(process.env.STRIPE_PUBLIC_KEY || ''),
-        uiAppUrl: process.env.REQUEST_NETWORK_UI_URL || ''
+      res.setHeader(
+        "Content-Security-Policy",
+        "default-src 'self' data: ; script-src 'self' 'unsafe-inline' https://www.paypal.com; connect-src 'self' https://www.paypal.com https://www.sandbox.paypal.com; frame-src 'self' https://www.paypal.com https://www.sandbox.paypal.com; img-src 'self' data:  https://www.paypalobjects.com; style-src 'unsafe-inline' 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
+      );
+      res.render("paypal-payment", {
+        clientId: process.env.PAYPAL_CLIENT_ID || '',
+        uiAppUrl: process.env.REQUEST_NETWORK_UI_URL || "",
+        validatorName: process.env.VALIDATOR_NAME || "",
       });
     });
   }
@@ -112,6 +119,7 @@ export default class App {
     this.express.use(Cors.getDynamicCorsMiddleware());
     this.express.use(new ConsumerRoute(new ConsumerCtrl()).routes());
     this.express.use(new PaymentRoute(new PaymentCtrl()).routes());
+    this.express.use(new PayPalRoute(new PayPalCtrl()).routes());
 
     // Loop through all the schema and mount their routes
     // In case there are more than 1 schema, we will loop through them

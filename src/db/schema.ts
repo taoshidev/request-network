@@ -31,6 +31,8 @@ export const serviceStatusTypeEnum = pgEnum("serviceStatusType", [
   "cancelled",
 ]);
 
+export const paymentServiceEnum = pgEnum("paymentService", ["stripe", "paypal"]);
+
 export const services = authSchema.table(
   "services",
   {
@@ -62,6 +64,9 @@ export const services = authSchema.table(
     meta: jsonb("meta"),
     enabled: boolean("enabled").default(true).notNull(),
     active: boolean("active").default(false).notNull(),
+    payPalPlanId: varchar("paypal_plan_id"),
+    paymentService: paymentServiceEnum("paymentService"),
+    hash: varchar('hash'),
     createdAt: timestamp("created_at", {
       precision: 6,
       withTimezone: true,
@@ -163,8 +168,8 @@ export const wallets = authSchema.table(
   })
 );
 
-export const enrollments = authSchema.table(
-  "enrollments",
+export const stripe_enrollments = authSchema.table(
+  "stripe",
   {
     id: uuid("id")
       .default(sql`gen_random_uuid()`)
@@ -193,6 +198,60 @@ export const enrollments = authSchema.table(
       withTimezone: true,
     }).default(sql`now()`),
     deletedAt: timestamp("deleted_at", { precision: 6, withTimezone: true }),
+  },
+  (table) => ({})
+);
+
+export const paypal_enrollments = authSchema.table(
+  "paypal",
+  {
+    id: uuid("id")
+      .default(sql`gen_random_uuid()`)
+      .primaryKey()
+      .unique()
+      .notNull(),
+    serviceId: uuid("service_id").references(() => services.id, {
+      onDelete: "set null",
+    }),
+    payPalCustomerId: varchar("paypal_customer_id"),
+    payPalSubscriptionId: varchar("paypal_subscription_id"),
+    payPalPlanId: varchar('paypal_plan_id'),
+    email: varchar("email"),
+    expMonth: integer("exp_month"),
+    expYear: integer("exp_year"),
+    lastFour: integer("last_four"),
+    firstPayment: timestamp("first_payment"),
+    paid: boolean("paid").default(true).notNull(),
+    currentPeriodEnd: timestamp("current_period_end"),
+    active: boolean("active").default(true).notNull(),
+    createdAt: timestamp("created_at", {
+      precision: 6,
+      withTimezone: true,
+    }).default(sql`now()`),
+    updatedAt: timestamp("updated_at", {
+      precision: 6,
+      withTimezone: true,
+    }).default(sql`now()`),
+    deletedAt: timestamp("deleted_at", { precision: 6, withTimezone: true }),
+  },
+  (table) => ({})
+);
+
+
+export const paypalProducts = authSchema.table(
+  "paypal_products",
+  {
+    id: uuid("id")
+      .default(sql`gen_random_uuid()`)
+      .primaryKey()
+      .unique()
+      .notNull(),
+    validatorId: varchar("validator_id").notNull(),
+    endpointId: varchar("endpoint_id").notNull(),
+    payPalProductId: varchar("paypal_product_id").notNull(),
+    name: varchar("name").notNull(),
+    description: varchar("description").notNull(),
+    meta: jsonb("meta"),
   },
   (table) => ({})
 );

@@ -162,6 +162,48 @@
       "when": 1717286339902,
       "tag": "0022_moaning_mimic",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "5",
+      "when": 1719460793392,
+      "tag": "0023_fresh_justin_hammer",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "5",
+      "when": 1719526350377,
+      "tag": "0024_jittery_scarecrow",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1719615931628,
+      "tag": "0025_ambiguous_revanche",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "5",
+      "when": 1719629257113,
+      "tag": "0026_fast_silhouette",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "5",
+      "when": 1719633093127,
+      "tag": "0027_salty_tana_nile",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "5",
+      "when": 1720026216379,
+      "tag": "0028_faithful_firelord",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to the Taoshi Request Network Marketplace</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=ADLaM+Display&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="subscribe" class="subscribe-container open">
+      <h1><%= validatorName %></h1>
+      <h2 id="sub-title">Subscribe to Service</h2>
+      <img src="./img/paypal-1.svg" alt="Stripe Logo" class="logo" />
+      <br />
+      <div id="paypal-button-container"></div>
+      <p id="result-message"></p>
+    </div>
+    <div id="complete" class="subscribe-container">
+      <h1>Payment Complete</h1>
+      <p>Return to Request Network Marketplace...</p>
+    </div>
+    <script
+      src="https://www.paypal.com/sdk/js?client-id=<%= clientId %>&components=buttons&disable-funding=paylater&vault=true"
+      data-sdk-integration-source="integrationbuilder_sc"
+    ></script>
+    <script src="./paypal.js"></script>
+  </body>
+</html>
