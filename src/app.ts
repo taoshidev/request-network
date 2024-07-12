@@ -22,6 +22,8 @@ import PaymentRoute from "./router/payment.router";
 import PaymentCtrl from "./controller/payment.controller";
 import PayPalRoute from "./router/paypal.router";
 import PayPalCtrl from "./controller/paypal.controller";
+import ServiceRoute from "./router/service.router";
+import ServiceCtrl from "./controller/service.controller";
 
 export default class App {
   public express: Express;
@@ -120,6 +122,7 @@ export default class App {
     this.express.use(new ConsumerRoute(new ConsumerCtrl()).routes());
     this.express.use(new PaymentRoute(new PaymentCtrl()).routes());
     this.express.use(new PayPalRoute(new PayPalCtrl()).routes());
+    this.express.use(new ServiceRoute(new ServiceCtrl()).routes());
 
     // Loop through all the schema and mount their routes
     // In case there are more than 1 schema, we will loop through them
