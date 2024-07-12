@@ -14,7 +14,7 @@
     "ReqNet",
     "Taoshi"
   ],
-  "author": "Ken Raleigh / Tom Aplerin / Lucas Phan",
+  "author": "Ken Raleigh / Tom Alperin / Lucas Phan",
   "license": "MIT",
   "scripts": {
     "test": "jest",
