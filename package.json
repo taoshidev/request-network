@@ -1,6 +1,6 @@
 {
   "name": "request-network",
-  "version": "v1.4.11",
+  "version": "v1.4.13",
   "main": "dist/index.js",
   "description": "",
   "types": "dist/index.d.ts",
