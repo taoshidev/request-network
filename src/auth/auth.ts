@@ -30,6 +30,7 @@ export default class Auth {
     { type }: { type: string }
   ): Promise<Partial<ConsumerDTO> | boolean | any> {
     const token = Auth.extractToken(req, { type });
+    const url = `${req?.protocol}://${req?.get("host")}${req?.originalUrl}`;
 
     if (!token) {
       Logger.error("Unauthorized: No token provided");
@@ -57,6 +58,12 @@ export default class Auth {
         return res
           .status(403)
           .send({ error: "Unauthorized: Invalid request key" });
+      }
+
+      if (data?.endpoint && url !== data?.endpoint) {
+        return res
+          .status(403)
+          .send({ error: "Unauthorized: Access not allowed" });
       }
 
       const resp = await this.consumerCtrl.find(
@@ -89,11 +96,9 @@ export default class Auth {
       }
 
       if (!(data?.endpointId === endpointId)) {
-        return res
-          .status(403)
-          .send({
-            error: "Unauthorized: Endpoint unauthorized for this service",
-          });
+        return res.status(403).send({
+          error: "Unauthorized: Endpoint unauthorized for this service",
+        });
       }
 
       return response?.data;
