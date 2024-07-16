@@ -76,7 +76,7 @@
       subTitle.innerText = "Pay for Service";
       quantityInput.classList.remove("hidden");
       if (
-        paymentIntent?.data?.amount !== data?.price * 100 &&
+        paymentIntent?.data?.amount !== Math.floor(+data?.price * 100) &&
         data.quantity !== paymentIntent?.data?.quantity
       ) {
         const paymentIntentRes = await fetch(

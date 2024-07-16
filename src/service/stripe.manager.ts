@@ -54,7 +54,7 @@ export default class StripeManager extends DatabaseWrapper<StripeEnrollmentDTO> 
       }
 
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: transaction?.tokenData?.price ? +transaction.tokenData.price * 100 : undefined,
+        amount: transaction?.tokenData?.price ? Math.floor(+transaction.tokenData.price * 100) : undefined,
         currency: 'usd',
         payment_method_types: ["card"],
         customer: customer.id,
