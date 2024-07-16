@@ -30,7 +30,7 @@ export default class Auth {
     { type }: { type: string }
   ): Promise<Partial<ConsumerDTO> | boolean | any> {
     const token = Auth.extractToken(req, { type });
-    const url = `${req?.protocol}://${req?.get("host")}${req?.originalUrl}`;
+    const url = `${process.env.API_HOST}${req?.originalUrl}`;
 
     if (!token) {
       Logger.error("Unauthorized: No token provided");
