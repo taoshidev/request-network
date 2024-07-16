@@ -41,11 +41,12 @@
 
     serviceNameInput.value = data.name;
     emailInput.value = data.email;
-    priceInput.value = `$${data.price}`;
+    priceInput.value = `$${(+data.price || 0).toFixed(2)}`;
     quantity.value = data.quantity;
     serviceRouteInput.value = data.url;
     redirect = data.redirect;
   } catch (e) {
+    console.log(e)
     submitBtn.disabled = true;
     apiError.innerText = "Error: Invalid token.";
   }
@@ -75,7 +76,7 @@
       subTitle.innerText = "Pay for Service";
       quantityInput.classList.remove("hidden");
       if (
-        paymentIntent?.data?.amount !== data?.price * 100 &&
+        paymentIntent?.data?.amount !== Math.floor(+data?.price * 100) &&
         data.quantity !== paymentIntent?.data?.quantity
       ) {
         const paymentIntentRes = await fetch(
