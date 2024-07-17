@@ -4,6 +4,7 @@ import { eq, getTableName, SQL } from "drizzle-orm";
 import { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "../db/schema";
 import { createWhereClause, Condition } from "../utils/query-helper";
+import { captureException } from "@sentry/node";
 
 export interface DrizzleError {
   severity_local: string;
@@ -54,7 +55,7 @@ export default abstract class DatabaseWrapper<T> {
         .where(where);
       return { data: res as T[], error: null };
     } catch (error) {
-      console.error(error);
+      captureException(error);
       return { data: null, error: error as DrizzleError };
     }
   }
@@ -64,7 +65,7 @@ export default abstract class DatabaseWrapper<T> {
       const res = await this.db.select().from(this.schema);
       return { data: res as T[], error: null };
     } catch (error) {
-      console.error(error);
+      captureException(error);
       return { data: null, error: error as DrizzleError };
     }
   }
@@ -77,7 +78,7 @@ export default abstract class DatabaseWrapper<T> {
         .where(eq(this.schema.id, id));
       return { data: res?.[0] as T, error: null };
     } catch (error) {
-      console.error(error);
+      captureException(error);
       return { data: null, error: error as DrizzleError };
     }
   }
@@ -87,7 +88,7 @@ export default abstract class DatabaseWrapper<T> {
       const res = await this.db.insert(this.schema).values(record).returning();
       return { data: res as T, error: null };
     } catch (error) {
-      console.error(error);
+      captureException(error);
       return { data: null, error: error as DrizzleError };
     }
   }
@@ -102,7 +103,7 @@ export default abstract class DatabaseWrapper<T> {
 
       return { data: res as T, error: null };
     } catch (error) {
-      console.error(error);
+      captureException(error);
       return { data: null, error: error as DrizzleError };
     }
   }
@@ -112,7 +113,7 @@ export default abstract class DatabaseWrapper<T> {
       const res = await this.db.update(this.schema).set(record).returning();
       return { data: res as T, error: null };
     } catch (error) {
-      console.error(error);
+      captureException(error);
       return { data: null, error: error as DrizzleError };
     }
   }
@@ -130,7 +131,7 @@ export default abstract class DatabaseWrapper<T> {
 
       return { data: res as T, error: null };
     } catch (error) {
-      console.error(error);
+      captureException(error);
       return { data: null, error: error as DrizzleError };
     }
   }
@@ -143,7 +144,7 @@ export default abstract class DatabaseWrapper<T> {
         .returning({ deletedId: this.schema.id });
       return { data: res as T, error: null };
     } catch (error) {
-      console.error(error);
+      captureException(error);
       return { data: null, error: error as DrizzleError };
     }
   }
@@ -207,7 +208,7 @@ export default abstract class DatabaseWrapper<T> {
       const results = await dbQuery;
       return { data: results, error: null };
     } catch (error) {
-      console.error(error);
+      captureException(error);
       return { data: null, error: error as DrizzleError };
     }
   }

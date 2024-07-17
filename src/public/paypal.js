@@ -177,7 +177,6 @@
               }, 3000);
             }
           } catch (error) {
-            console.error(error);
             resultMessage(
               `Sorry, your transaction could not be processed...<br><br>${error}`
             );
