@@ -7,11 +7,13 @@ dotenv.config({ path: envPath });
 import App from "./app";
 import DatabaseMigrator from "./db/migrator";
 import Logger from "./utils/logger";
+import packageJson from "../package.json";
 
 const app = new App();
 
 (async () => {
   try {
+    Logger.info(`Validator Server version: ${packageJson?.version}`);
     app.init(async (app: App) => {
       Logger.info(`Application loading environment variables from ${envPath}...`);
       if (process.env.DATABASE_URL && process.env.MIGRATE === "true") {

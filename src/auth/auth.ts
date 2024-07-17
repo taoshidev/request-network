@@ -7,7 +7,6 @@ import { ConsumerDTO } from "../db/dto/consumer.dto";
 import { services } from "../db/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
-import HttpError from "../utils/http-error";
 
 /**
  * Interceptor for handling consumer request authentication.
@@ -52,12 +51,16 @@ export default class Auth {
 
       Logger.info(`Unkey Response: ${response?.data?.valid}`);
 
-      const { keyId, meta: data } = response?.data as ConsumerDTO;
+      const { keyId, meta: data, code } = response?.data as ConsumerDTO;
 
       if (!keyId) {
         return res
           .status(403)
           .send({ error: "Unauthorized: Invalid request key" });
+      }
+
+      if (!response?.data?.valid && code === "RATE_LIMITED") {
+        return res.status(403).send({ error: "Unauthorized: Rate limited" });
       }
 
       if (data?.endpoint && url !== data?.endpoint) {
