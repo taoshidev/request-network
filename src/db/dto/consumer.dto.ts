@@ -3,6 +3,7 @@ export interface ConsumerDTO {
   valid: boolean;
   name: string;
   ownerId: string;
+  code: string;
   meta: {
     shortId: string;
     type: string;
