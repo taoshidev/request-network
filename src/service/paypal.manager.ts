@@ -1,26 +1,33 @@
-import { isEqual as _isEqual } from 'lodash';
+import { isEqual as _isEqual } from "lodash";
 import { Request, Response } from "express";
 import Logger from "../utils/logger";
-import TransactionManager from './transaction.manager';
+import TransactionManager from "./transaction.manager";
 import { randomBytes } from "crypto";
-import ServiceManager from './service.manager';
-import { AuthenticatedRequest, XTaoshiHeaderKeyType } from '../core/auth-request';
-import DatabaseWrapper from '../core/database.wrapper';
-import { PayPalEnrollmentDTO } from '../db/dto/paypal-enrollment.dto';
-import { paypalProducts, paypal_enrollments, services } from '../db/schema';
-import { eq } from 'drizzle-orm';
-import { PAYMENT_SERVICE, ServiceDTO } from '../db/dto/service.dto';
-import PaypalProductManager from './paypal-product.manager';
-import { PayPalProductDTO } from '../db/dto/paypal-product.dto';
-import { captureException } from '@sentry/node';
+import ServiceManager from "./service.manager";
+import {
+  AuthenticatedRequest,
+  XTaoshiHeaderKeyType,
+} from "../core/auth-request";
+import DatabaseWrapper from "../core/database.wrapper";
+import { PayPalEnrollmentDTO } from "../db/dto/paypal-enrollment.dto";
+import { paypalProducts, paypal_enrollments, services } from "../db/schema";
+import { eq } from "drizzle-orm";
+import { PAYMENT_SERVICE, ServiceDTO } from "../db/dto/service.dto";
+import PaypalProductManager from "./paypal-product.manager";
+import { PayPalProductDTO } from "../db/dto/paypal-product.dto";
+import { captureSentryError } from "../utils/sentry-helper";
 
 const { PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET } = process.env;
-const PAYPAL_BASE_URL = process.env.NODE_ENV === "production" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
+const PAYPAL_BASE_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://api-m.paypal.com"
+    : "https://api-m.sandbox.paypal.com";
 
 export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> {
   private transactionManager: TransactionManager = new TransactionManager();
   private serviceManager: ServiceManager = new ServiceManager();
-  private paypalProductManager: PaypalProductManager = new PaypalProductManager();
+  private paypalProductManager: PaypalProductManager =
+    new PaypalProductManager();
 
   constructor() {
     super(paypal_enrollments);
@@ -36,7 +43,7 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
         throw new Error("MISSING_API_CREDENTIALS");
       }
       const auth = Buffer.from(
-        PAYPAL_CLIENT_ID + ":" + PAYPAL_CLIENT_SECRET,
+        PAYPAL_CLIENT_ID + ":" + PAYPAL_CLIENT_SECRET
       ).toString("base64");
       const response = await fetch(`${PAYPAL_BASE_URL}/v1/oauth2/token`, {
         method: "POST",
@@ -49,20 +56,21 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
       const data = await response.json();
       return data.access_token;
     } catch (error) {
-      captureException(error);
+      captureSentryError(error);
     }
-  };
-
+  }
 
   /**
-    * Create an order to start the transaction.
-    * @see https://developer.paypal.com/docs/api/catalog-products/v1/
-    */
+   * Create an order to start the transaction.
+   * @see https://developer.paypal.com/docs/api/catalog-products/v1/
+   */
   async createProductAndPlan(service: ServiceDTO) {
     try {
       const accessToken = await this.generateAccessToken();
 
-      const productsRes = await this.paypalProductManager.find(eq(paypalProducts.endpointId, service.endpointId as string));
+      const productsRes = await this.paypalProductManager.find(
+        eq(paypalProducts.endpointId, service.endpointId as string)
+      );
       let dbProduct = productsRes?.data?.[0];
 
       if (!dbProduct) {
@@ -70,22 +78,25 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
           name: service?.meta?.endpoint,
           description: `${process.env.VALIDATOR_NAME}-${service?.meta?.endpoint}`,
           type: "SERVICE",
-          category: "SOFTWARE"
+          category: "SOFTWARE",
         };
 
-        const productResponse = await fetch(`${PAYPAL_BASE_URL}/v1/catalogs/products`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-            // Uncomment one of these to force an error for negative testing (in sandbox mode only). Documentation:
-            // https://developer.paypal.com/tools/sandbox/negative-testing/request-headers/
-            // "PayPal-Mock-Response": '{"mock_application_codes": "MISSING_REQUIRED_PARAMETER"}'
-            // "PayPal-Mock-Response": '{"mock_application_codes": "PERMISSION_DENIED"}'
-            // "PayPal-Mock-Response": '{"mock_application_codes": "INTERNAL_SERVER_ERROR"}'
-          },
-          method: "POST",
-          body: JSON.stringify(productPayload),
-        });
+        const productResponse = await fetch(
+          `${PAYPAL_BASE_URL}/v1/catalogs/products`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+              // Uncomment one of these to force an error for negative testing (in sandbox mode only). Documentation:
+              // https://developer.paypal.com/tools/sandbox/negative-testing/request-headers/
+              // "PayPal-Mock-Response": '{"mock_application_codes": "MISSING_REQUIRED_PARAMETER"}'
+              // "PayPal-Mock-Response": '{"mock_application_codes": "PERMISSION_DENIED"}'
+              // "PayPal-Mock-Response": '{"mock_application_codes": "INTERNAL_SERVER_ERROR"}'
+            },
+            method: "POST",
+            body: JSON.stringify(productPayload),
+          }
+        );
 
         const productJson = await productResponse.json();
         const productSaveRes = await this.paypalProductManager.create({
@@ -111,29 +122,34 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
               tenure_type: "REGULAR",
               sequence: 1,
               total_cycles: 12,
-              pricing_scheme: { fixed_price: { value: service?.price, currency_code: "USD" } },
-            }
+              pricing_scheme: {
+                fixed_price: { value: service?.price, currency_code: "USD" },
+              },
+            },
           ],
           payment_preferences: {
             auto_bill_outstanding: true,
             setup_fee_failure_action: "CONTINUE",
             payment_failure_threshold: 3,
-          }
+          },
         };
 
-        const planResponse = await fetch(`${PAYPAL_BASE_URL}/v1/billing/plans`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-            // Uncomment one of these to force an error for negative testing (in sandbox mode only). Documentation:
-            // https://developer.paypal.com/tools/sandbox/negative-testing/request-headers/
-            // "PayPal-Mock-Response": '{"mock_application_codes": "MISSING_REQUIRED_PARAMETER"}'
-            // "PayPal-Mock-Response": '{"mock_application_codes": "PERMISSION_DENIED"}'
-            // "PayPal-Mock-Response": '{"mock_application_codes": "INTERNAL_SERVER_ERROR"}'
-          },
-          method: "POST",
-          body: JSON.stringify(planPayload),
-        });
+        const planResponse = await fetch(
+          `${PAYPAL_BASE_URL}/v1/billing/plans`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+              // Uncomment one of these to force an error for negative testing (in sandbox mode only). Documentation:
+              // https://developer.paypal.com/tools/sandbox/negative-testing/request-headers/
+              // "PayPal-Mock-Response": '{"mock_application_codes": "MISSING_REQUIRED_PARAMETER"}'
+              // "PayPal-Mock-Response": '{"mock_application_codes": "PERMISSION_DENIED"}'
+              // "PayPal-Mock-Response": '{"mock_application_codes": "INTERNAL_SERVER_ERROR"}'
+            },
+            method: "POST",
+            body: JSON.stringify(planPayload),
+          }
+        );
 
         const planJson = await planResponse.json();
 
@@ -149,7 +165,7 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
       Logger.error("PayPal error creating plan.");
       return { data: null, error: "Internal server error" };
     }
-  };
+  }
 
   /**
    * Return service with plan id for initiating subscription.
@@ -160,13 +176,16 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
 
       return { data, error: null };
     } catch (e) {
-      return { data: null, e }
+      return { data: null, e };
     }
-  };
+  }
 
   async activate(enrollment: any) {
     const { serviceId, subscriptionId, price } = enrollment.tokenData;
-    const statusRes: any = await this.serviceManager.update(serviceId as string, { paymentService: PAYMENT_SERVICE.PAYPAL, active: true, hash: null })
+    const statusRes: any = await this.serviceManager.update(
+      serviceId as string,
+      { paymentService: PAYMENT_SERVICE.PAYPAL, active: true, hash: null }
+    );
     delete statusRes?.data?.[0]?.hash;
 
     const payPalEnrollment = await this.create({
@@ -175,13 +194,18 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
       email: enrollment.tokenData.email,
       firstPayment: new Date(),
       active: true,
-      paid: true
+      paid: true,
     });
 
     await AuthenticatedRequest.send({
       method: "PUT",
       path: "/api/status",
-      body: { subscriptionId, active: true, transaction: { amount: +price }, type: 'invoice.payment_succeeded' },
+      body: {
+        subscriptionId,
+        active: true,
+        transaction: { amount: +price },
+        type: "invoice.payment_succeeded",
+      },
       xTaoshiKey: XTaoshiHeaderKeyType.Validator,
     });
 
@@ -191,47 +215,63 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
   async cancelSubscription(serviceId: string) {
     try {
       const accessToken = await this.generateAccessToken();
-      const enrollmentRes = await this.find(eq(paypal_enrollments.serviceId, serviceId));
+      const enrollmentRes = await this.find(
+        eq(paypal_enrollments.serviceId, serviceId)
+      );
       const enrollment = enrollmentRes?.data?.[0];
 
-      if (!enrollment) throw new Error('Enrollment not found.');
+      if (!enrollment) throw new Error("Enrollment not found.");
 
-      const existingSubResponse = await fetch(`${PAYPAL_BASE_URL}/v1/billing/subscriptions/${enrollment.payPalSubscriptionId}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-      const existingSub = await existingSubResponse.json();
-
-      if (existingSub.status !== 'CANCELLED') {
-        const response = await fetch(`${PAYPAL_BASE_URL}/v1/billing/subscriptions/${enrollment.payPalSubscriptionId}/cancel`, {
-          method: 'POST',
+      const existingSubResponse = await fetch(
+        `${PAYPAL_BASE_URL}/v1/billing/subscriptions/${enrollment.payPalSubscriptionId}`,
+        {
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            "Content-Type": "application/json",
+            Accept: "application/json",
           },
-          body: JSON.stringify({ "reason": "User cancelled subscription" })
-        });
-        if (response.status !== 204) throw new Error('Unsubscribe failed.');
+        }
+      );
+      const existingSub = await existingSubResponse.json();
+
+      if (existingSub.status !== "CANCELLED") {
+        const response = await fetch(
+          `${PAYPAL_BASE_URL}/v1/billing/subscriptions/${enrollment.payPalSubscriptionId}/cancel`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({ reason: "User cancelled subscription" }),
+          }
+        );
+        if (response.status !== 204) throw new Error("Unsubscribe failed.");
       }
 
-      const statusRes: any = await this.serviceManager.changeStatus(enrollment.serviceId as string, false);
+      const statusRes: any = await this.serviceManager.changeStatus(
+        enrollment.serviceId as string,
+        false
+      );
       await this.update(enrollment.id as string, { active: false });
       delete statusRes?.data?.[0]?.hash;
 
       await AuthenticatedRequest.send({
         method: "PUT",
         path: "/api/status",
-        body: { subscriptionId: (statusRes.data as ServiceDTO[])?.[0]?.subscriptionId, active: false },
+        body: {
+          subscriptionId: (statusRes.data as ServiceDTO[])?.[0]?.subscriptionId,
+          active: false,
+        },
         xTaoshiKey: XTaoshiHeaderKeyType.Validator,
       });
 
       return statusRes;
     } catch (error: any) {
-      Logger.error("Error paypal cancel subscription: " + JSON.stringify(error));
+      Logger.error(
+        "Error paypal cancel subscription: " + JSON.stringify(error)
+      );
       return { data: null, error: error.message || "Internal server error" };
     }
   }
@@ -245,7 +285,7 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
 
     const transaction = {
       serviceId: enrollment.tokenData?.serviceId,
-      walletAddress: '',
+      walletAddress: "",
       transactionHash: `Unknown Invoice ${randomBytes(32).toString("hex")}`,
       confirmed: false,
       fromAddress: enrollment.tokenData?.consumerServiceId,
@@ -254,7 +294,9 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
       transactionType: "deposit" as "deposit" | "withdrawal",
       blockNumber: -1,
     };
-    const newTransaction: any = await this.transactionManager.create(transaction);
+    const newTransaction: any = await this.transactionManager.create(
+      transaction
+    );
 
     const payload = {
       intent: "CAPTURE",
@@ -270,7 +312,7 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
         },
       ],
       application_context: {
-        shipping_preference: "NO_SHIPPING"
+        shipping_preference: "NO_SHIPPING",
       },
     };
 
@@ -289,7 +331,7 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
     });
 
     return this.handleResponse(response);
-  };
+  }
 
   /**
    * Capture payment for the created order to complete the transaction.
@@ -314,19 +356,31 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
 
     const jsonResponse = await response.json();
 
-    const transactionRes: any = await this.transactionManager.update(jsonResponse.purchase_units?.[0]?.payments?.captures?.[0]?.invoice_id, {
-      meta: jsonResponse,
-      transactionHash: orderID,
-      confirmed: true
-    });
+    const transactionRes: any = await this.transactionManager.update(
+      jsonResponse.purchase_units?.[0]?.payments?.captures?.[0]?.invoice_id,
+      {
+        meta: jsonResponse,
+        transactionHash: orderID,
+        confirmed: true,
+      }
+    );
     const transaction = transactionRes?.data?.[0];
-    const service: any = await this.serviceManager.update(transaction?.serviceId as string, { paymentService: PAYMENT_SERVICE.PAYPAL, active: true, hash: null })
+    const service: any = await this.serviceManager.update(
+      transaction?.serviceId as string,
+      { paymentService: PAYMENT_SERVICE.PAYPAL, active: true, hash: null }
+    );
     delete service?.data?.[0]?.hash;
 
     await AuthenticatedRequest.send({
       method: "PUT",
       path: "/api/status",
-      body: { subscriptionId: service?.data?.[0]?.subscriptionId, transaction, quantity, active: true, type: "CHARGE.SUCCEEDED" },
+      body: {
+        subscriptionId: service?.data?.[0]?.subscriptionId,
+        transaction,
+        quantity,
+        active: true,
+        type: "CHARGE.SUCCEEDED",
+      },
       xTaoshiKey: XTaoshiHeaderKeyType.Validator,
     });
 
@@ -334,40 +388,46 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
       jsonResponse,
       httpStatusCode: response.status,
     };
-  };
+  }
 
   payPalWebhook = async (req: Request, res: Response) => {
     try {
       const event = req.body;
       const accessToken = await this.generateAccessToken();
       let verifyBody = JSON.stringify({
-        transmission_id: req.headers?.['paypal-transmission-id'],
-        transmission_time: req.headers?.['paypal-transmission-time'],
-        cert_url: req.headers?.['paypal-cert-url'],
-        auth_algo: req.headers?.['paypal-auth-algo'],
-        transmission_sig: req.headers?.['paypal-transmission-sig'],
+        transmission_id: req.headers?.["paypal-transmission-id"],
+        transmission_time: req.headers?.["paypal-transmission-time"],
+        cert_url: req.headers?.["paypal-cert-url"],
+        auth_algo: req.headers?.["paypal-auth-algo"],
+        transmission_sig: req.headers?.["paypal-transmission-sig"],
         webhook_id: process.env.PAYPAL_WEBHOOK_ID,
-        webhook_event: ":webhookEvent:"
+        webhook_event: ":webhookEvent:",
       });
-      verifyBody = verifyBody.replace('\":webhookEvent:\"', (req as any).rawBody);
+      verifyBody = verifyBody.replace('":webhookEvent:"', (req as any).rawBody);
 
-      const verify = await fetch(`${PAYPAL_BASE_URL}/v1/notifications/verify-webhook-signature`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: verifyBody
-      });
+      const verify = await fetch(
+        `${PAYPAL_BASE_URL}/v1/notifications/verify-webhook-signature`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: verifyBody,
+        }
+      );
       const { verification_status } = await verify.json();
 
-      if (verification_status !== 'SUCCESS') {
+      if (verification_status !== "SUCCESS") {
         Logger.error("PayPal webhook error: Verify failed");
         return { data: null, error: "Internal server error" };
       }
 
-      const payPalEnrollmentReq = await this.find(eq(paypal_enrollments.payPalSubscriptionId, event?.resource?.id));
-      const enrollment: PayPalEnrollmentDTO = payPalEnrollmentReq?.data?.[0] as PayPalEnrollmentDTO;
+      const payPalEnrollmentReq = await this.find(
+        eq(paypal_enrollments.payPalSubscriptionId, event?.resource?.id)
+      );
+      const enrollment: PayPalEnrollmentDTO = payPalEnrollmentReq
+        ?.data?.[0] as PayPalEnrollmentDTO;
 
       if (event.event_type) {
         switch (event.event_type) {
@@ -376,17 +436,22 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
               payPalCustomerId: event?.resource?.subscriber?.payer_id,
               email: event?.resource?.subscriber?.email_address,
               firstPayment: new Date(),
-              paid: true
+              paid: true,
             });
 
-            const serviceReq: any = await this.serviceManager.update(enrollment.serviceId as string, { active: true });
+            const serviceReq: any = await this.serviceManager.update(
+              enrollment.serviceId as string,
+              { active: true }
+            );
             const activatedService = serviceReq?.data?.[0] as ServiceDTO;
             delete activatedService?.hash;
 
             const transaction = {
               serviceId: enrollment?.serviceId,
-              walletAddress: '',
-              transactionHash: event?.id || `Unknown Invoice ${randomBytes(32).toString("hex")}`,
+              walletAddress: "",
+              transactionHash:
+                event?.id ||
+                `Unknown Invoice ${randomBytes(32).toString("hex")}`,
               confirmed: true,
               fromAddress: event?.resource?.subscriber?.payer_id,
               toAddress: activatedService?.subscriptionId,
@@ -398,28 +463,40 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
 
             (transaction as any).meta = {
               hosted_invoice_url: event.data?.object?.hosted_invoice_url,
-              invoice_pdf: event.data?.object?.invoice_pdf
-            }
+              invoice_pdf: event.data?.object?.invoice_pdf,
+            };
 
             await AuthenticatedRequest.send({
               method: "PUT",
               path: "/api/status",
-              body: { subscriptionId: activatedService.subscriptionId, type: event.event_type, transaction },
+              body: {
+                subscriptionId: activatedService.subscriptionId,
+                type: event.event_type,
+                transaction,
+              },
               xTaoshiKey: XTaoshiHeaderKeyType.Validator,
             });
 
             break;
           case "BILLING.SUBSCRIPTION.EXPIRED":
           case "BILLING.SUBSCRIPTION.CANCELLED":
-            await this.update(enrollment?.id as string, { active: false })
-            const deactivatedServiceReq: any = await this.serviceManager.update(enrollment?.serviceId as string, { active: false });
-            const deActivatedService = deactivatedServiceReq?.data?.[0] as ServiceDTO;
+            await this.update(enrollment?.id as string, { active: false });
+            const deactivatedServiceReq: any = await this.serviceManager.update(
+              enrollment?.serviceId as string,
+              { active: false }
+            );
+            const deActivatedService = deactivatedServiceReq
+              ?.data?.[0] as ServiceDTO;
             delete deActivatedService?.hash;
 
             await AuthenticatedRequest.send({
               method: "PUT",
               path: "/api/status",
-              body: { subscriptionId: deActivatedService?.subscriptionId, active: false, type: event.event_type },
+              body: {
+                subscriptionId: deActivatedService?.subscriptionId,
+                active: false,
+                type: event.event_type,
+              },
               xTaoshiKey: XTaoshiHeaderKeyType.Validator,
             });
             break;
@@ -427,7 +504,7 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
             break;
         }
 
-        return { data: 'ok' };
+        return { data: "ok" };
       } else {
         Logger.error("PayPal webhook validation error: ");
         return { data: null, error: "PayPal webhook validation error: " };
@@ -436,32 +513,29 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
       Logger.error("PayPal webhook error: " + JSON.stringify(error));
       return { data: null, error: error.message || "Internal server error" };
     }
-  }
+  };
 
   async checkForPaypal(req?: Request, res?: Response) {
     try {
-      const isHttps = (process.env.API_HOST || '').includes('https://');
+      const isHttps = (process.env.API_HOST || "").includes("https://");
       let webhooks = true,
         webhookEvents = true,
         newEndpointCreated = false;
 
-      if
-        (process.env.STRIPE_SECRET_KEY &&
+      if (
+        process.env.STRIPE_SECRET_KEY &&
         process.env.PAYPAL_CLIENT_ID &&
         process.env.PAYMENT_ENROLLMENT_SECRET
       ) {
         // const endpoints = await stripe.webhookEndpoints.list();
         // webhookEndpoint = endpoints?.data?.find((endpoint: any) => endpoint.url === `${process.env.API_HOST}/webhooks`);
-
         // if (isHttps && !webhookEndpoint && !process.env.STRIPE_WEBHOOKS_KEY) {
         //   webhookEndpoint = (await stripe.webhookEndpoints.create({
         //     enabled_events,
         //     url: `${process.env.API_HOST}/webhooks`,
         //   }));
-
         //   if (webhookEndpoint) newEndpointCreated = true;
         // }
-
         // if (!!webhookEndpoint) webhooks = true;
         // if (_isEqual(webhookEndpoint?.enabled_events, enabled_events)) webhookEvents = true;
       }
@@ -472,28 +546,29 @@ export default class PayPalManager extends DatabaseWrapper<PayPalEnrollmentDTO> 
         isHttps,
         payPalSecretKey,
         payPalClientId,
-        enrollmentSecret: !!process.env.PAYMENT_ENROLLMENT_SECRET ? true : false,
+        enrollmentSecret: !!process.env.PAYMENT_ENROLLMENT_SECRET
+          ? true
+          : false,
         payPalWebhookId: !!process.env.PAYPAL_WEBHOOK_ID ? true : false,
         newEndpointCreated,
         webhooks,
         webhookEvents,
         rnUrl: process.env.REQUEST_NETWORK_UI_URL,
-      }
+      };
 
       if (res) {
-        return res
-          .status(200)
-          .json(payPalResponse);
+        return res.status(200).json(payPalResponse);
       }
 
       return payPalResponse;
     } catch (error: Error | unknown) {
       Logger.error("Error creating token:" + JSON.stringify(error));
-      const errorResponse = { ok: false, error: (error as Error)?.message || "Internal server error" };
+      const errorResponse = {
+        ok: false,
+        error: (error as Error)?.message || "Internal server error",
+      };
       if (res) {
-        return res
-          .status(500)
-          .json(errorResponse);
+        return res.status(500).json(errorResponse);
       }
 
       return errorResponse;
