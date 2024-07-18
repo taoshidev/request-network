@@ -46,7 +46,6 @@
     serviceRouteInput.value = data.url;
     redirect = data.redirect;
   } catch (e) {
-    console.log(e)
     submitBtn.disabled = true;
     apiError.innerText = "Error: Invalid token.";
   }
